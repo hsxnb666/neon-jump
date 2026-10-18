@@ -109,7 +109,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 .lbRow.me .nm{color:#ffd75e;font-weight:bold}
 .lbRow .sc{flex:0 0 58px;text-align:right;color:#6ff0c0;font-weight:bold;font-size:13px}
 .lbRow .ds{flex:0 0 52px;text-align:right;color:#7a8db8;font-size:11px}
-#lbNameBox{display:none;margin:10px 0 4px;font-size:13px;color:#9fd8ff}
+#lbNameBox{display:block;margin:10px 0 4px;font-size:13px;color:#9fd8ff;text-align:center}
+#lbRenameBtn{padding:7px 16px;border-radius:9px;border:1px solid rgba(120,200,255,.4);background:rgba(20,30,60,.7);color:#9fd8ff;font-size:13px;cursor:pointer}
+#lbRenameBtn:active{background:rgba(56,182,255,.3)}
+#startNameBox{margin:16px 0 10px;text-align:center;font-size:14px;color:#9fd8ff}
+#startNameBox span{margin-right:8px}
+#startNameInput{width:140px;padding:9px 10px;border-radius:10px;border:1px solid rgba(120,200,255,.45);background:rgba(10,18,38,.95);color:#cfe9ff;font-size:14px;text-align:center;outline:none}
+#startNameInput::placeholder{color:#5a6b8f}
+#startNameInput:focus{border-color:#38b6ff;box-shadow:0 0 10px rgba(56,182,255,.4)}
+#board{max-height:220px !important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 #lbNameInput{width:120px;padding:7px 9px;border-radius:9px;border:1px solid rgba(120,200,255,.4);background:rgba(10,18,38,.95);color:#cfe9ff;font-size:13px;text-align:center;margin-left:6px;outline:none}
 #lbNameInput:focus{border-color:#38b6ff;box-shadow:0 0 10px rgba(56,182,255,.4)}
 #lbStatus{font-size:11px;color:#7fb8e0;margin-top:6px;min-height:15px}
@@ -123,6 +131,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div class="logo">霓虹跃射</div>
   <div class="tagline">NEON LEAP SHOOTER</div>
 
+  <div id="startNameBox">
+    <span>昵称</span>
+    <input id="startNameInput" maxlength="12" onchange="onStartNameChange(this.value)" placeholder="输入你的昵称">
+  </div>
   <button class="btn btn-main" onclick="startGame(false)">开 始 游 戏</button>
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
   <button class="btn btn-cont" id="contBtn" onclick="continueGame()" style="display:none">继续上局</button>
@@ -140,7 +152,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 <div id="overScreen" class="panel hidden">
   <div class="logo" style="font-size:clamp(26px,8vw,42px)">游戏结束</div>
   <div id="finalScore" style="color:#a0a8ff;margin-top:12px;font-size:14px">得分 0</div>
-  <div id="lbTabs"><div class="tb on" id="lbTabAll" onclick="switchBoard(&#39;all&#39;)">&#127760; 全网榜</div><div class="tb" id="lbTabMe" onclick="switchBoard(&#39;me&#39;)">&#128241; 本机榜</div></div><div id="board"></div><div id="lbNameBox">昵称 <input id="lbNameInput" maxlength="12" onchange="onNameChange(this.value)"></div><div id="lbStatus"></div>
+  <div id="lbTabs"><div class="tb on" id="lbTabAll" onclick="switchBoard(&#39;all&#39;)">&#127760; 全网榜</div><div class="tb" id="lbTabMe" onclick="switchBoard(&#39;me&#39;)">&#128241; 本机榜</div></div><div id="board"></div><div id="lbNameBox"><button id="lbRenameBtn" onclick="lbShowRename()">✏️ 修改昵称</button></div><div id="lbStatus"></div>
   <button class="btn btn-main" onclick="startGame(smartMode)">重新开始</button>
 </div>
 
@@ -3502,6 +3514,34 @@ function lbGetName(){
   lbMyName=n;
   return n;
 }
+function lbSyncStartName(){
+  var el=document.getElementById("startNameInput");
+  if(el){ el.value=lbGetName(); }
+}
+function onStartNameChange(v){
+  var n=String(v||"").trim();
+  if(!n){ var el=document.getElementById("startNameInput"); if(el) el.value=lbGetName(); return; }
+  if(n.length>12) n=n.substring(0,12);
+  lbMyName=n;
+  try{localStorage.setItem("njs_name",n)}catch(e){}
+  var e2=document.getElementById("lbNameInput"); if(e2) e2.value=n;
+  lbSetStatus("昵称已设为："+n);
+  lbFetchAll();
+}
+function lbShowRename(){
+  var cur=lbGetName();
+  var v=window.prompt("输入新昵称（最多12字）",cur);
+  if(v==null) return;
+  v=String(v).trim();
+  if(!v){ lbSetStatus("昵称不能为空"); return; }
+  if(v.length>12) v=v.substring(0,12);
+  lbMyName=v;
+  try{localStorage.setItem("njs_name",v)}catch(e){}
+  var e2=document.getElementById("lbNameInput"); if(e2) e2.value=v;
+  var e3=document.getElementById("startNameInput"); if(e3) e3.value=v;
+  lbSetStatus("昵称已改为："+v);
+  lbFetchAll();
+}
 function onNameChange(){
   var el=document.getElementById("lbNameInput");
   if(!el) return;
@@ -3562,7 +3602,7 @@ function lbRender(){
 /* 拉取全网 Top10 */
 function lbFetchAll(){
   lbSetStatus("加载中…");
-  var url=LB_URL+"/rest/v1/scores?select=name,score,dist,lv,created_at&order=score.desc&limit=10";
+  var url=LB_URL+"/rest/v1/scores?select=name,score,dist,lv,created_at&order=score.desc&limit=50";
   var xhr=new XMLHttpRequest();
   xhr.open("GET",url,true);
   xhr.setRequestHeader("apikey",LB_KEY);
@@ -3647,6 +3687,8 @@ function lbOnGameOver(sc,ds){
   lbRender();
   lbFetchAll();
 }
+
+lbSyncStartName();
 
 requestAnimationFrame(loop);
 /* ========== 复活/放弃/存档 ========== */
