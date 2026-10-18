@@ -4476,32 +4476,37 @@ function backToHome(){
   if(startEl) startEl.classList.remove("hidden");
   setTimeout(function(){ try{ fitHome(); }catch(e){}
 
-/* ========== 兜底点击代理：结束页按钮强制可用 ========== */
+/* ========== 按钮触摸兜底（直接绑在按钮上，不破坏冒泡） ========== */
 try{
-  document.addEventListener("pointerdown", function(ev){
-    var el = ev.target;
-    while(el && el !== document.body){
-      if(el.tagName === "BUTTON" || (el.classList && el.classList.contains("tb"))){
-        var oc = el.getAttribute("onclick");
-        if(oc){
-          ev.stopPropagation();
-          try{ (new Function(oc)).call(el); }catch(e){}
-          return;
+  function _bindBtnTouch(){
+    var btns=document.querySelectorAll("button");
+    for(var i=0;i<btns.length;i++){(function(b){
+      if(b._tbound) return;
+      b._tbound=true;
+      var fired=false;
+      b.addEventListener("touchstart",function(e){
+        fired=false;
+      },{passive:true});
+      b.addEventListener("touchend",function(e){
+        if(fired) return;
+        fired=true;
+        var fn=b.getAttribute("onclick");
+        if(fn){
+          try{
+            /* 在全局作用域执行，能找到 startGame 等函数 */
+            (function(){ eval(fn); }).call(b);
+          }catch(err){}
         }
-      }
-      el = el.parentNode;
-    }
-  }, true);
-  document.addEventListener("click", function(ev){
-    var el = ev.target;
-    while(el && el !== document.body){
-      if(el.tagName === "BUTTON"){
-        ev.stopPropagation();
-        return;
-      }
-      el = el.parentNode;
-    }
-  }, true);
+      },{passive:true});
+    })(btns[i]);}
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",_bindBtnTouch);
+  } else {
+    _bindBtnTouch();
+  }
+  setTimeout(_bindBtnTouch,800);
+  setTimeout(_bindBtnTouch,2000);
 }catch(e){}
  },60);
   var c=document.getElementById("contBtn");
