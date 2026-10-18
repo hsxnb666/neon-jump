@@ -713,7 +713,7 @@ window.onerror=function(m,src,line,col,err){
     var d=document.getElementById("errbox");
     if(!d){
       d=document.createElement("div");d.id="errbox";
-      d.style.cssText="position:fixed;left:8px;bottom:8px;width:34px;height:34px;border-radius:50%;background:#c00;color:#fff;font-size:16px;line-height:34px;text-align:center;z-index:99999;box-shadow:0 0 12px rgba(255,0,0,.7);cursor:pointer";
+      d.style.cssText="position:fixed;left:8px;bottom:8px;width:26px;height:26px;border-radius:50%;background:rgba(180,0,0,.75);color:#fff;font-size:14px;line-height:26px;text-align:center;z-index:99998;cursor:pointer;opacity:.65";
       d.textContent="!";
       d.onclick=function(){var h=[];try{h=JSON.parse(localStorage.getItem("njs_errs")||"[]")}catch(e3){}alert("错误记录：\n\n"+(h.length?h.join("\n\n"):"无"))};
       document.body.appendChild(d);
@@ -4503,7 +4503,7 @@ window.addEventListener("error", function(ev){
     if(!d){
       d=document.createElement("div");
       d.id="errbox";
-      d.style.cssText="position:fixed;left:8px;bottom:8px;width:34px;height:34px;border-radius:50%;background:#c00;color:#fff;font-size:16px;line-height:34px;text-align:center;z-index:99999;box-shadow:0 0 12px rgba(255,0,0,.7);cursor:pointer";
+      d.style.cssText="position:fixed;left:8px;bottom:8px;width:26px;height:26px;border-radius:50%;background:rgba(180,0,0,.75);color:#fff;font-size:14px;line-height:26px;text-align:center;z-index:99998;cursor:pointer;opacity:.65";
       d.textContent="!";
       d.onclick=function(){
         var h=[];try{h=JSON.parse(localStorage.getItem("njs_errs")||"[]")}catch(e3){}
@@ -4520,6 +4520,22 @@ window.addEventListener("error", function(ev){
   var c=document.getElementById("contBtn");
   if(c) c.style.display="none";
   try{ lbFetchAll(); }catch(e){}
+}
+
+function continueGame(){
+  try{
+    var raw=localStorage.getItem("njs_save");
+    if(!raw){ return; }
+    var d=JSON.parse(raw);
+    resetGame();
+    if(d && typeof d.score==="number"){ score=d.score; }
+    if(d && typeof d.distance==="number"){ distance=d.distance; }
+    gameState="playing";
+    var st=document.getElementById("startScreen"); if(st) st.classList.add("hidden");
+    var ov=document.getElementById("overScreen"); if(ov) ov.classList.add("hidden");
+    var hu=document.getElementById("hud"); if(hu) hu.classList.remove("hidden");
+    startBgm();
+  }catch(e){}
 }
 
 function startGame(sm){
