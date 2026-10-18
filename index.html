@@ -5,22 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>霓虹跃射</title>
 <style>
-#lbTabs{display:flex;gap:6px;margin:10px 0 6px;justify-content:center}
-#lbTabs button{flex:1;max-width:120px;padding:7px 4px;font-size:13px;border-radius:9px;border:1px solid rgba(120,140,255,.45);background:rgba(30,40,90,.55);color:#9fa9ff;font-family:inherit;cursor:pointer}
-#lbTabs button.on{background:linear-gradient(135deg,#5f6bff,#a45cff);color:#fff;border-color:transparent;box-shadow:0 0 12px rgba(120,100,255,.6)}
-#lbTag{font-size:11px;color:#7c86c8;text-align:center;margin-bottom:8px;height:14px}
-.lbRow{display:flex;align-items:center;gap:6px;padding:5px 8px;font-size:13px;border-radius:7px}
-.lbRow:nth-child(odd){background:rgba(90,110,220,.10)}
-.lbRow .rk{width:22px;text-align:right;color:#8b95e0;font-size:12px;flex:none}
-.lbRow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#dfe3ff;text-align:left}
-.lbRow .sc{color:#ffd76a;font-weight:bold;flex:none}
-.lbRow .ds{color:#8f9be0;font-size:11px;width:52px;text-align:right;flex:none}
-.lbRow.me{background:rgba(255,190,60,.16);box-shadow:inset 0 0 0 1px rgba(255,200,80,.5)}
-#lbNameBox{margin:8px 0 2px;display:none}
-#lbNameBox input{width:100%;padding:9px 10px;border-radius:9px;border:1px solid rgba(120,140,255,.5);background:rgba(20,26,60,.85);color:#e8ebff;font-size:14px;font-family:inherit;text-align:center;outline:none}
-#lbStatus{font-size:11px;color:#7c86c8;text-align:center;margin-top:6px;height:14px}
-</style>
-<style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:none}
 html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:"Microsoft YaHei","PingFang SC",sans-serif}
 #game{position:fixed;left:0;top:0;width:100%;height:100%}
@@ -112,6 +96,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   color:#7fdcff;font-size:13px;line-height:1.9;text-align:left;
   min-width:200px;max-width:86vw;
 }
+
+#lbTabs{display:flex;gap:6px;margin:10px 0 6px;justify-content:center}
+#lbTabs .tb{flex:1;padding:7px 0;font-size:13px;border-radius:8px;border:1px solid rgba(120,200,255,.35);background:rgba(20,30,60,.6);color:#9fd8ff;cursor:pointer}
+#lbTabs .tb.on{background:linear-gradient(135deg,#2a6cff,#00d4ff);color:#fff;border-color:transparent}
+#board{max-height:150px;overflow-y:auto;font-size:13px;line-height:1.75;text-align:left;padding:0 6px}
+#board .row{padding:2px 4px;border-radius:5px}
+#board .row.me{background:rgba(255,200,60,.16);color:#ffd75e;font-weight:bold}
+#lbNameBox{display:none;margin:8px 0}
+#lbNameInput{width:130px;padding:6px 8px;border-radius:8px;border:1px solid rgba(120,200,255,.4);background:rgba(10,18,38,.9);color:#cfe9ff;font-size:13px;text-align:center}
+#lbStatus{font-size:11px;color:#7fb8e0;margin-top:4px;min-height:14px}
 </style>
 </head>
 <body>
@@ -139,14 +133,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 <div id="overScreen" class="panel hidden">
   <div class="logo" style="font-size:clamp(26px,8vw,42px)">游戏结束</div>
   <div id="finalScore" style="color:#a0a8ff;margin-top:12px;font-size:14px">得分 0</div>
-  <div id="lbTabs">
-    <button id="lbTabAll" class="on" onclick="switchBoard('all')">🌐 全网榜</button>
-    <button id="lbTabMe" onclick="switchBoard('me')">📱 本机榜</button>
-  </div>
-  <div id="lbTag"></div>
-  <div id="board"></div>
-  <div id="lbNameBox"><input id="lbNameInput" maxlength="12" placeholder="输入你的名字" onchange="onNameChange()"></div>
-  <div id="lbStatus"></div>
+  <div id="lbTabs"><div class="tb on" id="lbTabAll" onclick="switchBoard(&#39;all&#39;)">&#127760; 全网榜</div><div class="tb" id="lbTabMe" onclick="switchBoard(&#39;me&#39;)">&#128241; 本机榜</div></div><div id="board"></div><div id="lbNameBox">昵称 <input id="lbNameInput" maxlength="12" onchange="onNameChange(this.value)"></div><div id="lbStatus"></div>
   <button class="btn btn-main" onclick="startGame(smartMode)">重新开始</button>
 </div>
 
@@ -3442,7 +3429,49 @@ function loop(ts){
   else if(gameState==="start"||gameState==="paused"){draw()}
 
   _lastFrameMs=performance.now()-t0;
-  
+  requestAnimationFrame(loop);
+}
+
+function startGame(sm){
+  smartMode=!!sm;
+  eA();
+  startBgm();
+  resetGame();
+  gameState="playing";
+  ui.start.classList.add("hidden");
+  ui.over.classList.add("hidden");
+  ui.pause.classList.add("hidden");
+  ui.hud.classList.remove("hidden");
+  ui.hint.classList.remove("hidden");
+  setTimeout(function(){ui.hint.classList.add("hidden")},5000);
+}
+function togglePause(){
+  if(gameState==="playing"){gameState="paused";ui.pause.classList.remove("hidden");ui.hud.classList.add("hidden")}
+  else if(gameState==="paused"){gameState="playing";ui.pause.classList.add("hidden");ui.hud.classList.remove("hidden")}
+}
+function saveScore(sc,ds){
+  var arr=[];
+  try{arr=JSON.parse(localStorage.getItem("njs_scores")||"[]")}catch(e){}
+  arr.push({s:sc,d:ds});
+  arr.sort(function(a,b){return b.s-a.s});
+  arr=arr.slice(0,10);
+  try{localStorage.setItem("njs_scores",JSON.stringify(arr))}catch(e){}
+  return arr;
+}
+function gameOver(){
+  gameState="over";
+  stopBgm();
+  sfx(110,"sawtooth",1,0.12,40);
+  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel;
+  saveScore(score,distance);
+  lbView="all";
+  var _ta=document.getElementById("lbTabAll"),_tb=document.getElementById("lbTabMe");
+  if(_ta&&_tb){_ta.classList.add("on");_tb.classList.remove("on")}
+  lbOnGameOver(score,distance);
+  ui.over.classList.remove("hidden");
+  ui.hud.classList.add("hidden");
+}
+
 /* ========== 联网排行榜（Supabase） ========== */
 var LB_URL="https://jdsodgkigvmsczmxgggy.supabase.co";
 var LB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkc29kZ2tpZ3Ztc2N6bXhnZ2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyODY5MDcsImV4cCI6MjEwNzg2MjkwN30.VxNY8tBfYXgd89sfyY4P7LeVxBzlhBHtAZhGXM9oQMY";
@@ -3610,49 +3639,6 @@ function lbOnGameOver(sc,ds){
   lbSubmit(sc,ds);
   lbRender();
   lbFetchAll();
-}
-
-requestAnimationFrame(loop);
-}
-
-function startGame(sm){
-  smartMode=!!sm;
-  eA();
-  startBgm();
-  resetGame();
-  gameState="playing";
-  ui.start.classList.add("hidden");
-  ui.over.classList.add("hidden");
-  ui.pause.classList.add("hidden");
-  ui.hud.classList.remove("hidden");
-  ui.hint.classList.remove("hidden");
-  setTimeout(function(){ui.hint.classList.add("hidden")},5000);
-}
-function togglePause(){
-  if(gameState==="playing"){gameState="paused";ui.pause.classList.remove("hidden");ui.hud.classList.add("hidden")}
-  else if(gameState==="paused"){gameState="playing";ui.pause.classList.add("hidden");ui.hud.classList.remove("hidden")}
-}
-function saveScore(sc,ds){
-  var arr=[];
-  try{arr=JSON.parse(localStorage.getItem("njs_scores")||"[]")}catch(e){}
-  arr.push({s:sc,d:ds});
-  arr.sort(function(a,b){return b.s-a.s});
-  arr=arr.slice(0,10);
-  try{localStorage.setItem("njs_scores",JSON.stringify(arr))}catch(e){}
-  return arr;
-}
-function gameOver(){
-  gameState="over";
-  stopBgm();
-  sfx(110,"sawtooth",1,0.12,40);
-  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel;
-  saveScore(score,distance);
-  lbView="all";
-  var _ta=document.getElementById("lbTabAll"),_tb=document.getElementById("lbTabMe");
-  if(_ta&&_tb){_ta.classList.add("on");_tb.classList.remove("on")}
-  lbOnGameOver(score,distance);
-  ui.over.classList.remove("hidden");
-  ui.hud.classList.add("hidden");
 }
 
 requestAnimationFrame(loop);
