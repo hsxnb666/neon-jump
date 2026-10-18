@@ -92,9 +92,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 }
 
 
-#lbTabs{display:flex;gap:8px;margin:12px 0 10px;justify-content:center}
-#lbTabs .tb{flex:0 0 45%;padding:9px 0;font-size:14px;border-radius:10px;border:1px solid rgba(120,200,255,.35);background:rgba(20,30,60,.65);color:#9fd8ff;cursor:pointer;transition:.15s}
-#lbTabs .tb.on{background:linear-gradient(135deg,#2a6cff,#00d4ff);color:#fff;border-color:transparent;box-shadow:0 0 14px rgba(0,180,255,.5)}
+
 
 .lbRow{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;margin-bottom:3px;background:rgba(255,255,255,.04)}
 .lbRow.me{background:rgba(255,200,60,.18);border:1px solid rgba(255,200,60,.45)}
@@ -116,25 +114,67 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 #lbNameInput{width:120px;padding:7px 9px;border-radius:9px;border:1px solid rgba(120,200,255,.4);background:rgba(10,18,38,.95);color:#cfe9ff;font-size:13px;text-align:center;margin-left:6px;outline:none}
 #lbNameInput:focus{border-color:#38b6ff;box-shadow:0 0 10px rgba(56,182,255,.4)}
 #lbStatus{font-size:11px;color:#7fb8e0;margin-top:6px;min-height:15px}
-#board{
+/* ===== 滚动榜单统一容器 ===== */
+.rankScroll{
   display:block;box-sizing:border-box;
-  width:min(88vw,520px);
-  height:230px;
-  overflow-y:auto;
+  width:min(90vw,560px);
+  height:240px;
+  min-height:240px;
+  max-height:240px;
+  overflow-y:auto !important;
   overflow-x:hidden;
   -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
   overscroll-behavior:contain;
-  margin:10px auto 6px;
+  margin:10px auto 8px;
   padding:8px 10px;
   border-radius:14px;
   background:rgba(0,242,255,.05);
-  border:1px solid rgba(0,242,255,.2);
+  border:1px solid rgba(0,242,255,.25);
   color:#7fdcff;font-size:13px;line-height:1.6;
   text-align:left;
+  position:relative;
 }
-#board::-webkit-scrollbar{width:5px}
-#board::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:3px}
-#board::-webkit-scrollbar-thumb{background:rgba(0,242,255,.35);border-radius:3px}
+.rankScroll::-webkit-scrollbar{width:6px}
+.rankScroll::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:3px}
+.rankScroll::-webkit-scrollbar-thumb{background:rgba(0,242,255,.5);border-radius:3px}
+.rankScroll::-webkit-scrollbar-thumb:hover{background:rgba(0,242,255,.8)}
+.rankStatus{font-size:11px;color:#7fb8e0;margin-top:6px;min-height:15px;text-align:center}
+#homeRankTabs,
+#homeRankTabs .tb,#lbTabs .tb{
+  padding:6px 16px;border-radius:20px;font-size:13px;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);
+  color:#8fb8d8;transition:all .2s;user-select:none;
+}
+#homeRankTabs .tb.on,#lbTabs .tb.on{
+  background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;
+  border-color:transparent;box-shadow:0 0 14px rgba(0,242,255,.5);
+}
+.btn-rank{
+  margin-top:14px;padding:10px 26px;border-radius:22px;font-size:15px;
+  background:rgba(255,200,0,.08);border:1.5px solid rgba(255,200,0,.45);
+  color:#ffd54a;cursor:pointer;transition:all .2s;
+}
+.btn-rank:active{transform:scale(.96);background:rgba(255,200,0,.18)}
+.btn-rank-close{
+  margin:8px 0 0;padding:6px 22px;border-radius:18px;font-size:13px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(0,242,255,.3);
+  color:#8fb8d8;cursor:pointer;
+}
+.btn-home{
+  margin-top:10px !important;background:rgba(255,255,255,.06) !important;
+  border:1.5px solid rgba(160,168,255,.4) !important;color:#a0a8ff !important;
+}
+.btn-mini{
+  padding:6px 18px;border-radius:16px;font-size:12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.3);
+  color:#8fd8ff;cursor:pointer;
+}
+.lbRow.me .nm{color:#ffd54a;font-weight:700}
+.lbRow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbRow .rk{width:26px;text-align:right;color:#6a7fb8;font-size:12px}
+.lbRow .sc{color:#00f2ff;font-weight:700;min-width:64px;text-align:right}
+.lbRow .ds{color:#7c86c8;font-size:11px;min-width:48px;text-align:right}
 </style>
 </head>
 <body>
@@ -153,21 +193,35 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
   <button class="btn btn-cont" id="contBtn" onclick="continueGame()" style="display:none">继续上局</button>
 
+  <button class="btn btn-rank" id="homeRankBtn" onclick="openHomeRank()">🏆 排 行 榜</button>
+
+  <div id="homeRank" class="hidden">
+    <div id="homeRankTabs">
+      <div class="tb on" id="hrTabAll" onclick="switchBoard('all')">🌐 全网榜</div>
+      <div class="tb" id="hrTabMe" onclick="switchBoard('me')">📱 本机榜</div>
+    </div>
+    <div id="homeBoard" class="rankScroll"></div>
+    <div id="homeRankStatus" class="rankStatus"></div>
+    <button class="btn btn-rank-close" onclick="closeHomeRank()">收起</button>
+  </div>
+
   <div class="feats">
     <div class="feat f1"><i>🔫</i><div><b>50 级武器</b><s>每级独立枪型</s></div></div>
     <div class="feat f2"><i>👾</i><div><b>10 种怪物</b><s>含 BOSS</s></div></div>
     <div class="feat f3"><i>💰</i><div><b>金币狂暴</b><s>100 币 = 5 秒</s></div></div>
     <div class="feat f4"><i>⚡</i><div><b>双技能</b><s>雷霆 + 护盾</s></div></div>
-    <div class="feat f5"><i>🪤</i><div><b>40 种陷阱</b><s>聪明人模式</s></div></div>
-    <div class="feat f6"><i>🏆</i><div><b>本机排行</b><s>挑战最高分</s></div></div>
   </div>
 </div>
 
 <div id="overScreen" class="panel hidden">
   <div class="logo" style="font-size:clamp(26px,8vw,42px)">游戏结束</div>
   <div id="finalScore" style="color:#a0a8ff;margin-top:12px;font-size:14px">得分 0</div>
-  <div id="lbTabs"><div class="tb on" id="lbTabAll" onclick="switchBoard(&#39;all&#39;)">&#127760; 全网榜</div><div class="tb" id="lbTabMe" onclick="switchBoard(&#39;me&#39;)">&#128241; 本机榜</div></div><div id="board"></div><div id="lbNameBox"><button id="lbRenameBtn" onclick="lbShowRename()">✏️ 修改昵称</button></div><div id="lbStatus"></div>
-  <button class="btn btn-main" onclick="startGame(smartMode)">重新开始</button>
+  <div id="lbTabs"><div class="tb on" id="lbTabAll" onclick="switchBoard(&#39;all&#39;)">🌐 全网榜</div><div class="tb" id="lbTabMe" onclick="switchBoard(&#39;me&#39;)">📱 本机榜</div></div>
+  <div id="overBoard" class="rankScroll"></div>
+  <div id="lbNameBox"><button id="lbRenameBtn" class="btn-mini" onclick="lbShowRename()">✏️ 修改昵称</button></div>
+  <div id="lbStatus" class="rankStatus"></div>
+  <button class="btn btn-main" onclick="startGame(smartMode)">再 来 一 局</button>
+  <button class="btn btn-home" onclick="backToHome()">🏠 回 主 页</button>
 </div>
 
 <div id="pauseScreen" class="panel hidden">
@@ -3466,6 +3520,44 @@ function loop(ts){
   requestAnimationFrame(loop);
 }
 
+/* ========== 首页排行榜 ========== */
+function openHomeRank(){
+  var box=document.getElementById("homeRank");
+  if(!box) return;
+  box.classList.remove("hidden");
+  var btn=document.getElementById("homeRankBtn");
+  if(btn) btn.style.display="none";
+  lbView="all";
+  lbRender();
+  lbFetchAll();
+}
+function closeHomeRank(){
+  var box=document.getElementById("homeRank");
+  if(box) box.classList.add("hidden");
+  var btn=document.getElementById("homeRankBtn");
+  if(btn) btn.style.display="";
+}
+
+/* ========== 回主页 ========== */
+function backToHome(){
+  try{ if(typeof stopBgm==="function") stopBgm(); }catch(e){}
+  gameState="start";
+  closeHomeRank();
+  try{ resetGame(); }catch(e){}
+  var ids=["overScreen","reviveScreen","pauseScreen"];
+  for(var i=0;i<ids.length;i++){
+    var el=document.getElementById(ids[i]);
+    if(el) el.classList.add("hidden");
+  }
+  var hud=document.getElementById("hud");
+  if(hud) hud.classList.add("hidden");
+  var startEl=document.getElementById("startScreen");
+  if(startEl) startEl.classList.remove("hidden");
+  var c=document.getElementById("contBtn");
+  if(c) c.style.display="none";
+  try{ lbFetchAll(); }catch(e){}
+}
+
 function startGame(sm){
   smartMode=!!sm;
   eA();
@@ -3574,8 +3666,10 @@ function onNameChange(){
   if(lbLastScore) lbSubmit(lbLastScore.s, lbLastScore.d);
 }
 function lbSetStatus(t){
-  var e=document.getElementById("lbStatus");
-  if(e) e.textContent=t||"";
+  var a=document.getElementById("lbStatus");
+  var b=document.getElementById("homeRankStatus");
+  if(a) a.textContent=t||"";
+  if(b) b.textContent=t||"";
 }
 function lbSetTag(t){
   var e=document.getElementById("lbTag");
@@ -3595,28 +3689,34 @@ function switchBoard(v){
 }
 
 function lbRender(){
-  var box=document.getElementById("board");
-  if(!box) return;
+  var targets=[document.getElementById("overBoard"),document.getElementById("homeBoard")];
   var arr=(lbView==="all")?lbCacheAll:lbCacheMe;
-  if(!arr||!arr.length){
-    box.innerHTML='<div class="lbRow"><span class="nm" style="color:#7c86c8">暂无记录，快去创一个吧</span></div>';
-    return;
-  }
   var my=lbGetName();
   var h="";
-  for(var i=0;i<arr.length;i++){
-    var r=arr[i];
-    var nm=r.name||"玩家";
-    var isMe=(lbView==="me")||(nm===my);
-    var rk=(lbView==="all")?(r.rk||(i+1)):(i+1);
-    h+='<div class="lbRow'+(isMe?' me':'')+'">'
-      +'<span class="rk">'+rk+'</span>'
-      +'<span class="nm">'+lbEscape(nm)+'</span>'
-      +'<span class="sc">'+(r.score||0)+'</span>'
-      +'<span class="ds">'+(r.dist||0)+'m</span>'
+  if(!arr||!arr.length){
+    h='<div class="lbRow"><span class="nm" style="color:#7c86c8">暂无记录，快去创一个吧</span></div>';
+  } else {
+    for(var i=0;i<arr.length;i++){
+      var r=arr[i]||{};
+      var nm=r.name||"玩家";
+      var isMe=(nm===my);
+      var rk=(lbView==="all")?(r.rk||(i+1)):(i+1);
+      h+='<div class="lbRow'+(isMe?' me':'')+'">'
+        +'<span class="rk">'+rk+'</span>'
+        +'<span class="nm">'+lbEscape(nm)+'</span>'
+        +'<span class="sc">'+(r.score||0)+'</span>'
+        +'<span class="ds">'+(r.dist||0)+'m</span>'
       +'</div>';
+    }
   }
-  box.innerHTML=h;
+  for(var k=0;k<targets.length;k++){
+    if(targets[k]){ targets[k].innerHTML=h; targets[k].scrollTop=0; }
+  }
+  var ta1=document.getElementById("lbTabAll"),tb1=document.getElementById("lbTabMe");
+  var ta2=document.getElementById("hrTabAll"),tb2=document.getElementById("hrTabMe");
+  var isAll=(lbView==="all");
+  if(ta1&&tb1){ ta1.className="tb"+(isAll?" on":""); tb1.className="tb"+(isAll?"":" on"); }
+  if(ta2&&tb2){ ta2.className="tb"+(isAll?" on":""); tb2.className="tb"+(isAll?"":" on"); }
 }
 
 /* 拉取全网 Top10 */
