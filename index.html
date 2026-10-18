@@ -14,7 +14,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   position:absolute;left:0;top:0;width:100%;height:100%;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:radial-gradient(circle at 50% 40%,rgba(20,10,50,.92),rgba(5,3,15,.97));
-  transition:opacity .3s;padding:20px;overflow-y:auto;
+  transition:opacity .3s;padding:20px;
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
 }
 .hidden{opacity:0;pointer-events:none}
 .logo{
@@ -114,17 +116,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 #lbNameInput{width:120px;padding:7px 9px;border-radius:9px;border:1px solid rgba(120,200,255,.4);background:rgba(10,18,38,.95);color:#cfe9ff;font-size:13px;text-align:center;margin-left:6px;outline:none}
 #lbNameInput:focus{border-color:#38b6ff;box-shadow:0 0 10px rgba(56,182,255,.4)}
 #lbStatus{font-size:11px;color:#7fb8e0;margin-top:6px;min-height:15px}
+/* ===== pointer-events 继承链修复 ===== */
+#startScreen,#overScreen,#pauseScreen,#reviveScreen{pointer-events:auto !important}
+#startScreen *,#overScreen *,#pauseScreen *,#reviveScreen *{pointer-events:auto !important}
+#hud{pointer-events:none !important}
+
 /* ===== 滚动榜单统一容器 ===== */
 .rankScroll{
-  display:block;box-sizing:border-box;
+  display:block !important;box-sizing:border-box;
   width:min(90vw,560px);
-  height:240px;
-  min-height:240px;
-  max-height:240px;
-  overflow-y:auto !important;
-  overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  touch-action:pan-y;
+  height:240px !important;
+  min-height:240px !important;
+  max-height:240px !important;
+  overflow-y:scroll !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  touch-action:pan-y !important;
   overscroll-behavior:contain;
   margin:10px auto 8px;
   padding:8px 10px;
@@ -134,7 +141,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   color:#7fdcff;font-size:13px;line-height:1.6;
   text-align:left;
   position:relative;
+  pointer-events:auto !important;
+  z-index:10;
 }
+.rankScroll > *{pointer-events:auto !important}
 .rankScroll::-webkit-scrollbar{width:6px}
 .rankScroll::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:3px}
 .rankScroll::-webkit-scrollbar-thumb{background:rgba(0,242,255,.5);border-radius:3px}
@@ -470,8 +480,25 @@ function pUp(id){if(stick.active&&id===stick.id){stick.active=false;stick.id=-1;
 var hasTouch=("ontouchstart" in window)||(navigator.maxTouchPoints>0);
 function isOnBtn(x,y){return inC(x,y,fireBtn,fireBtn.r*2)||inC(x,y,jumpBtn,jumpBtn.r*2)||inC(x,y,skillBtn,skillBtn.r*2)||inC(x,y,dashBtn,dashBtn.r*2)}
 if(hasTouch){
-document.addEventListener("touchstart",function(e){var ob=false;for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(isOnBtn(t.clientX,t.clientY))ob=true}if(gameState==="playing"&&!ob)e.preventDefault();for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];pDown(t.identifier,t.clientX,t.clientY)}},{passive:false});
-document.addEventListener("touchmove",function(e){if(gameState==="playing"){e.preventDefault();for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];pMove(t.identifier,t.clientX,t.clientY)}}},{passive:false});
+document.addEventListener("touchstart",function(e){
+  var tn=e.target;
+  while(tn&&tn!==document.body){
+    if(tn.classList&&(tn.classList.contains("rankScroll")||tn.id==="startScreen"||tn.id==="overScreen")){return}
+    tn=tn.parentNode;
+  }
+  var ob=false;
+  for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(isOnBtn(t.clientX,t.clientY))ob=true}
+  if(gameState==="playing"&&!ob)e.preventDefault();
+  for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];pDown(t.identifier,t.clientX,t.clientY)}
+},{passive:false});
+document.addEventListener("touchmove",function(e){
+  var tn=e.target;
+  while(tn&&tn!==document.body){
+    if(tn.classList&&(tn.classList.contains("rankScroll")||tn.id==="startScreen"||tn.id==="overScreen")){return}
+    tn=tn.parentNode;
+  }
+  if(gameState==="playing"){e.preventDefault();for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];pMove(t.identifier,t.clientX,t.clientY)}}
+},{passive:false});
 document.addEventListener("touchend",function(e){for(var i=0;i<e.changedTouches.length;i++){pUp(e.changedTouches[i].identifier)}},{passive:false});
 document.addEventListener("touchcancel",function(e){for(var i=0;i<e.changedTouches.length;i++){pUp(e.changedTouches[i].identifier)}},{passive:false});
 }else{var mD=false;document.addEventListener("mousedown",function(e){mD=true;pDown(999,e.clientX,e.clientY)});document.addEventListener("mousemove",function(e){if(mD)pMove(999,e.clientX,e.clientY)});document.addEventListener("mouseup",function(){mD=false;pUp(999)})}
@@ -3732,9 +3759,17 @@ function lbFetchAll(){
     if(xhr.status===200){
       try{
         var d=JSON.parse(xhr.responseText||"[]");
-        lbCacheAll=d;
+        // 去重：同一昵称只保留最高分
+        var seen={},uniq=[];
+        for(var i=0;i<d.length;i++){
+          var it=d[i]||{};
+          var key=String(it.name||"玩家");
+          if(!seen[key]){ seen[key]=1; uniq.push(it); }
+        }
+        for(var j=0;j<uniq.length;j++){ uniq[j].rk=j+1; }
+        lbCacheAll=uniq;
         lbRender();
-        lbSetStatus(d.length?("已同步全网 " + d.length + " 条"):"全网还没有记录");
+        lbSetStatus(uniq.length?("全网 " + uniq.length + " 位玩家上榜"):"全网还没有记录");
       }catch(e){lbSetStatus("数据解析失败")}
     }else{
       lbSetStatus("离线模式（联网失败）");
