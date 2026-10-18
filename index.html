@@ -704,7 +704,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 
 
 <script>
-window.onerror=function(m,src,line,col,err){var d=document.getElementById("errbox");if(!d){d=document.createElement("div");d.id="errbox";d.style.cssText="position:fixed;left:0;bottom:0;right:0;background:#900;color:#fff;font-size:11px;padding:6px;z-index:9999;word-break:break-all;max-height:40vh;overflow:auto";document.body.appendChild(d)}var f=src?String(src).split("/").pop():"";var msg=m+" @ "+f+":"+line+":"+col;if(err&&err.stack){msg+=" | "+String(err.stack).split("\n").slice(0,3).join(" <- ")}d.textContent=msg;return false};
+window.onerror=function(m,src,line,col,err){
+  try{
+    var msg="ERR: "+m+" @ "+(src?String(src).split("/").pop():"?")+":"+line+":"+col;
+    var hist=[];try{hist=JSON.parse(localStorage.getItem("njs_errs")||"[]")}catch(e2){}
+    if(hist.length>8)hist.shift();hist.push(msg);
+    localStorage.setItem("njs_errs",JSON.stringify(hist));
+    var d=document.getElementById("errbox");
+    if(!d){
+      d=document.createElement("div");d.id="errbox";
+      d.style.cssText="position:fixed;left:8px;bottom:8px;width:34px;height:34px;border-radius:50%;background:#c00;color:#fff;font-size:16px;line-height:34px;text-align:center;z-index:99999;box-shadow:0 0 12px rgba(255,0,0,.7);cursor:pointer";
+      d.textContent="!";
+      d.onclick=function(){var h=[];try{h=JSON.parse(localStorage.getItem("njs_errs")||"[]")}catch(e3){}alert("错误记录：\n\n"+(h.length?h.join("\n\n"):"无"))};
+      document.body.appendChild(d);
+    }
+  }catch(e){}
+  return false};
 var canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
 function $(id){return document.getElementById(id)}
 var ui={start:$("startScreen"),over:$("overScreen"),pause:$("pauseScreen"),hud:$("hud"),hpFill:$("hpFill"),enFill:$("enFill"),dist:$("distVal"),score:$("scoreVal"),final:$("finalScore"),toast:$("toast"),hint:$("hint"),musicBtn:$("musicBtn")};
@@ -4475,39 +4490,32 @@ function backToHome(){
   var startEl=document.getElementById("startScreen");
   if(startEl) startEl.classList.remove("hidden");
   setTimeout(function(){ try{ fitHome(); }catch(e){}
+window.addEventListener("error", function(ev){
+  try{
+    var msg = "ERR: "+(ev.message||"?")+" @ "+(ev.filename?String(ev.filename).split("/").pop():"?")+":"+(ev.lineno||0)+":"+(ev.colno||0);
+    try{
+      var hist = JSON.parse(localStorage.getItem("njs_errs")||"[]");
+      if(hist.length>8) hist.shift();
+      hist.push(msg);
+      localStorage.setItem("njs_errs", JSON.stringify(hist));
+    }catch(e2){}
+    var d=document.getElementById("errbox");
+    if(!d){
+      d=document.createElement("div");
+      d.id="errbox";
+      d.style.cssText="position:fixed;left:8px;bottom:8px;width:34px;height:34px;border-radius:50%;background:#c00;color:#fff;font-size:16px;line-height:34px;text-align:center;z-index:99999;box-shadow:0 0 12px rgba(255,0,0,.7);cursor:pointer";
+      d.textContent="!";
+      d.onclick=function(){
+        var h=[];try{h=JSON.parse(localStorage.getItem("njs_errs")||"[]")}catch(e3){}
+        alert("错误记录：\n\n"+(h.length?h.join("\n\n"):"无"));
+      };
+      document.body.appendChild(d);
+    }
+  }catch(e){}
+}, true);
 
-/* ========== 按钮触摸兜底（直接绑在按钮上，不破坏冒泡） ========== */
-try{
-  function _bindBtnTouch(){
-    var btns=document.querySelectorAll("button");
-    for(var i=0;i<btns.length;i++){(function(b){
-      if(b._tbound) return;
-      b._tbound=true;
-      var fired=false;
-      b.addEventListener("touchstart",function(e){
-        fired=false;
-      },{passive:true});
-      b.addEventListener("touchend",function(e){
-        if(fired) return;
-        fired=true;
-        var fn=b.getAttribute("onclick");
-        if(fn){
-          try{
-            /* 在全局作用域执行，能找到 startGame 等函数 */
-            (function(){ eval(fn); }).call(b);
-          }catch(err){}
-        }
-      },{passive:true});
-    })(btns[i]);}
-  }
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",_bindBtnTouch);
-  } else {
-    _bindBtnTouch();
-  }
-  setTimeout(_bindBtnTouch,800);
-  setTimeout(_bindBtnTouch,2000);
-}catch(e){}
+
+/* 按钮兜底已改为直接 onclick（更可靠） */
  },60);
   var c=document.getElementById("contBtn");
   if(c) c.style.display="none";
