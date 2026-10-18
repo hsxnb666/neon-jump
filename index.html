@@ -3446,6 +3446,7 @@ function loop(ts){
 
   if(gameState==="playing"){update(rdt);draw();drawControls();updateUI()}
   else if(gameState==="start"||gameState==="paused"){draw()}
+  else if(gameState==="revive"||gameState==="over"){draw()}
 
   _lastFrameMs=performance.now()-t0;
   requestAnimationFrame(loop);
