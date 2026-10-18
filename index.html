@@ -435,6 +435,139 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   letter-spacing:1px;
 }
 .btn-back:active{transform:scale(.95)}
+/* ===================== 游戏结束页（高度自适应） ===================== */
+#overScreen{
+  overflow:hidden !important;
+  padding:0 !important;
+  justify-content:center !important;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(176,38,255,.18), transparent 55%),
+    radial-gradient(ellipse at 50% 90%, rgba(0,242,255,.12), transparent 55%),
+    rgba(4,2,12,.97) !important;
+}
+.overInner{
+  display:flex;flex-direction:column;align-items:center;
+  width:100%;max-width:min(94vw,560px);
+  height:100%;max-height:100vh;
+  padding:1.6vh 12px;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.overTitle{
+  font-size:clamp(16px,3.2vh,32px);font-weight:900;letter-spacing:4px;
+  background:linear-gradient(135deg,#ff2a6d,#b026ff);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  filter:drop-shadow(0 0 14px rgba(255,42,109,.6));
+  flex:0 0 auto;line-height:1.15;
+}
+#finalScore{
+  color:#a0a8ff;
+  font-size:clamp(9px,1.5vh,13px);
+  margin:.6vh 0 1vh;
+  text-align:center;line-height:1.4;
+  flex:0 0 auto;
+}
+
+/* 标签：强制横排，绝不换行 */
+#lbTabs{
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  gap:8px;
+  justify-content:center;
+  align-items:center;
+  margin-bottom:1vh;
+  flex:0 0 auto;
+  width:100%;
+}
+#lbTabs .tb{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:clamp(4px,.9vh,8px) clamp(12px,3.5vw,20px);
+  border-radius:18px;
+  font-size:clamp(9px,1.6vh,13px);
+  cursor:pointer;white-space:nowrap;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(0,242,255,.25);
+  color:#8fb8d8;
+  transition:all .2s;
+  user-select:none;
+  flex:0 0 auto;
+  pointer-events:auto !important;
+}
+#lbTabs .tb.on{
+  background:linear-gradient(135deg,#00f2ff,#b026ff);
+  color:#06111a;font-weight:700;
+  border-color:transparent;
+  box-shadow:0 0 12px rgba(0,242,255,.45);
+}
+
+/* 榜单：占满剩余空间 */
+#overScreen #overBoard{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  height:auto !important;
+  max-height:none !important;
+  width:100% !important;
+  margin:0 !important;
+  padding:6px 10px;
+  border-radius:14px;
+  background:rgba(0,242,255,.04);
+  border:1px solid rgba(0,242,255,.2);
+  box-sizing:border-box;
+}
+
+#overScreen .rankStatus{
+  font-size:clamp(8px,1.2vh,11px);
+  color:#7fb8e0;
+  margin-top:.4vh;
+  min-height:1.4vh;
+  text-align:center;
+  flex:0 0 auto;
+}
+
+/* 按钮区：横排 */
+.overBtns{
+  display:flex;
+  flex-direction:row;
+  flex-wrap:wrap;
+  gap:clamp(5px,1vw,9px);
+  justify-content:center;
+  align-items:center;
+  margin-top:1vh;
+  width:100%;
+  flex:0 0 auto;
+}
+#overScreen .btn{
+  position:relative;
+  margin:0 !important;
+  padding:clamp(6px,1.3vh,11px) clamp(10px,3vw,22px) !important;
+  border-radius:22px !important;
+  font-size:clamp(9px,1.6vh,14px) !important;
+  font-weight:700;
+  letter-spacing:1px;
+  cursor:pointer;
+  font-family:inherit;
+  flex:0 0 auto;
+  transition:transform .15s;
+}
+#overScreen .btn:active{transform:scale(.95)}
+#overScreen .btn-mini{
+  background:rgba(255,255,255,.06);
+  border:1.5px solid rgba(0,242,255,.3) !important;
+  color:#8fd8ff !important;
+}
+#overScreen .btn-main{
+  background:linear-gradient(135deg,rgba(0,242,255,.16),rgba(0,140,255,.1));
+  border:2px solid #00f2ff !important;
+  color:#9ff4ff !important;
+  box-shadow:0 0 14px rgba(0,242,255,.35);
+}
+#overScreen .btn-home{
+  background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(160,168,255,.45) !important;
+  color:#b8c0ff !important;
+}
 </style>
 </head>
 <body>
@@ -473,14 +606,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 </div>
 
 <div id="overScreen" class="panel hidden">
-  <div class="logo" style="font-size:clamp(26px,8vw,42px)">游戏结束</div>
-  <div id="finalScore" style="color:#a0a8ff;margin-top:12px;font-size:14px">得分 0</div>
-  <div id="lbTabs"><div class="tb on" id="lbTabAll" onclick="switchBoard(&#39;all&#39;)">🌐 全网榜</div><div class="tb" id="lbTabMe" onclick="switchBoard(&#39;me&#39;)">📱 本机榜</div></div>
-  <div id="overBoard" class="rankScroll"></div>
-  <div id="lbNameBox"><button id="lbRenameBtn" class="btn-mini" onclick="lbShowRename()">✏️ 修改昵称</button></div>
-  <div id="lbStatus" class="rankStatus"></div>
-  <button class="btn btn-main" onclick="startGame(smartMode)">再 来 一 局</button>
-  <button class="btn btn-home" onclick="backToHome()">🏠 回 主 页</button>
+  <div class="overInner">
+    <div class="overTitle">游 戏 结 束</div>
+    <div id="finalScore">得分 0</div>
+
+    <div id="lbTabs">
+      <div class="tb on" id="lbTabAll" onclick="switchBoard(&#39;all&#39;)">🌐 全网榜</div>
+      <div class="tb" id="lbTabMe" onclick="switchBoard(&#39;me&#39;)">📱 本机榜</div>
+    </div>
+    <div id="overBoard" class="rankScroll"></div>
+    <div id="lbStatus" class="rankStatus"></div>
+
+    <div class="overBtns">
+      <button class="btn btn-mini" id="lbRenameBtn" onclick="lbShowRename()">✏️ 修改昵称</button>
+      <button class="btn btn-main" onclick="startGame(smartMode)">再 来 一 局</button>
+      <button class="btn btn-home" onclick="backToHome()">🏠 回 主 页</button>
+    </div>
+  </div>
 </div>
 
 <div id="pauseScreen" class="panel hidden">
@@ -789,6 +931,8 @@ player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:100,maxHp:100,en:100,maxEn:100,onGr
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
 world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
 score=0;distance=0;wave=1;bossSpawned=0;bossWave=0;skillCd=0;timeScale=1;slowTimer=0;
+/* 重置背景主题 */
+try{ _bgCur=0; _bgMix=1; _bgPrev=null; _bgToastShown={}; }catch(e){}
 makeStars();
 world.platforms.push({x:-200,y:H-60,w:900,h:120,bounce:false,moving:false});
 world.enemies.push({type:"walker",x:520,y:H-60-32,w:34,h:42,vx:1.2,hp:35,maxHp:35,plat:world.platforms[0],dir:-1,score:80});
@@ -2601,7 +2745,7 @@ var ang=0;if(tg)ang=Math.atan2(tg.y-p.y,tg.x-p.x);else ang=p.facing>0?0:Math.PI;
 p.shootCd=0.13;p.en-=8;p.muzzle=0.09;var spd=680;
 var rd=rageTimer>0?2:1;
 function mk(a,off,col,r,dmg,home){
-  var _mx=p.x+Math.cos(a)*34,_my=p.y+Math.sin(a)*16+off;
+  var _mx=p.x+Math.cos(a)*42,_my=p.y+p.h*0.30+Math.sin(a)*10;
   world.bullets.push({x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:dmg*rd,home:home});
   // 枪口喷射粒子（每次开火都喷）
   spawnMuzzle(_mx,_my,a,col,r>=8?1.8:1.1);
@@ -3341,9 +3485,100 @@ function drawHero(x,y,scale,facing,frame,onGround,vx){
 
 
 /* ============ 世界绘制 ============ */
+/* ============ 背景主题系统：按距离切换 ============ */
+var BG_STAGES=[
+  {d:0,    sky:"#05030f", neb1:"rgba(0,242,255,0.10)", neb2:"rgba(176,38,255,0.08)", col:"#0a0820", name:"霓虹深海"},
+  {d:350,  sky:"#0a0418", neb1:"rgba(176,38,255,0.16)", neb2:"rgba(255,42,109,0.10)", col:"#140828", name:"紫晶回廊"},
+  {d:700,  sky:"#0f0208", neb1:"rgba(255,42,109,0.18)", neb2:"rgba(255,150,0,0.10)", col:"#1a0410", name:"赤焰炼狱"},
+  {d:1050, sky:"#020a10", neb1:"rgba(0,255,170,0.14)", neb2:"rgba(0,242,255,0.10)", col:"#04141a", name:"翡翠深渊"},
+  {d:1400, sky:"#0a0a02", neb1:"rgba(255,230,0,0.14)", neb2:"rgba(255,150,0,0.08)", col:"#14120a", name:"黄金王座"},
+  {d:1750, sky:"#10000a", neb1:"rgba(255,0,170,0.18)", neb2:"rgba(176,38,255,0.12)", col:"#1a0014", name:"血月魔域"},
+  {d:2100, sky:"#000008", neb1:"rgba(120,0,255,0.20)", neb2:"rgba(0,180,255,0.12)", col:"#08000f", name:"虚空尽头"}
+];
+var _bgCur=0, _bgMix=1, _bgPrev=null, _bgToastShown={};
+
+function bgStageIndex(d){
+  var idx=0;
+  for(var i=0;i<BG_STAGES.length;i++){ if(d>=BG_STAGES[i].d) idx=i; }
+  return idx;
+}
+
+/* 把 hex 转 rgb 数组 */
+function hex2rgb(h){
+  h=String(h).replace("#","");
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];
+}
+function mixHex(a,b,t){
+  var A=hex2rgb(a),B=hex2rgb(b);
+  var r=Math.round(A[0]+(B[0]-A[0])*t);
+  var g=Math.round(A[1]+(B[1]-A[1])*t);
+  var bl=Math.round(A[2]+(B[2]-A[2])*t);
+  return "rgb("+r+","+g+","+bl+")";
+}
+/* 解析 rgba(...) 取前三通道与alpha，做插值 */
+function mixRgba(a,b,t){
+  function parse(x){
+    var m=String(x).match(/rgba?\(([^)]+)\)/);
+    if(!m) return [255,255,255,1];
+    var p=m[1].split(",").map(function(v){return parseFloat(v)});
+    return [p[0]||0,p[1]||0,p[2]||0,(p[3]===undefined?1:p[3])];
+  }
+  var A=parse(a),B=parse(b);
+  var r=Math.round(A[0]+(B[0]-A[0])*t);
+  var g=Math.round(A[1]+(B[1]-A[1])*t);
+  var bl=Math.round(A[2]+(B[2]-A[2])*t);
+  var al=Math.round((A[3]+(B[3]-A[3])*t)*100)/100;
+  return "rgba("+r+","+g+","+bl+","+al+")";
+}
+
+function drawBgStages(){
+  var idx=bgStageIndex(distance);
+  // 检测阶段变化
+  if(idx!==_bgCur){
+    _bgPrev=BG_STAGES[_bgCur];
+    _bgCur=idx;
+    _bgMix=0;
+    var st=BG_STAGES[idx];
+    if(st && !_bgToastShown[st.name]){
+      _bgToastShown[st.name]=1;
+      try{ showToast("进入 · "+st.name); }catch(e){}
+    }
+  }
+  if(_bgMix<1){ _bgMix=Math.min(1,_bgMix+0.02); }
+
+  var cur=BG_STAGES[_bgCur];
+  var prev=_bgPrev||cur;
+  var t=_bgMix;
+
+  var sky=mixHex(prev.sky,cur.sky,t);
+  var n1=mixRgba(prev.neb1,cur.neb1,t);
+  var n2=mixRgba(prev.neb2,cur.neb2,t);
+  var col=mixHex(prev.col,cur.col,t);
+
+  ctx.fillStyle=sky;
+  ctx.fillRect(0,0,W,H);
+
+  // 星云光斑
+  var cx1=W*0.25+Math.sin(Date.now()*0.00022)*W*0.08;
+  var cy1=H*0.30+Math.cos(Date.now()*0.00018)*H*0.06;
+  var g1=ctx.createRadialGradient(cx1,cy1,0,cx1,cy1,W*0.55);
+  g1.addColorStop(0,n1); g1.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=g1; ctx.fillRect(0,0,W,H);
+
+  var cx2=W*0.78+Math.cos(Date.now()*0.00026)*W*0.07;
+  var cy2=H*0.72+Math.sin(Date.now()*0.00021)*H*0.07;
+  var g2=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,W*0.50);
+  g2.addColorStop(0,n2); g2.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
+
+  world._bgCol=col;
+  world._bgStage=cur;
+}
+
 function draw(){
   ctx.save();
-  ctx.fillStyle="#05030f";ctx.fillRect(0,0,W,H);
+  drawBgStages();
 
   // 星空优化：按颜色分组批量绘制，减少 fillStyle 切换（关键性能优化）
   if(world._starGroups===undefined){
@@ -3371,7 +3606,7 @@ function draw(){
   }
   ctx.globalAlpha=1;
 
-  ctx.fillStyle="#0a0820";ctx.beginPath();
+  ctx.fillStyle=(world._bgCol||"#0a0820");ctx.beginPath();
   for(var i=-2;i<W/70+2;i++){var bx=i*70-(cam.x*0.08)%70;var bh=50+Math.sin(i*2.4)*35+Math.cos(i*1.1)*25;ctx.rect(bx,H-bh,72,bh)}
   ctx.fill();
 
