@@ -4701,7 +4701,7 @@ function lbRender(){
   var my=lbGetName();
   var h="";
   if(!arr||!arr.length){
-    h='<div class="lbRow"><span class="nm" style="color:#7c86c8">暂无记录，快去创一个吧</span></div>';
+    h='<div class="lbRow"><span class="nm" style="color:#7c86c8">暂无记录，快去创一个吧<' + '/span><' + '/div>';
   } else {
     for(var i=0;i<arr.length;i++){
       var r=arr[i]||{};
@@ -4709,11 +4709,11 @@ function lbRender(){
       var isMe=(nm===my);
       var rk=(lbView==="all")?(r.rk||(i+1)):(i+1);
       h+='<div class="lbRow'+(isMe?' me':'')+'">'
-        +'<span class="rk">'+rk+'</span>'
-        +'<span class="nm">'+lbEscape(nm)+'</span>'
-        +'<span class="sc">'+(r.score||0)+'</span>'
-        +'<span class="ds">'+(r.dist||0)+'m</span>'
-      +'</div>';
+        +'<span class="rk">'+rk+'<' + '/span>'
+        +'<span class="nm">'+lbEscape(nm)+'<' + '/span>'
+        +'<span class="sc">'+(r.score||0)+'<' + '/span>'
+        +'<span class="ds">'+(r.dist||0)+'m<' + '/span>'
+      +'<' + '/div>';
     }
   }
   for(var k=0;k<targets.length;k++){
