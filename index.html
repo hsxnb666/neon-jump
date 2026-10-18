@@ -116,9 +116,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 #lbNameInput{width:120px;padding:7px 9px;border-radius:9px;border:1px solid rgba(120,200,255,.4);background:rgba(10,18,38,.95);color:#cfe9ff;font-size:13px;text-align:center;margin-left:6px;outline:none}
 #lbNameInput:focus{border-color:#38b6ff;box-shadow:0 0 10px rgba(56,182,255,.4)}
 #lbStatus{font-size:11px;color:#7fb8e0;margin-top:6px;min-height:15px}
-/* ===== pointer-events 继承链修复 ===== */
-#startScreen,#overScreen,#pauseScreen,#reviveScreen{pointer-events:auto !important}
-#startScreen *,#overScreen *,#pauseScreen *,#reviveScreen *{pointer-events:auto !important}
+/* ===== pointer-events：只恢复面板，不用通配 ===== */
+#startScreen,#overScreen,#pauseScreen,#reviveScreen,#rankLayer{pointer-events:auto !important}
 #hud{pointer-events:none !important}
 
 /* ===== 滚动榜单统一容器 ===== */
@@ -185,6 +184,42 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 .lbRow .rk{width:26px;text-align:right;color:#6a7fb8;font-size:12px}
 .lbRow .sc{color:#00f2ff;font-weight:700;min-width:64px;text-align:right}
 .lbRow .ds{color:#7c86c8;font-size:11px;min-width:48px;text-align:right}
+/* ===== 全屏排行榜层 ===== */
+#rankLayer{
+  position:fixed;left:0;top:0;width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(5,3,15,.97);
+  z-index:200;
+  padding:14px;box-sizing:border-box;
+}
+#rankLayer.hidden{display:none !important}
+#rankPanel{
+  width:min(94vw,600px);
+  max-height:92vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:18px 14px;
+  box-sizing:border-box;
+}
+.rankTitle{
+  font-size:clamp(20px,6vw,28px);font-weight:900;letter-spacing:2px;
+  color:#00f2ff;text-shadow:0 0 18px rgba(0,242,255,.7);margin-bottom:12px;
+}
+#rankTabs{display:flex;gap:10px;justify-content:center;margin-bottom:10px}
+#rankTabs .tb{
+  padding:7px 20px;border-radius:20px;font-size:13px;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);
+  color:#8fb8d8;transition:all .2s;user-select:none;
+}
+#rankTabs .tb.on{
+  background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;
+  border-color:transparent;box-shadow:0 0 14px rgba(0,242,255,.5);
+}
+.btn-back{
+  margin-top:12px;padding:11px 40px;border-radius:24px;font-size:15px;
+  background:rgba(0,242,255,.1);border:1.5px solid rgba(0,242,255,.5);
+  color:#00f2ff;cursor:pointer;font-weight:700;
+}
+.btn-back:active{transform:scale(.95)}
 </style>
 </head>
 <body>
@@ -204,17 +239,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <button class="btn btn-cont" id="contBtn" onclick="continueGame()" style="display:none">继续上局</button>
 
   <button class="btn btn-rank" id="homeRankBtn" onclick="openHomeRank()">🏆 排 行 榜</button>
-
-  <div id="homeRank" class="hidden">
-    <div id="homeRankTabs">
-      <div class="tb on" id="hrTabAll" onclick="switchBoard('all')">🌐 全网榜</div>
-      <div class="tb" id="hrTabMe" onclick="switchBoard('me')">📱 本机榜</div>
-    </div>
-    <div id="homeBoard" class="rankScroll"></div>
-    <div id="homeRankStatus" class="rankStatus"></div>
-    <button class="btn btn-rank-close" onclick="closeHomeRank()">收起</button>
-  </div>
-
   <div class="feats">
     <div class="feat f1"><i>🔫</i><div><b>50 级武器</b><s>每级独立枪型</s></div></div>
     <div class="feat f2"><i>👾</i><div><b>10 种怪物</b><s>含 BOSS</s></div></div>
@@ -244,6 +268,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div id="reviveInfo" style="color:#a0a8ff;margin-top:12px;font-size:15px">剩余复活 3 次</div>
   <button class="btn btn-revive" onclick="doRevive()">复活继续</button>
   <button class="btn btn-ghost" onclick="doGiveUp()">放弃</button>
+</div>
+
+<!-- ===== 全屏排行榜层 ===== -->
+<div id="rankLayer" class="hidden">
+  <div id="rankPanel">
+    <div class="rankTitle">🏆 排 行 榜</div>
+    <div id="rankTabs">
+      <div class="tb on" id="hrTabAll" onclick="switchBoard('all')">🌐 全网榜</div>
+      <div class="tb" id="hrTabMe" onclick="switchBoard('me')">📱 本机榜</div>
+    </div>
+    <div id="homeBoard" class="rankScroll"></div>
+    <div id="homeRankStatus" class="rankStatus"></div>
+    <button class="btn btn-back" onclick="closeHomeRank()">← 返 回</button>
+  </div>
 </div>
 
 <div id="hud" class="hud hidden">
@@ -3547,29 +3585,28 @@ function loop(ts){
   requestAnimationFrame(loop);
 }
 
-/* ========== 首页排行榜 ========== */
+/* ========== 全屏排行榜层 ========== */
 function openHomeRank(){
-  var box=document.getElementById("homeRank");
-  if(!box) return;
-  box.classList.remove("hidden");
-  var btn=document.getElementById("homeRankBtn");
-  if(btn) btn.style.display="none";
+  var lay=document.getElementById("rankLayer");
+  if(!lay) return;
+  lay.classList.remove("hidden");
   lbView="all";
   lbRender();
   lbFetchAll();
+  setTimeout(initRankDrag,50);
 }
 function closeHomeRank(){
-  var box=document.getElementById("homeRank");
-  if(box) box.classList.add("hidden");
-  var btn=document.getElementById("homeRankBtn");
-  if(btn) btn.style.display="";
+  var lay=document.getElementById("rankLayer");
+  if(lay) lay.classList.add("hidden");
+  var b=document.getElementById("homeRankBtn");
+  if(b) b.style.display="";
 }
 
 /* ========== 回主页 ========== */
 function backToHome(){
   try{ if(typeof stopBgm==="function") stopBgm(); }catch(e){}
   gameState="start";
-  closeHomeRank();
+  try{ closeHomeRank(); }catch(e){}
   try{ resetGame(); }catch(e){}
   var ids=["overScreen","reviveScreen","pauseScreen"];
   for(var i=0;i<ids.length;i++){
@@ -3703,6 +3740,36 @@ function lbSetTag(t){
   if(e) e.textContent=t||"";
 }
 
+/* ========== 手动拖拽滚动（不依赖浏览器原生滚动） ========== */
+function initRankDrag(){
+  var boxes=document.querySelectorAll(".rankScroll");
+  for(var i=0;i<boxes.length;i++){(function(box){
+    if(box._dragInit) return;
+    box._dragInit=true;
+    var startY=0,startTop=0,dragging=false,moved=false;
+    box.addEventListener("touchstart",function(e){
+      if(e.touches.length!==1) return;
+      startY=e.touches[0].clientY;
+      startTop=box.scrollTop;
+      dragging=true;moved=false;
+      box.style.transition="none";
+    },{passive:true});
+    box.addEventListener("touchmove",function(e){
+      if(!dragging) return;
+      var dy=e.touches[0].clientY-startY;
+      if(Math.abs(dy)>3) moved=true;
+      box.scrollTop=startTop-dy;
+      e.stopPropagation();
+      if(e.cancelable) e.preventDefault();
+    },{passive:false});
+    box.addEventListener("touchend",function(e){
+      if(dragging&&moved){ e.stopPropagation(); }
+      dragging=false;
+    },{passive:true});
+    box.addEventListener("touchcancel",function(){dragging=false;},{passive:true});
+  })(boxes[i]);}
+}
+
 function switchBoard(v){
   lbView=v;
   var a=document.getElementById("lbTabAll"), b=document.getElementById("lbTabMe");
@@ -3739,11 +3806,14 @@ function lbRender(){
   for(var k=0;k<targets.length;k++){
     if(targets[k]){ targets[k].innerHTML=h; targets[k].scrollTop=0; }
   }
-  var ta1=document.getElementById("lbTabAll"),tb1=document.getElementById("lbTabMe");
-  var ta2=document.getElementById("hrTabAll"),tb2=document.getElementById("hrTabMe");
   var isAll=(lbView==="all");
-  if(ta1&&tb1){ ta1.className="tb"+(isAll?" on":""); tb1.className="tb"+(isAll?"":" on"); }
-  if(ta2&&tb2){ ta2.className="tb"+(isAll?" on":""); tb2.className="tb"+(isAll?"":" on"); }
+  var pairs=[["lbTabAll","lbTabMe"],["hrTabAll","hrTabMe"]];
+  for(var p=0;p<pairs.length;p++){
+    var x=document.getElementById(pairs[p][0]),y=document.getElementById(pairs[p][1]);
+    if(x) x.className="tb"+(isAll?" on":"");
+    if(y) y.className="tb"+(isAll?"":" on");
+  }
+  try{ if(typeof initRankDrag==="function") setTimeout(initRankDrag,0); }catch(e){}
 }
 
 /* 拉取全网 Top10 */
