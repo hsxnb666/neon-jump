@@ -3563,8 +3563,18 @@ function togglePause(){
 function saveScore(sc,ds){
   var arr=[];
   try{arr=JSON.parse(localStorage.getItem("njs_scores")||"[]")}catch(e){}
-  arr.push({s:sc,d:ds});
-  arr.sort(function(a,b){return b.s-a.s});
+  var nm=lbGetName();
+  arr.push({name:nm,score:sc,dist:ds,s:sc,d:ds,
+            lv:(typeof gunLevel!=="undefined"?gunLevel:1),
+            t:Date.now()});
+  // 统一字段：兼容旧数据
+  for(var i=0;i<arr.length;i++){
+    var a=arr[i];
+    if(a.score===undefined&&a.s!==undefined)a.score=a.s;
+    if(a.dist===undefined&&a.d!==undefined)a.dist=a.d;
+    if(!a.name)a.name=nm;
+  }
+  arr.sort(function(x,y){return (y.score||0)-(x.score||0)});
   arr=arr.slice(0,10);
   try{localStorage.setItem("njs_scores",JSON.stringify(arr))}catch(e){}
   return arr;
@@ -3609,15 +3619,9 @@ function doGiveUp(){
   sfx(110,"sawtooth",1,0.12,40);
   var rs=document.getElementById("reviveScreen");if(rs)rs.classList.add("hidden");
   ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+(smartMode?" · 🧠聪明人":"");
-  var arr=saveScore(score,distance);
-  var html="🏆 本机排行榜<br>";
-  var marked=false;
-  for(var i=0;i<arr.length;i++){
-    var star="";
-    if(!marked&&arr[i].s===score&&arr[i].d===distance){star=" ★新";marked=true}
-    html+=(i+1)+". "+arr[i].s+" 分 · "+arr[i].d+"m"+star+"<br>";
-  }
-  document.getElementById("board").innerHTML=html;
+  saveScore(score,distance);
+  lbSubmit(score,distance);
+  switchBoard("all");
   ui.over.classList.remove("hidden");
   ui.hud.classList.add("hidden");
 }
@@ -3733,12 +3737,29 @@ function lbFetchMe(){
     var raw=localStorage.getItem("njs_scores");
     lbCacheMe=raw?JSON.parse(raw):[];
   }catch(e){ lbCacheMe=[]; }
+  // 字段兼容：老数据可能是 {s,d}
+  for(var i=0;i<lbCacheMe.length;i++){
+    var a=lbCacheMe[i]||{};
+    if(a.score===undefined&&a.s!==undefined)a.score=a.s;
+    if(a.dist===undefined&&a.d!==undefined)a.dist=a.d;
+    if(!a.name)a.name="玩家";
+  }
+  lbCacheMe.sort(function(x,y){return (y.score||0)-(x.score||0)});
   lbRender();
   lbStat("本机 "+lbCacheMe.length+" 条");
 }
 
 function lbSubmit(sc,ds){
-  var body=JSON.stringify({name:lbGetName(),score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1)});
+  // 优先用输入框当前值，其次 localStorage，最后 lbName
+  var nm="";
+  try{
+    var inp=document.getElementById("startNameInput");
+    if(inp&&inp.value)nm=String(inp.value).replace(/\s+/g,"").slice(0,12);
+  }catch(e){}
+  if(!nm){ try{ nm=localStorage.getItem("njs_name")||""; }catch(e){ nm=""; } }
+  if(!nm)nm=lbGetName();
+  lbSetName(nm);
+  var body=JSON.stringify({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1)});
   var x=new XMLHttpRequest();
   x.open("POST",LB_URL+"/rest/v1/scores",true);
   x.setRequestHeader("apikey",LB_KEY);
@@ -3747,7 +3768,7 @@ function lbSubmit(sc,ds){
   x.setRequestHeader("Prefer","return=minimal");
   x.timeout=8000;
   x.onload=function(){
-    if(x.status<300){ lbStat("已上传"); lbFetchAll(); }
+    if(x.status<300){ lbStat("已上传"); saveScore(sc,ds); lbFetchAll(); }
     else { lbStat("上传失败"); }
   };
   x.onerror=function(){ lbStat("上传失败(离线)"); };
