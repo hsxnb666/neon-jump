@@ -128,7 +128,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 <div id="overScreen" class="panel hidden">
   <div class="logo" style="font-size:clamp(26px,8vw,42px)">游戏结束</div>
   <div id="finalScore" style="color:#a0a8ff;margin-top:12px;font-size:14px">得分 0</div>
-  <div id="board"></div>
+  <div id="board" style="display:none"></div>
     <div id="lbTabs" style="display:flex;gap:8px;justify-content:center;margin:10px 0 6px">
     <div class="tb on" id="lbTabAll" onclick="switchBoard('all')" style="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none">🌐 全网榜</div>
     <div class="tb" id="lbTabMe" onclick="switchBoard('me')" style="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none">📱 本机榜</div>
@@ -405,7 +405,7 @@ var skillCd=0,SK_CD=12,combo=0,comboT=0,gunLevel=1;
 var smartMode=false;
 
 function resetGame(){
-  bgStageIdx=-1;bgCur={top:[5,3,15],bot:[10,8,35],glow:[70,40,180],hill:[10,8,32]};
+  bgStageIdx=-1;bgCur={top:[22,10,58],bot:[10,14,70],glow:[90,60,255],hill:[26,12,62]};
 setCL();gunLevel=1;combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;
 player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:100,maxHp:100,en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
@@ -2967,15 +2967,15 @@ function drawHero(x,y,scale,facing,frame,onGround,vx){
 
 /* ===== 背景阶段配色（随距离平滑过渡） ===== */
 var BG_STAGES=[
-  {d:0,    name:"虚空入口", top:[5,3,15],    bot:[10,8,35],  glow:[70,40,180],  hill:[10,8,32]},
-  {d:400,  name:"霓虹街区", top:[6,4,22],    bot:[28,6,48],  glow:[180,20,150], hill:[16,6,38]},
-  {d:900,  name:"离子风暴", top:[3,8,26],    bot:[4,26,52],  glow:[0,150,220],  hill:[4,18,40]},
-  {d:1500, name:"熔火深渊", top:[22,4,10],   bot:[48,10,6],  glow:[255,90,20],  hill:[30,8,6]},
-  {d:2300, name:"翡翠遗迹", top:[3,18,14],   bot:[6,40,30],  glow:[40,220,140], hill:[5,28,22]},
-  {d:3200, name:"黄金王座", top:[24,18,4],   bot:[52,40,6],  glow:[255,200,40], hill:[32,24,6]},
-  {d:4500, name:"终焉裂隙", top:[16,2,20],   bot:[34,4,40],  glow:[200,40,255], hill:[20,4,26]}
+  {d:0,    name:"虚空入口", top:[22,10,58],   bot:[10,14,70],  glow:[90,60,255],   hill:[26,12,62]},
+  {d:400,  name:"霓虹街区", top:[58,8,72],    bot:[96,10,86],  glow:[255,30,180],  hill:[70,10,80]},
+  {d:900,  name:"离子风暴", top:[6,32,88],    bot:[4,86,140],  glow:[0,190,255],   hill:[6,48,104]},
+  {d:1500, name:"熔火深渊", top:[86,14,10],   bot:[140,42,6],  glow:[255,110,20],  hill:[96,26,8]},
+  {d:2300, name:"翡翠遗迹", top:[6,66,44],    bot:[10,116,72], glow:[40,255,160],  hill:[8,74,50]},
+  {d:3200, name:"黄金王座", top:[92,68,6],    bot:[150,110,10],glow:[255,215,40],  hill:[104,76,8]},
+  {d:4500, name:"终焉裂隙", top:[62,6,78],    bot:[110,10,120],glow:[230,50,255],  hill:[72,8,86]}
 ];
-var bgCur={top:[5,3,15],bot:[10,8,35],glow:[70,40,180],hill:[10,8,32]};
+var bgCur={top:[22,10,58],bot:[10,14,70],glow:[90,60,255],hill:[26,12,62]};
 var bgStageIdx=-1;
 
 function bgLerp(a,b,t){return a+(b-a)*t}
@@ -3034,9 +3034,9 @@ function drawBg(){
 
   var hor=H*0.62;
   var rg=ctx.createRadialGradient(W*0.5,hor,10,W*0.5,hor,Math.max(W,H)*0.75);
-  var pulse=0.16+Math.sin(Date.now()*0.0011)*0.035;
+  var pulse=0.42+Math.sin(Date.now()*0.0011)*0.08;
   rg.addColorStop(0,bgRgb(bgCur.glow,pulse));
-  rg.addColorStop(0.45,bgRgb(bgCur.glow,pulse*0.32));
+  rg.addColorStop(0.45,bgRgb(bgCur.glow,pulse*0.45));
   rg.addColorStop(1,bgRgb(bgCur.glow,0));
   ctx.fillStyle=rg;
   ctx.fillRect(0,0,W,H);
@@ -3047,11 +3047,27 @@ function drawBg(){
     var by=H*(0.34+k*0.18)+Math.cos(t*1.3+k)*H*0.04;
     var br=Math.max(W,H)*(0.16+k*0.07);
     var og=ctx.createRadialGradient(bx,by,4,bx,by,br);
-    og.addColorStop(0,bgRgb(bgCur.glow,0.10));
+    og.addColorStop(0,bgRgb(bgCur.glow,0.28));
     og.addColorStop(1,bgRgb(bgCur.glow,0));
     ctx.fillStyle=og;
     ctx.fillRect(bx-br,by-br,br*2,br*2);
   }
+
+  // 地平线亮线：强化阶段色辨识
+  var ly=H*0.62;
+  var lg=ctx.createLinearGradient(0,0,W,0);
+  lg.addColorStop(0,bgRgb(bgCur.glow,0));
+  lg.addColorStop(0.5,bgRgb(bgCur.glow,0.85));
+  lg.addColorStop(1,bgRgb(bgCur.glow,0));
+  ctx.fillStyle=lg;
+  ctx.fillRect(0,ly-1.5,W,3);
+
+  var lg2=ctx.createLinearGradient(0,0,W,0);
+  lg2.addColorStop(0,bgRgb(bgCur.glow,0));
+  lg2.addColorStop(0.5,bgRgb(bgCur.glow,0.22));
+  lg2.addColorStop(1,bgRgb(bgCur.glow,0));
+  ctx.fillStyle=lg2;
+  ctx.fillRect(0,ly+1.5,W,H*0.06);
 }
 
 function draw(){
@@ -3084,7 +3100,7 @@ function draw(){
   }
   ctx.globalAlpha=1;
 
-  ctx.fillStyle=bgRgb(bgCur.hill);ctx.beginPath();
+  ctx.fillStyle=bgRgb([bgCur.hill[0]*0.55,bgCur.hill[1]*0.55,bgCur.hill[2]*0.55]);ctx.beginPath();
   for(var i=-2;i<W/70+2;i++){var bx=i*70-(cam.x*0.08)%70;var bh=50+Math.sin(i*2.4)*35+Math.cos(i*1.1)*25;ctx.rect(bx,H-bh,72,bh)}
   ctx.fill();
 
@@ -3557,15 +3573,9 @@ function gameOver(){
   stopBgm();
   sfx(110,"sawtooth",1,0.12,40);
   ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel;
-  var arr=saveScore(score,distance);
-  var html="🏆 本机排行榜<br>";
-  var marked=false;
-  for(var i=0;i<arr.length;i++){
-    var star="";
-    if(!marked&&arr[i].s===score&&arr[i].d===distance){star=" ★新";marked=true}
-    html+=(i+1)+". "+arr[i].s+" 分 · "+arr[i].d+"m"+star+"<br>";
-  }
-  document.getElementById("board").innerHTML=html;
+  saveScore(score,distance);
+  lbSubmit(score,distance);
+  switchBoard("all");
   ui.over.classList.remove("hidden");
   ui.hud.classList.add("hidden");
 }
