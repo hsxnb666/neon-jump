@@ -405,6 +405,7 @@ var skillCd=0,SK_CD=12,combo=0,comboT=0,gunLevel=1;
 var smartMode=false;
 
 function resetGame(){
+  bgStageIdx=-1;bgCur={top:[5,3,15],bot:[10,8,35],glow:[70,40,180],hill:[10,8,32]};
 setCL();gunLevel=1;combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;
 player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:100,maxHp:100,en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
@@ -2349,6 +2350,7 @@ ctx.shadowBlur=(FQ>=2?0:0)}
 function update(rdt){
 if(gameState!=="playing")return;
 var dt=rdt*timeScale;
+bgUpdate(rdt);
 if(slowTimer>0){slowTimer-=rdt;if(slowTimer<=0)timeScale=1}
 if(skillCd>0)skillCd-=rdt;
 if(comboT>0){comboT-=rdt;if(comboT<=0)combo=0}
@@ -2962,9 +2964,99 @@ function drawHero(x,y,scale,facing,frame,onGround,vx){
 
 
 /* ============ 世界绘制 ============ */
+
+/* ===== 背景阶段配色（随距离平滑过渡） ===== */
+var BG_STAGES=[
+  {d:0,    name:"虚空入口", top:[5,3,15],    bot:[10,8,35],  glow:[70,40,180],  hill:[10,8,32]},
+  {d:400,  name:"霓虹街区", top:[6,4,22],    bot:[28,6,48],  glow:[180,20,150], hill:[16,6,38]},
+  {d:900,  name:"离子风暴", top:[3,8,26],    bot:[4,26,52],  glow:[0,150,220],  hill:[4,18,40]},
+  {d:1500, name:"熔火深渊", top:[22,4,10],   bot:[48,10,6],  glow:[255,90,20],  hill:[30,8,6]},
+  {d:2300, name:"翡翠遗迹", top:[3,18,14],   bot:[6,40,30],  glow:[40,220,140], hill:[5,28,22]},
+  {d:3200, name:"黄金王座", top:[24,18,4],   bot:[52,40,6],  glow:[255,200,40], hill:[32,24,6]},
+  {d:4500, name:"终焉裂隙", top:[16,2,20],   bot:[34,4,40],  glow:[200,40,255], hill:[20,4,26]}
+];
+var bgCur={top:[5,3,15],bot:[10,8,35],glow:[70,40,180],hill:[10,8,32]};
+var bgStageIdx=-1;
+
+function bgLerp(a,b,t){return a+(b-a)*t}
+function bgEase(t){return t*t*(3-2*t)}
+
+function bgPick(d){
+  var st=BG_STAGES;
+  var i=0;
+  for(var k=0;k<st.length;k++){if(d>=st[k].d)i=k}
+  var A=st[i],B=st[Math.min(i+1,st.length-1)];
+  var span=Math.max(1,B.d-A.d);
+  var t=bgEase(Math.min(1,Math.max(0,(d-A.d)/span)));
+  var o={top:[],bot:[],glow:[],hill:[]};
+  for(var j=0;j<3;j++){
+    o.top[j]=bgLerp(A.top[j],B.top[j],t);
+    o.bot[j]=bgLerp(A.bot[j],B.bot[j],t);
+    o.glow[j]=bgLerp(A.glow[j],B.glow[j],t);
+    o.hill[j]=bgLerp(A.hill[j],B.hill[j],t);
+  }
+  o.idx=i;o.name=A.name;
+  return o;
+}
+
+function bgRgb(c,a){
+  var r=Math.round(c[0]),g=Math.round(c[1]),b=Math.round(c[2]);
+  if(a===undefined||a>=1)return "rgb("+r+","+g+","+b+")";
+  return "rgba("+r+","+g+","+b+","+a+")";
+}
+
+function bgUpdate(dt){
+  var tgt=bgPick(distance);
+  var t=Math.min(1,dt*1.6);
+  for(var j=0;j<3;j++){
+    bgCur.top[j]=bgLerp(bgCur.top[j],tgt.top[j],t);
+    bgCur.bot[j]=bgLerp(bgCur.bot[j],tgt.bot[j],t);
+    bgCur.glow[j]=bgLerp(bgCur.glow[j],tgt.glow[j],t);
+    bgCur.hill[j]=bgLerp(bgCur.hill[j],tgt.hill[j],t);
+  }
+  if(tgt.idx!==bgStageIdx){
+    if(bgStageIdx!==-1){
+      world.texts.push({x:player?player.x:0,y:player?player.y-110:0,text:"进入 "+tgt.name,life:1.8,vy:-26});
+      spawnShockRing(player?player.x:W/2,player?player.y:H/2,"#ffffff",140);
+    }
+    bgStageIdx=tgt.idx;
+  }
+}
+
+/* ===== 背景绘制 ===== */
+function drawBg(){
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,bgRgb(bgCur.top));
+  g.addColorStop(0.55,bgRgb(bgCur.bot));
+  g.addColorStop(1,bgRgb(bgCur.hill));
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,W,H);
+
+  var hor=H*0.62;
+  var rg=ctx.createRadialGradient(W*0.5,hor,10,W*0.5,hor,Math.max(W,H)*0.75);
+  var pulse=0.16+Math.sin(Date.now()*0.0011)*0.035;
+  rg.addColorStop(0,bgRgb(bgCur.glow,pulse));
+  rg.addColorStop(0.45,bgRgb(bgCur.glow,pulse*0.32));
+  rg.addColorStop(1,bgRgb(bgCur.glow,0));
+  ctx.fillStyle=rg;
+  ctx.fillRect(0,0,W,H);
+
+  var t=Date.now()*0.00035;
+  for(var k=0;k<2;k++){
+    var bx=W*(0.28+k*0.46)+Math.sin(t+k*2.1)*W*0.06;
+    var by=H*(0.34+k*0.18)+Math.cos(t*1.3+k)*H*0.04;
+    var br=Math.max(W,H)*(0.16+k*0.07);
+    var og=ctx.createRadialGradient(bx,by,4,bx,by,br);
+    og.addColorStop(0,bgRgb(bgCur.glow,0.10));
+    og.addColorStop(1,bgRgb(bgCur.glow,0));
+    ctx.fillStyle=og;
+    ctx.fillRect(bx-br,by-br,br*2,br*2);
+  }
+}
+
 function draw(){
   ctx.save();
-  ctx.fillStyle="#05030f";ctx.fillRect(0,0,W,H);
+  drawBg();
 
   // 星空优化：按颜色分组批量绘制，减少 fillStyle 切换（关键性能优化）
   if(world._starGroups===undefined){
@@ -2987,12 +3079,12 @@ function draw(){
       ctx.moveTo(sx+s.s,sy);
       ctx.arc(sx,sy,s.s,0,6.2832);
     }
-    ctx.globalAlpha=0.75;
+    ctx.globalAlpha=0.75-bgStageIdx*0.045>0.35?0.75-bgStageIdx*0.045:0.35;
     ctx.fill();
   }
   ctx.globalAlpha=1;
 
-  ctx.fillStyle="#0a0820";ctx.beginPath();
+  ctx.fillStyle=bgRgb(bgCur.hill);ctx.beginPath();
   for(var i=-2;i<W/70+2;i++){var bx=i*70-(cam.x*0.08)%70;var bh=50+Math.sin(i*2.4)*35+Math.cos(i*1.1)*25;ctx.rect(bx,H-bh,72,bh)}
   ctx.fill();
 
