@@ -3631,6 +3631,74 @@ var LB_URL="https://jdsodgkigvmsczmxgggy.supabase.co";
 var LB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkc29kZ2tpZ3Ztc2N6bXhnZ2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyODY5MDcsImV4cCI6MjEwNzg2MjkwN30.VxNY8tBfYXgd89sfyY4P7LeVxBzlhBHtAZhGXM9oQMY";
 var lbCacheAll=[], lbCacheMe=[], lbView="all", lbName="", lbLast={};
 
+
+/* ===== 本机身份识别（F: id 精确 + D: 成绩指纹兜底） ===== */
+function myIdsLoad(){
+  try{ return JSON.parse(localStorage.getItem("njs_my_ids")||"[]"); }catch(e){ return []; }
+}
+function myIdsSave(a){
+  try{ localStorage.setItem("njs_my_ids", JSON.stringify(a.slice(-200))); }catch(e){}
+}
+function myIdsAdd(id){
+  if(id===undefined||id===null)return;
+  var a=myIdsLoad();
+  var sid=String(id);
+  for(var i=0;i<a.length;i++){ if(String(a[i])===sid)return; }
+  a.push(sid);
+  myIdsSave(a);
+}
+
+/* 成绩指纹：score|dist|t（t 为提交时间，秒级容差） */
+function myRecsLoad(){
+  try{ return JSON.parse(localStorage.getItem("njs_my_recs")||"[]"); }catch(e){ return []; }
+}
+function myRecsSave(a){
+  try{ localStorage.setItem("njs_my_recs", JSON.stringify(a.slice(-200))); }catch(e){}
+}
+function myRecsAdd(sc,ds,t){
+  var a=myRecsLoad();
+  a.push({score:Number(sc)||0, dist:Number(ds)||0, t:Number(t)||Date.now()});
+  myRecsSave(a);
+}
+
+/* 判断榜上某一条是否属于本机 */
+function isMyRow(r){
+  if(!r) return false;
+
+  // ① F：id 精确匹配
+  if(r.id!==undefined && r.id!==null){
+    var ids=myIdsLoad();
+    var rid=String(r.id);
+    for(var i=0;i<ids.length;i++){
+      if(String(ids[i])===rid) return true;
+    }
+  }
+
+  // ② D：成绩指纹兜底（分数+距离相同，且时间接近）
+  var recs=myRecsLoad();
+  var sc=Number(r.score)||0;
+  var ds=Number(r.dist)||0;
+  if(sc<=0&&ds<=0) return false;   // 0 分不做指纹匹配，避免误判
+
+  var rt=0;
+  if(r.created_at){
+    try{ rt=new Date(r.created_at).getTime(); }catch(e){ rt=0; }
+  }
+
+  for(var j=0;j<recs.length;j++){
+    var m=recs[j];
+    if(Number(m.score)===sc && Number(m.dist)===ds){
+      // 有时间就比对（60 秒容差），没时间就认
+      if(rt>0 && m.t>0){
+        if(Math.abs(rt-m.t) < 60000) return true;
+      } else {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 /* 安全的 HTML 转义 */
 function lbEsc(t){
   t=String(t==null?"":t);
@@ -3679,11 +3747,10 @@ function lbRender(){
     box.appendChild(emp);
     return;
   }
-  var my=lbGetName();
   for(var i=0;i<arr.length;i++){
     var r=arr[i]||{};
     var nm=r.name||"玩家";
-    var isMe=(nm===my);
+    var isMe=(lbView==="all")?isMyRow(r):false;
     var row=document.createElement("div");
     row.style.cssText="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;margin-bottom:2px;"+(isMe?"background:rgba(255,213,74,.12);":"background:rgba(255,255,255,.03);");
     var s1=document.createElement("span");
@@ -3706,7 +3773,7 @@ function lbRender(){
 function lbFetchAll(){
   if(typeof homeRankRender==="function"){try{homeRankRender()}catch(e){}}
   lbStat("加载中…");
-  var url=LB_URL+"/rest/v1/scores?select=name,score,dist,lv,created_at&order=score.desc&limit=50";
+  var url=LB_URL+"/rest/v1/scores?select=id,name,score,dist,lv,created_at&order=score.desc&limit=50";
   var x=new XMLHttpRequest();
   x.open("GET",url,true);
   x.setRequestHeader("apikey",LB_KEY);
@@ -3718,8 +3785,10 @@ function lbFetchAll(){
         var d=JSON.parse(x.responseText||"[]");
         var seen={},uniq=[];
         for(var i=0;i<d.length;i++){
-          var k=String((d[i]||{}).name||"玩家");
-          if(!seen[k]){ seen[k]=1; uniq.push(d[i]); }
+          var row=d[i]||{};
+          // 只去掉「同一 id 的重复」，不同人同名要保留
+          var k=(row.id!==undefined)?("id:"+row.id):("n:"+(row.name||"")+"|"+(row.score||0)+"|"+(row.created_at||""));
+          if(!seen[k]){ seen[k]=1; uniq.push(row); }
         }
         lbCacheAll=uniq;
         lbRender();
@@ -3760,16 +3829,29 @@ function lbSubmit(sc,ds){
   if(!nm)nm=lbGetName();
   lbSetName(nm);
   var body=JSON.stringify({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1)});
+  var _submitT=Date.now();
   var x=new XMLHttpRequest();
   x.open("POST",LB_URL+"/rest/v1/scores",true);
   x.setRequestHeader("apikey",LB_KEY);
   x.setRequestHeader("Authorization","Bearer "+LB_KEY);
   x.setRequestHeader("Content-Type","application/json");
-  x.setRequestHeader("Prefer","return=minimal");
+  x.setRequestHeader("Prefer","return=representation");
   x.timeout=8000;
   x.onload=function(){
-    if(x.status<300){ lbStat("已上传"); saveScore(sc,ds); lbFetchAll(); }
-    else { lbStat("上传失败"); }
+    if(x.status<300){
+      // F：取回数据库 id 并记录
+      var newId=null;
+      try{
+        var rj=JSON.parse(x.responseText||"[]");
+        if(rj&&rj.length&&rj[0].id!==undefined)newId=rj[0].id;
+      }catch(e){}
+      if(newId!==null)myIdsAdd(newId);
+      // D：记录成绩指纹
+      myRecsAdd(sc,ds,_submitT);
+      lbStat("已上传");
+      saveScore(sc,ds);
+      lbFetchAll();
+    } else { lbStat("上传失败"); }
   };
   x.onerror=function(){ lbStat("上传失败(离线)"); };
   try{ x.send(body); }catch(e){}
@@ -3860,11 +3942,10 @@ function homeRankRender(){
     box.appendChild(em);
     return;
   }
-  var my=lbGetName();
   for(var i=0;i<arr.length;i++){
     var r=arr[i]||{};
     var nm=r.name||"玩家";
-    var isMe=(nm===my);
+    var isMe=(lbView==="all")?isMyRow(r):false;
     var row=document.createElement("div");
     row.style.cssText="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;margin-bottom:4px;font-size:13px;"+
       (isMe?"background:rgba(255,213,74,.14);border:1px solid rgba(255,213,74,.35);":"background:rgba(255,255,255,.045);");
