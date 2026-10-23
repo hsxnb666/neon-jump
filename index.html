@@ -113,7 +113,38 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 <button class="btn btn-main" onclick="startGame(false)">开 始 游 戏</button>
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
   <button id="homeRankBtn" onclick="openHomeRank()" style="display:block;margin:10px auto 0;padding:8px 26px;border-radius:20px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:14px;cursor:pointer">🏆 排行榜</button>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">v28</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.0</div>
+  <div id="patchNote" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(5,8,20,.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px">
+    <div style="max-width:420px;width:100%;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15)">
+      <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
+      <div style="text-align:center;font-size:11px;color:#6a7fb8;margin-bottom:12px">正式版 v1.0 · 更新于 2025-06-23</div>
+      <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
+        <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 全新内容</div>
+        <div>· 5 大角色自由切换：机甲战士 / 二次元少女 / 写实格斗家 / 赛博武士 / 女仆鲸娘</div>
+        <div>· 女仆鲸娘全新登场：蓝发女仆裙 + 鲸尾巴 + 白丝过膝袜</div>
+        <div>· 4 种新小怪：集群蜂 / 护盾兵 / 瞬移者 / 激光炮</div>
+        <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">⚡ 体验优化</div>
+        <div>· 跑步动画重做：脚步咬合地面、起跳收腿、速度渐变</div>
+        <div>· 持枪姿势修正：枪真正握在手里，子弹从枪口射出</div>
+        <div>· 冰风颠倒时长 1.5s → 0.6s</div>
+        <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">🗑 清理</div>
+        <div>· 删除 7 种作用微小的陷阱（镜像/黑幕/锁屏等）</div>
+        <div>· 修复部分小怪隐形不显示的 bug</div>
+      </div>
+      <button onclick="closePatchNote()" style="display:block;margin:14px auto 0;padding:9px 38px;border-radius:20px;font-size:14px;background:rgba(0,242,255,.15);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:600">开始游戏</button>
+    </div>
+  </div>
+  <div style="margin-top:10px;text-align:center">
+    <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
+    <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:0 8px">
+      <button data-hero-btn="1" onclick="setHero(1)" style="padding:6px 12px;border-radius:14px;font-size:11px;background:rgba(0,242,255,.2);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer">🤖 机甲战士</button>
+      <button data-hero-btn="2" onclick="setHero(2)" style="padding:6px 12px;border-radius:14px;font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,120,220,.3);color:#e08fd8;cursor:pointer">🌸 二次元少女</button>
+      <button data-hero-btn="3" onclick="setHero(3)" style="padding:6px 12px;border-radius:14px;font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,160,80,.3);color:#e0b080;cursor:pointer">🥊 写实格斗家</button>
+      <button data-hero-btn="4" onclick="setHero(4)" style="padding:6px 12px;border-radius:14px;font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,64,192,.3);color:#e08fc8;cursor:pointer">⚔️ 赛博武士</button>
+      <button data-hero-btn="5" onclick="setHero(5)" style="padding:6px 12px;border-radius:14px;font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(90,160,255,.4);color:#8ab8f0;cursor:pointer">🐋 女仆鲸娘</button>
+    </div>
+    <div id="heroTag" style="font-size:11px;color:#ffd54a;margin-top:6px">当前角色：机甲战士</div>
+  </div>
   <button class="btn btn-cont" id="contBtn" onclick="continueGame()" style="display:none">继续上局</button>
 
   <div class="feats">
@@ -505,16 +536,20 @@ while(world.enemies.length<Math.min(4+wave,10)){
 var cand=world.platforms.filter(function(p){return p.x>cam.x+W*0.5&&p.x<cam.x+W+700});
 if(cand.length===0)break;
 var plat=cand[Math.floor(Math.random()*cand.length)];
-var r=Math.random();var e;
-if(r<0.4){e={type:"walker",x:plat.x+30+Math.random()*(plat.w-60),y:plat.y-32,w:34,h:42,vx:1+Math.random()*0.8,hp:35+wave*7,maxHp:35+wave*7,plat:plat,dir:1,score:80}}
-else if(r<0.65){e={type:"flyer",x:plat.x+plat.w/2,y:plat.y-100-Math.random()*60,w:38,h:38,hp:28+wave*5,maxHp:28+wave*5,t:Math.random()*10,score:100}}
-else if(r<0.8){e={type:"shooter",x:plat.x+plat.w/2,y:plat.y-44,w:36,h:48,hp:45+wave*9,maxHp:45+wave*9,cd:0,score:130}}
-else if(r<0.88){e={type:"charger",x:plat.x+plat.w/2,y:plat.y-30,w:40,h:34,hp:60+wave*10,maxHp:60+wave*10,cd:1.5,vx:0,score:180}}
-else if(r<0.93){e={type:"turret",x:plat.x+plat.w/2,y:plat.y-30,w:30,h:50,hp:50+wave*8,maxHp:50+wave*8,cd:0.8,score:160}}
-else if(r<0.96){e={type:"bomber",x:plat.x+plat.w/2,y:plat.y-200,w:32,h:32,hp:40+wave*6,maxHp:40+wave*6,cd:2.5,score:200,t:0}}
-else if(r<0.98){e={type:"sniper",x:plat.x+plat.w/2,y:plat.y-150,w:28,h:28,hp:35+wave*5,maxHp:35+wave*5,cd:1.5,score:220,t:0}}
-else if(r<0.985){e={type:"tank",x:plat.x+plat.w/2,y:plat.y-40,w:34,h:50,vx:0.4,hp:200+wave*20,maxHp:200+wave*20,score:300,t:0}}
-else{e={type:"splitter",x:plat.x+plat.w/2,y:plat.y-34,w:44,h:44,hp:80+wave*12,maxHp:80+wave*12,score:250,split:2}}
+ var r=Math.random();var e;
+ if(r<0.32){e={type:"walker",x:plat.x+30+Math.random()*(plat.w-60),y:plat.y-32,w:34,h:42,vx:1+Math.random()*0.8,hp:35+wave*7,maxHp:35+wave*7,plat:plat,dir:1,score:80}}
+ else if(r<0.5){e={type:"flyer",x:plat.x+plat.w/2,y:plat.y-100-Math.random()*60,w:38,h:38,hp:28+wave*5,maxHp:28+wave*5,t:Math.random()*10,score:100}}
+ else if(r<0.6){e={type:"shooter",x:plat.x+plat.w/2,y:plat.y-44,w:36,h:48,hp:45+wave*9,maxHp:45+wave*9,cd:0,score:130}}
+ else if(r<0.68){e={type:"charger",x:plat.x+plat.w/2,y:plat.y-30,w:40,h:34,hp:60+wave*10,maxHp:60+wave*10,cd:1.5,vx:0,score:180}}
+ else if(r<0.74){e={type:"turret",x:plat.x+plat.w/2,y:plat.y-30,w:30,h:50,hp:50+wave*8,maxHp:50+wave*8,cd:0.8,score:160}}
+ else if(r<0.79){e={type:"bomber",x:plat.x+plat.w/2,y:plat.y-200,w:32,h:32,hp:40+wave*6,maxHp:40+wave*6,cd:2.5,score:200,t:0}}
+ else if(r<0.84){e={type:"sniper",x:plat.x+plat.w/2,y:plat.y-150,w:28,h:28,hp:35+wave*5,maxHp:35+wave*5,cd:1.5,score:220,t:0}}
+ else if(r<0.87){e={type:"tank",x:plat.x+plat.w/2,y:plat.y-40,w:34,h:50,vx:0.4,hp:200+wave*20,maxHp:200+wave*20,score:300,t:0}}
+ else if(r<0.9){e={type:"splitter",x:plat.x+plat.w/2,y:plat.y-34,w:44,h:44,hp:80+wave*12,maxHp:80+wave*12,score:250,split:2}}
+ else if(r<0.94){e={type:"swarmer",x:plat.x+plat.w/2,y:plat.y-120,w:22,h:22,hp:15+wave*3,maxHp:15+wave*3,t:Math.random()*10,score:90}}
+ else if(r<0.97){e={type:"shield",x:plat.x+plat.w/2,y:plat.y-36,w:40,h:50,hp:90+wave*15,maxHp:90+wave*15,dir:1,cd:0,score:260,shieldT:0}}
+ else if(r<0.985){e={type:"teleporter",x:plat.x+plat.w/2,y:plat.y-40,w:30,h:44,hp:55+wave*10,maxHp:55+wave*10,t:0,cd:2.2,score:240}}
+ else{e={type:"laser",x:plat.x+plat.w/2,y:plat.y-34,w:40,h:54,hp:120+wave*20,maxHp:120+wave*20,cd:3,charge:0,score:320}}
 world.enemies.push(e);
 }
 if(distance>1200&&distance>bossSpawned*1000+999){
@@ -578,9 +613,9 @@ if(world.challenge){world.challenge.kills++;world.challenge.score+=20;if(world.c
 /* ========== 聪明人模式：40种陷阱与套路 ========== */
 var TRAP_KINDS=[
 "fake_floor","disappear","crush","saw","poison_spike","magnet","reverse","dark","ice_wind","fake_gem",
-"fake_coin","fake_portal","fake_checkpoint","spike_wall","arrow","fire_jet","laser_grid","mine","gravity","slow_zone",
-"bounce_trap","sticky","mirror","invisible","electric","acid","swing","pendulum","falling_block","crusher",
-"ambush","feint","decoy","swap","lock","reverse_ctrl","blind","drain","ghost_hit","final_boss"
+"fake_coin","fake_portal","spike_wall","arrow","fire_jet","laser_grid","mine","gravity","slow_zone",
+"bounce_trap","sticky","invisible","electric","acid","swing","pendulum","falling_block","crusher",
+"ambush","decoy","swap","reverse_ctrl","final_boss"
 ];
 var trapNames={fake_floor:"假地板",disappear:"消失平台",crush:"压路机",saw:"电锯",poison_spike:"毒刺",magnet:"反向磁力",reverse:"反向操作",dark:"视野封锁",ice_wind:"冰风颠倒",fake_gem:"假宝石",fake_coin:"假金币",fake_portal:"假传送门",fake_checkpoint:"假存档点",spike_wall:"尖刺墙",arrow:"暗箭",fire_jet:"喷火口",laser_grid:"激光网",mine:"地雷",gravity:"重力反转",slow_zone:"腐蚀泥沼",bounce_trap:"恶意弹板",sticky:"酸液黏胶",mirror:"镜像陷阱",invisible:"隐形怪",electric:"电弧",acid:"酸雨",swing:"旋锤",pendulum:"摆动刀",falling_block:"落石",crusher:"液压压板",ambush:"伏击怪",feint:"假退真攻",decoy:"诱饵分身",swap:"位置交换",lock:"屏幕锁定",reverse_ctrl:"键位颠倒",blind:"屏幕黑幕",drain:"吸血红光",ghost_hit:"穿墙怪",final_boss:"最终守门"};
 
@@ -591,8 +626,8 @@ var trapNames={fake_floor:"假地板",disappear:"消失平台",crush:"压路机"
    环境型：区域效果，有明确出路
 */
 var TRAP_DANGER=["saw","poison_spike","spike_wall","fire_jet","laser_grid","mine","electric","acid","swing","pendulum","falling_block","crusher","ambush","final_boss"];
-var TRAP_DISTURB=["magnet","reverse","dark","ice_wind","gravity","slow_zone","bounce_trap","sticky","mirror","invisible","swap","lock","reverse_ctrl","blind","drain","ghost_hit","arrow","fake_floor","disappear"];
-var TRAP_BAIT=["fake_gem","fake_coin","fake_portal","fake_checkpoint","feint","decoy"];
+var TRAP_DISTURB=["magnet","reverse","dark","ice_wind","gravity","slow_zone","bounce_trap","sticky","invisible","swap","reverse_ctrl","arrow","fake_floor","disappear"];
+var TRAP_BAIT=["fake_gem","fake_coin","fake_portal","decoy"];
 
 /* 按平台生成陷阱：保证可通关
    规则：
@@ -771,7 +806,7 @@ function updateSmartTraps(dt,rdt){
     }
     else if(t.kind==="ice_wind"){
       // 改为反向操作（不再减速）
-      if(near&&!world._revCtrl){world._revCtrl=1.5;world.texts.push({x:p.x,y:p.y-70,text:"冻! 操作颠倒",life:1.2,vy:-30})}
+      if(near&&!world._revCtrl){world._revCtrl=0.6;world.texts.push({x:p.x,y:p.y-70,text:"冻! 操作颠倒",life:1.2,vy:-30})}
     }
     else if(t.kind==="fake_gem"){
       if(!t.got&&Math.abs(d2x)<30&&Math.abs(d2y)<40){t.got=true;t.life=0;p.hp-=14;cam.shake=10;sHit();spawnShockRing(t.x,t.y,"#ff00aa",120);world.texts.push({x:t.x,y:t.y-40,text:"假宝石!-20HP",life:1.2,vy:-40})}
@@ -2258,29 +2293,30 @@ var ang=0;if(tg)ang=Math.atan2(tg.y-p.y,tg.x-p.x);else ang=p.facing>0?0:Math.PI;
 p.shootCd=0.13;p.en-=8;p.muzzle=0.09;var spd=680;
 var rd=rageTimer>0?2:1;
 function mk(a,off,col,r,dmg,home){
-  var _mx=p.x+Math.cos(a)*34,_my=p.y+Math.sin(a)*16+off;
+  var _fx=(p.facing||1);
+  var _mx=p.x+_fx*36,_my=p.y-31+off;
   world.bullets.push({x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:dmg*rd,home:home});
   // 枪口喷射粒子（每次开火都喷）
   spawnMuzzle(_mx,_my,a,col,r>=8?1.8:1.1);
 }
-if(gunLevel===1){mk(ang,0,"#00f2ff",5,12,false)}
-else if(gunLevel===2){mk(ang,-5,"#00f2ff",5,12,false);mk(ang,5,"#00f2ff",5,12,false)}
-else if(gunLevel===3){mk(ang,0,"#ffe600",6,16,false);mk(ang-0.18,-6,"#00f2ff",5,12,false);mk(ang+0.18,6,"#00f2ff",5,12,false)}
+if(gunLevel===1){mk(ang,0,"#00f2ff",5,12,true)}
+else if(gunLevel===2){mk(ang,-5,"#00f2ff",5,12,true);mk(ang,5,"#00f2ff",5,12,true)}
+else if(gunLevel===3){mk(ang,0,"#ffe600",6,16,true);mk(ang-0.18,-6,"#00f2ff",5,12,true);mk(ang+0.18,6,"#00f2ff",5,12,true)}
 else if(gunLevel===4){mk(ang,0,"#ff00aa",7,22,true);mk(ang-0.3,-8,"#00f2ff",5,10,true);mk(ang+0.3,8,"#00f2ff",5,10,true)}
-else if(gunLevel===5){for(var fi=0;fi<4;fi++)mk(ang+(fi-1.5)*0.15,(fi-1.5)*6,"#ff8a5b",7,9,false)}
+else if(gunLevel===5){for(var fi=0;fi<4;fi++)mk(ang+(fi-1.5)*0.15,(fi-1.5)*6,"#ff8a5b",7,9,true)}
 else if(gunLevel===6){mk(ang,0,"#7fdcff",6,14,true);mk(ang-0.16,-6,"#7fdcff",6,14,true);mk(ang+0.16,6,"#7fdcff",6,14,true)}
-else if(gunLevel===7){mk(ang,0,"#b026ff",8,45,false);var sn=world.bullets[world.bullets.length-1];sn.pierce=true;sn.vx=Math.cos(ang)*1100;sn.vy=Math.sin(ang)*1100}
+else if(gunLevel===7){mk(ang,0,"#b026ff",8,45,true);var sn=world.bullets[world.bullets.length-1];sn.pierce=true;sn.vx=Math.cos(ang)*1100;sn.vy=Math.sin(ang)*1100}
 else if(gunLevel===8){for(var qi=0;qi<8;qi++)mk(ang+qi*Math.PI/4,0,qi%2?"#ff00aa":"#ffe600",6,16,true)}
-else if(gunLevel===9){for(var ni=-2;ni<=2;ni++)mk(ang+ni*0.08,ni*5,"#3aff7a",5,11,false);mk(ang,0,"#ffe600",7,20,true)}
+else if(gunLevel===9){for(var ni=-2;ni<=2;ni++)mk(ang+ni*0.08,ni*5,"#3aff7a",5,11,true);mk(ang,0,"#ffe600",7,20,true)}
 else if(gunLevel===10){for(var si=0;si<6;si++){var sa=ang+Math.sin(Date.now()/100+si)*0.12;mk(sa,(si-2.5)*4,"#00f2ff",5,10,true)}}
-else if(gunLevel===11){mk(ang,0,"#ff2a6d",9,35,false);var sn2=world.bullets[world.bullets.length-1];sn2.pierce=true;sn2.vx=Math.cos(ang)*900;sn2.vy=Math.sin(ang)*900;for(var xi=-1;xi<=1;xi+=2)mk(ang+xi*0.5,0,"#ff8a5b",5,8,false)}
+else if(gunLevel===11){mk(ang,0,"#ff2a6d",9,35,true);var sn2=world.bullets[world.bullets.length-1];sn2.pierce=true;sn2.vx=Math.cos(ang)*900;sn2.vy=Math.sin(ang)*900;for(var xi=-1;xi<=1;xi+=2)mk(ang+xi*0.5,0,"#ff8a5b",5,8,true)}
 else if(gunLevel===12){
   // Lv12 棱镜炮：3发蓝青主弹 + 2发侧翼，全部穿透（参考Lv11强度，绝不用Lv50弹幕）
-  mk(ang,0,"#00f2ff",7,22,false);
+  mk(ang,0,"#00f2ff",7,22,true);
   var _sn12=world.bullets[world.bullets.length-1];
   _sn12.pierce=true;_sn12.vx=Math.cos(ang)*820;_sn12.vy=Math.sin(ang)*820;
-  mk(ang-0.13,-3,"#7fdcff",5,14,false);
-  mk(ang+0.13,3,"#7fdcff",5,14,false);
+  mk(ang-0.13,-3,"#7fdcff",5,14,true);
+  mk(ang+0.13,3,"#7fdcff",5,14,true);
   for(var _i12=-1;_i12<=1;_i12+=2){
     mk(ang+_i12*0.34,0,"#b026ff",4,9,false);
   }
@@ -2385,6 +2421,7 @@ ctx.shadowBlur=(FQ>=2?0:0)}
 function update(rdt){
 if(gameState!=="playing")return;
 var dt=rdt*timeScale;
+try{ _animUpd(dt); }catch(e){}
 bgUpdate(rdt);
 if(slowTimer>0){slowTimer-=rdt;if(slowTimer<=0)timeScale=1}
 if(skillCd>0)skillCd-=rdt;
@@ -2521,12 +2558,16 @@ for(var i=0;i<world.enemies.length;i++){
   else if(e.type==="sniper"){e.t+=dt;e.y+=Math.sin(e.t*1.2)*0.4;e.cd-=dt;if(e.cd<=0){e.cd=1.5;var sa2=Math.atan2(p.y-e.y,p.x-e.x);world.bullets.push({x:e.x,y:e.y,vx:Math.cos(sa2)*420,vy:Math.sin(sa2)*420,r:3,life:2,owner:"enemy",color:"#ff2a6d"})}}
   else if(e.type==="tank"){e.t+=dt;e.x+=e.vx*dt*60;if(e.cd===undefined)e.cd=2;e.cd-=dt;if(e.cd<=0){e.cd=2.5;world.bullets.push({x:e.x,y:e.y,vx:0,vy:280,r:8,life:3,owner:"enemy",color:"#ff2a6d",big:true,bomb:true})}}
   else if(e.type==="splitter"){}
+  else if(e.type==="swarmer"){e.t+=dt;var swdir=(p.x>e.x?1:-1);e.x+=swdir*130*dt;e.y+=Math.sin(e.t*5)*1.2;if(e._n===undefined)e._n=0;e._n++;if(e._n%45===0){world.bullets.push({x:e.x,y:e.y,vx:swdir*220,vy:40+Math.random()*40,r:4,life:2.2,owner:"enemy",color:"#ff00aa"})}}
+  else if(e.type==="shield"){e.dir=(p.x>e.x?1:-1);e.x+=e.dir*0.6*dt*60;e.cd-=dt;if(e.cd<=0){e.cd=2;e.shieldT=0.6}if(e.shieldT>0)e.shieldT-=dt}
+  else if(e.type==="teleporter"){e.t+=dt;e.cd-=dt;if(e.cd<=0){e.cd=2.2;e.x=p.x+(p.facing||1)*140;e.y=p.y-40;world.flash=0.15;spawnShockRing(e.x,e.y,"#7c3aed",50)}}
+  else if(e.type==="laser"){e.cd-=dt;if(e.cd<=0&&e.charge===0){e.charge=1;e.cd=1.2;world.texts.push({x:e.x,y:e.y-40,text:"蓄力激光!",life:0.6,vy:-25})}else if(e.charge>0){e.charge-=dt;if(e.charge<=0){e.charge=0;e.cd=3;var ldir=(p.x>e.x?1:-1);world.bullets.push({x:e.x,y:e.y,vx:ldir*520,vy:0,r:13,life:1.5,owner:"enemy",color:"#ff2a6d",laser:true,big:true})}}}
   else if(e.type==="boss"){e.phase+=dt;e.y+=Math.sin(e.phase*1.5)*1;e.cd-=dt;if(e.cd<=0){e.cd=Math.max(0.5,1.2-(e.bw||1)*0.08);var dirs=8+(e.bw||1);for(var k=0;k<dirs;k++){var ba=e.phase+k*Math.PI*2/dirs;var bsp=220+(e.bw||1)*15;world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ba)*bsp,vy:Math.sin(ba)*bsp,r:6,life:4,owner:"enemy",color:e.bc||"#ffe600"})}}}
 }
 // 子弹
 for(var i=0;i<world.bullets.length;i++){
   var b=world.bullets[i];
-  if(b.home&&b.owner==="player"){var tg2b=null,td3=99999;for(var j=0;j<world.enemies.length;j++){var en2=world.enemies[j];var dd3=(en2.x-b.x)*(en2.x-b.x)+(en2.y-b.y)*(en2.y-b.y);if(dd3<td3){td3=dd3;tg2b=en2}}if(tg2b&&td3<490000){var ta2=Math.atan2(tg2b.y-b.y,tg2b.x-b.x);var ca2=Math.atan2(b.vy,b.vx);var diff2=ta2-ca2;while(diff2>Math.PI)diff2-=6.28;while(diff2<-Math.PI)diff2+=6.28;var turn2=Math.max(-4*dt,Math.min(4*dt,diff2));var sp3=Math.sqrt(b.vx*b.vx+b.vy*b.vy);b.vx=Math.cos(ca2+turn2)*sp3;b.vy=Math.sin(ca2+turn2)*sp3}}
+  if(b.home&&b.owner==="player"){var tg2b=null,td3=99999;for(var j=0;j<world.enemies.length;j++){var en2=world.enemies[j];var dd3=(en2.x-b.x)*(en2.x-b.x)+(en2.y-b.y)*(en2.y-b.y);if(dd3<td3){td3=dd3;tg2b=en2}}if(tg2b&&td3<1440000){var ta2=Math.atan2(tg2b.y-b.y,tg2b.x-b.x);var ca2=Math.atan2(b.vy,b.vx);var diff2=ta2-ca2;while(diff2>Math.PI)diff2-=6.28;while(diff2<-Math.PI)diff2+=6.28;var turn2=Math.max(-22*dt,Math.min(22*dt,diff2));var sp3=Math.sqrt(b.vx*b.vx+b.vy*b.vy);b.vx=Math.cos(ca2+turn2)*sp3;b.vy=Math.sin(ca2+turn2)*sp3}}
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
   if(b.owner==="player"){for(var j=0;j<world.enemies.length;j++){var e2=world.enemies[j];if(Math.abs(b.x-e2.x)<e2.w/2+b.r&&Math.abs(b.y-e2.y)<e2.h/2+b.r){e2.hp-=b.dmg||12;if(!b.pierce)b.life=0;
 var _dmg=b.dmg||12;
@@ -2589,21 +2630,555 @@ heroHeadImg.src="data:image/jpeg;base64,/9j/4QBYRXhpZgAATU0AKgAAAAgABAEAAAQAAAAB
    4. 肩→肘→腕三级骨骼，枪握在腕点，朝向鼠标/瞄准方向
 */
 function drawHero(x,y,scale,facing,frame,onGround,vx){
-  var running=Math.abs(vx)>40&&onGround;
-  var ph=frame*13;
-  var swing=running?Math.sin(ph):0;
-  var bob=running?Math.abs(Math.sin(ph))*-2.2:Math.sin(frame*2.4)*1.2;
-  var lean=Math.max(-0.1,Math.min(0.1,vx/2600));
-  var ext=Math.abs(vx)>60?1:0;   // 伸展度
+  // 分发器：根据 HERO 角色 ID 调用对应绘制
+  var h=HERO;
+  if(h===1) return drawHeroMech(x,y,scale,facing,frame,onGround,vx);
+  if(h===2) return drawHeroAnime(x,y,scale,facing,frame,onGround,vx);
+  if(h===3) return drawHeroFighter(x,y,scale,facing,frame,onGround,vx);
+  if(h===4) return drawHeroSamurai(x,y,scale,facing,frame,onGround,vx);
+  if(h===5) return drawHeroMaid(x,y,scale,facing,frame,onGround,vx);
+  return drawHeroMech(x,y,scale,facing,frame,onGround,vx);
+}
+
+/* ============ 角色系统全局 ============ */
+var HERO=1;   // 当前角色 1~4
+var HERO_NAMES=["机甲战士","二次元少女","写实格斗家","赛博武士","女仆鲸娘"];
+
+function setHero(n){
+  n=parseInt(n,10);
+  if(n<1||n>5) n=1;
+  HERO=n;
+  try{ localStorage.setItem("njs_hero", String(n)); }catch(e){}
+  try{
+    var t=document.getElementById("heroTag");
+    if(t) t.textContent="当前角色："+HERO_NAMES[n-1];
+  }catch(e){}
+  try{
+    var bs=document.querySelectorAll("[data-hero-btn]");
+    for(var i=0;i<bs.length;i++){
+      var v=parseInt(bs[i].getAttribute("data-hero-btn"),10);
+      bs[i].style.background = (v===n) ? "rgba(0,242,255,.2)" : "rgba(255,255,255,.06)";
+      bs[i].style.borderColor = (v===n) ? "#00f2ff" : "rgba(0,242,255,.3)";
+      bs[i].style.color = (v===n) ? "#00f2ff" : "#8fb8d8";
+    }
+  }catch(e){}
+}
+function initHero(){
+  try{
+    var v=parseInt(localStorage.getItem("njs_hero")||"1",10);
+    if(v>=1&&v<=5) HERO=v;
+  }catch(e){}
+  try{ setHero(HERO); }catch(e){}
+}
+try{ initHero(); }catch(e){}
+/* 更新公告：仅新版首次进入显示 */
+function closePatchNote(){
+  var d=document.getElementById("patchNote");
+  if(d)d.style.display="none";
+  try{ localStorage.setItem("njs_patch","v1.0"); }catch(e){}
+}
+(function(){
+  try{
+    var seen=localStorage.getItem("njs_patch");
+    if(seen!=="v1.0"){
+      var d=document.getElementById("patchNote");
+      if(d)d.style.display="flex";
+    }
+  }catch(e){}
+})();
+
+/* ============================================================
+   通用工具：关节球 / 手臂 / 腿（供各角色复用）
+============================================================ */
+
+/* ============ 全局动画平滑系统 v2 ============ */
+var _anim = { spd: 0, lean: 0, run: 0, air: 0, ph: 0, lastX: null, vy: 0 };
+function _animUpd(dt){
+  var pl = (typeof player !== "undefined" && player) ? player : null;
+  var k = 1 - Math.pow(0.002, (dt || 0.016));    // 帧率无关平滑系数
+  if(!pl){
+    _anim.spd = _anim.lean = _anim.run = _anim.air = 0;
+    return;
+  }
+  // 步频绑定实际位移：每移动 ~34px 迈一步（2π），脚步永远咬合地面
+  if(_anim.lastX === null) _anim.lastX = pl.x;
+  var dx = pl.x - _anim.lastX;
+  _anim.lastX = pl.x;
+  var spdN = Math.min(1, Math.abs(pl.vx) / 2600);
+  var onG = !!pl.onGround;
+  if(onG && Math.abs(pl.vx) > 40){
+    _anim.ph += Math.abs(dx) / 34 * Math.PI * 2;   // 位移驱动相位
+  }
+  _anim.spd += (spdN - _anim.spd) * k;
+  _anim.lean += (Math.max(-0.12, Math.min(0.12, pl.vx / 2400)) - _anim.lean) * k;
+  _anim.run += ((Math.abs(pl.vx) > 40 && onG ? 1 : 0) - _anim.run) * k * 2;
+  _anim.air += ((onG ? 0 : 1) - _anim.air) * k * 2.5;
+  _anim.vy = pl.vy || 0;
+}
+try{ _animUpd(1); }catch(e){}
+
+
+/* ============ 统一水平持枪臂（5 角色共用骨架，配色区分）============ */
+function heroGunArm(shY, aimA, pal){
+  // pal = {sleeve, sleeveDark, cuff, skin, hand} 颜色组
+  ctx.save();
+  ctx.translate(-4,shY);
+  ctx.rotate(aimA*0.35);           // 轻微跟随瞄准方向
+  // 上臂（袖子）：肩→肘
+  var g1=ctx.createLinearGradient(-4,0,4,0);
+  g1.addColorStop(0,pal.sleeve);
+  g1.addColorStop(1,pal.sleeveDark);
+  ctx.strokeStyle=g1;
+  ctx.lineWidth=7.5;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(8,4);
+  ctx.stroke();
+  // 肘关节球
+  if(pal.joint){
+    hjDot(8,4,3.4,true,pal.joint,pal.jointDark||pal.sleeveDark);
+  }else{
+    ctx.fillStyle=pal.sleeve;
+    ctx.beginPath();
+    ctx.arc(8,4,3.4,0,6.2832);
+    ctx.fill();
+  }
+  // 前臂（袖/肤色）：肘→手（水平向前）
+  var g2=ctx.createLinearGradient(0,0,0,10);
+  g2.addColorStop(0,pal.skin);
+  g2.addColorStop(1,pal.sleeveDark);
+  ctx.strokeStyle=pal.skin;
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.moveTo(8,4);
+  ctx.lineTo(17,2);
+  ctx.stroke();
+  // 蕾丝/护腕袖口（如果有）
+  if(pal.cuff){
+    ctx.strokeStyle=pal.cuff;
+    ctx.lineWidth=6.4;
+    ctx.beginPath();
+    ctx.moveTo(13,2.7);
+    ctx.lineTo(16,2.4);
+    ctx.stroke();
+  }
+  // 手掌（握枪）
+  ctx.fillStyle=pal.skin;
+  ctx.beginPath();
+  ctx.arc(17.5,2,3,0,6.2832);
+  ctx.fill();
+  ctx.fillStyle=pal.hand||pal.skin;
+  ctx.beginPath();
+  ctx.arc(18.5,2.5,2.6,0,6.2832);
+  ctx.fill();
+  // 枪：drawGun 自带 y+8 内偏移，translate(0,-10) 让枪身贴住手掌
+  ctx.save();
+  ctx.rotate(aimA*0.5);           // 枪口微微跟随瞄准
+  ctx.translate(12,-10);
+  drawGun();
+  ctx.restore();
+  ctx.restore();
+}
+
+function hjDot(px,py,r,bright,c1,c2){
+  var g=ctx.createRadialGradient(px-r*0.35,py-r*0.35,r*0.15,px,py,r);
+  g.addColorStop(0,bright?(c1||"rgba(200,248,255,0.98)"):(c1||"rgba(70,160,200,0.92)"));
+  g.addColorStop(1,bright?(c2||"rgba(20,140,190,0.92)"):(c2||"rgba(6,70,100,0.92)"));
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.arc(px,py,r,0,6.2832);
+  ctx.fill();
+}
+
+/* ============================================================
+   角色2：二次元少女（大眼 + 长发 + 水手服 + 蝴蝶结）
+============================================================ */
+function drawHeroAnime(x,y,scale,facing,frame,onGround,vx){
+  var spd=_anim.spd;
+  var runT=_anim.run;                            // 跑步状态渐进 0~1
+  var airT=_anim.air;                            // 空中状态渐进 0~1
+  var running=runT>0.25;
+  var ph=_anim.ph;                               // 相位由位移驱动（脚步咬合地面）
+  // 步幅：速度越快摆得越大；双频叠加打破机械节拍
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  // 跑步时身体重心下压（髋部随步伐起伏）
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);     // 跑姿额外前倾
+  // 腾空：双腿前后分叉（前腿抬、后腿伸），非对称预备落地
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
 
   ctx.save();
   ctx.translate(x,y);
   ctx.scale(facing*scale,scale);
 
-  // ---------- 地面投影 ----------
+  // 地面投影
   ctx.save();
   ctx.globalAlpha=onGround?0.3:0.14;
-  ctx.fillStyle="#0096d6";
+  ctx.fillStyle="#c050d0";
+  ctx.beginPath();
+  ctx.ellipse(0,0,16,5,0,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.rotate(lean);
+
+  var hipY=-30+bob;
+  var chestTop=-66+bob;
+  var headR=13;
+  var headY=-82+bob;
+
+  // 长发（底层，飘动）
+  animeHair(headY, headR, ph);
+
+  // 后腿
+  animeLeg(hipY,-4.5,-(swing+tuck*0.6),false);
+  // 后臂
+  animeArm(chestTop+6,-0.9-swing*0.35,false);
+
+  // ===== 躯干：水手服 =====
+  ctx.save();
+  // 身体（肤色）
+  var body=ctx.createLinearGradient(-16,0,16,0);
+  body.addColorStop(0,"#ffe0d0");
+  body.addColorStop(0.5,"#ffd4c0");
+  body.addColorStop(1,"#e8b8a0");
+  ctx.fillStyle=body;
+  ctx.beginPath();
+  ctx.moveTo(-9,chestTop);
+  ctx.lineTo(9,chestTop);
+  ctx.quadraticCurveTo(11,chestTop+12,7.5,hipY);
+  ctx.lineTo(-7.5,hipY);
+  ctx.quadraticCurveTo(-11,chestTop+12,-9,chestTop);
+  ctx.closePath();
+  ctx.fill();
+
+  // 水手服上衣（白色）
+  ctx.save();
+  ctx.fillStyle="#f8f4f8";
+  ctx.beginPath();
+  ctx.moveTo(-10,chestTop+1);
+  ctx.lineTo(10,chestTop+1);
+  ctx.lineTo(8.5,chestTop+14);
+  ctx.lineTo(6,chestTop+20);
+  ctx.lineTo(-6,chestTop+20);
+  ctx.lineTo(-8.5,chestTop+14);
+  ctx.closePath();
+  ctx.fill();
+  // 领口（蓝色）
+  ctx.fillStyle="#3068c0";
+  ctx.beginPath();
+  ctx.moveTo(-6,chestTop+2);
+  ctx.lineTo(6,chestTop+2);
+  ctx.lineTo(0,chestTop+12);
+  ctx.closePath();
+  ctx.fill();
+  // 领巾（红色蝴蝶结）
+  ctx.fillStyle="#e03050";
+  ctx.beginPath();
+  ctx.moveTo(0,chestTop+10);
+  ctx.quadraticCurveTo(-5,chestTop+14,-3,chestTop+18);
+  ctx.quadraticCurveTo(0,chestTop+16,0,chestTop+10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0,chestTop+10);
+  ctx.quadraticCurveTo(5,chestTop+14,3,chestTop+18);
+  ctx.quadraticCurveTo(0,chestTop+16,0,chestTop+10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle="#c02040";
+  ctx.beginPath();
+  ctx.arc(0,chestTop+12,1.8,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+
+  // 裙子（百褶）
+  ctx.save();
+  var sk=ctx.createLinearGradient(-8,chestTop+20,8,chestTop+20);
+  sk.addColorStop(0,"#4a70c8");
+  sk.addColorStop(0.5,"#5a80d8");
+  sk.addColorStop(1,"#3a60b0");
+  ctx.fillStyle=sk;
+  ctx.beginPath();
+  ctx.moveTo(-7,chestTop+19);
+  ctx.lineTo(7,chestTop+19);
+  ctx.lineTo(9,hipY-1);
+  ctx.lineTo(-9,hipY-1);
+  ctx.closePath();
+  ctx.fill();
+  // 褶子线
+  ctx.strokeStyle="rgba(20,40,90,0.4)";
+  ctx.lineWidth=0.8;
+  for(var k=-6;k<=6;k+=3){
+    ctx.beginPath();
+    ctx.moveTo(k,chestTop+19);
+    ctx.lineTo(k,hipY-1);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 胸口蝴蝶结
+  ctx.fillStyle="#e03050";
+  ctx.beginPath();
+  ctx.arc(-2,chestTop+14,2,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(2,chestTop+14,2,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+
+  // 前腿
+  animeLeg(hipY,4.5,swing+tuck*0.6,true);
+  // 前臂 + 枪
+  var aimA=-0.22;
+  var armSwing=running?Math.sin(ph+3.1)*0.15:Math.sin(frame*1.8)*0.05;
+  animeShootArm(chestTop+7,aimA+armSwing,aimA-0.06+armSwing*0.5);
+
+  ctx.shadowBlur=0;
+
+  // ===== 头 =====
+  ctx.save();
+  // 脖子
+  ctx.fillStyle="#ffd4c0";
+  ctx.beginPath();
+  ctx.moveTo(-3.5,headY+headR-1);
+  ctx.lineTo(3.5,headY+headR-1);
+  ctx.lineTo(4,chestTop+2);
+  ctx.lineTo(-4,chestTop+2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 脸
+  var fg=ctx.createRadialGradient(-4,headY-4,1,0,headY,headR);
+  fg.addColorStop(0,"#fff5f0");
+  fg.addColorStop(0.72,"#ffe8de");
+  fg.addColorStop(1,"#f0c8b5");
+  ctx.fillStyle=fg;
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,0,6.2832);
+  ctx.fill();
+
+  // 刘海
+  ctx.save();
+  ctx.fillStyle="#e8d0f0";
+  ctx.beginPath();
+  ctx.arc(0,headY-headR*0.4,headR*0.95,Math.PI*0.9,Math.PI*2.1);
+  ctx.fill();
+  // 刘海发梢（锯齿）
+  ctx.fillStyle="#e8d0f0";
+  ctx.beginPath();
+  ctx.moveTo(-headR,headY-headR*0.3);
+  ctx.lineTo(-headR*0.7,headY-headR*0.15);
+  ctx.lineTo(-headR*0.4,headY-headR*0.4);
+  ctx.lineTo(-headR*0.1,headY-headR*0.2);
+  ctx.lineTo(headR*0.2,headY-headR*0.42);
+  ctx.lineTo(headR*0.5,headY-headR*0.22);
+  ctx.lineTo(headR*0.8,headY-headR*0.4);
+  ctx.lineTo(headR,headY-headR*0.3);
+  ctx.quadraticCurveTo(headR*0.4,headY-headR*0.6,-headR*0.4,headY-headR*0.6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // 大眼
+  animeEyes(headY, headR);
+
+  // 腮红
+  ctx.save();
+  ctx.fillStyle="rgba(255,150,170,0.4)";
+  ctx.beginPath();
+  ctx.ellipse(-headR*0.55,headY+headR*0.25,headR*0.18,headR*0.12,0,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(headR*0.55,headY+headR*0.25,headR*0.18,headR*0.12,0,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+
+  // 霓虹描边
+  ctx.lineWidth=2;
+  ctx.strokeStyle="rgba(255,120,220,0.95)";
+  ctx.shadowBlur=(FQ>=2?12:0);
+  ctx.shadowColor="#ff78dc";
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,-0.75,2.05);
+  ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function animeHair(hy,hr,ph){
+  ctx.save();
+  var wave=Math.sin(ph*0.6)*2;
+  var hg=ctx.createLinearGradient(-hr,hy,-hr*2.2,hy+hr*1.3);
+  hg.addColorStop(0,"#f0e0f8");
+  hg.addColorStop(0.5,"#e0c8f0");
+  hg.addColorStop(1,"#c8a8e0");
+  ctx.fillStyle=hg;
+  ctx.beginPath();
+  ctx.moveTo(-hr*0.7,hy-hr*0.3);
+  ctx.quadraticCurveTo(-hr*1.9,hy+hr*0.5+wave,-hr*2.1,hy+hr*1.6+wave);
+  ctx.quadraticCurveTo(-hr*0.9,hy+hr*1.7+wave,-hr*0.4,hy+hr*0.9);
+  ctx.quadraticCurveTo(-hr*0.5,hy+hr*0.2,-hr*0.7,hy-hr*0.3);
+  ctx.closePath();
+  ctx.fill();
+  // 发带
+  ctx.fillStyle="#e03050";
+  ctx.beginPath();
+  ctx.ellipse(-hr*0.8,hy+hr*0.4,hr*0.3,hr*0.18,-0.3,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+
+function animeEyes(hy,hr){
+  var ex=hr*0.4, ey=hy+hr*0.1;
+  // 眼白
+  ctx.fillStyle="rgba(255,255,255,0.98)";
+  ctx.beginPath(); ctx.ellipse(-ex,ey,hr*0.32,hr*0.4,-0.08,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(ex,ey,hr*0.32,hr*0.4,0.08,0,6.2832); ctx.fill();
+  // 瞳孔（紫粉渐变）
+  var p1=ctx.createRadialGradient(-ex,ey-hr*0.04,0.5,-ex,ey,hr*0.3);
+  p1.addColorStop(0,"#ff7adc"); p1.addColorStop(1,"#8020a0");
+  ctx.fillStyle=p1;
+  ctx.beginPath(); ctx.arc(-ex,ey,hr*0.28,0,6.2832); ctx.fill();
+  var p2=ctx.createRadialGradient(ex,ey-hr*0.04,0.5,ex,ey,hr*0.3);
+  p2.addColorStop(0,"#ff7adc"); p2.addColorStop(1,"#8020a0");
+  ctx.fillStyle=p2;
+  ctx.beginPath(); ctx.arc(ex,ey,hr*0.28,0,6.2832); ctx.fill();
+  // 高光（大）
+  ctx.fillStyle="rgba(255,255,255,0.98)";
+  ctx.beginPath(); ctx.arc(-ex-hr*0.08,ey-hr*0.12,hr*0.12,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(ex-hr*0.08,ey-hr*0.12,hr*0.12,0,6.2832); ctx.fill();
+  // 高光（小）
+  ctx.beginPath(); ctx.arc(-ex+hr*0.08,ey+hr*0.1,hr*0.06,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(ex+hr*0.08,ey+hr*0.1,hr*0.06,0,6.2832); ctx.fill();
+  // 上睫毛
+  ctx.strokeStyle="rgba(40,20,60,0.9)";
+  ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.arc(-ex,ey,hr*0.36,Math.PI*1.1,Math.PI*1.95); ctx.stroke();
+  ctx.beginPath(); ctx.arc(ex,ey,hr*0.36,Math.PI*1.05,Math.PI*1.9); ctx.stroke();
+}
+
+function animeLeg(hy2,offX,angle,front){
+  var c1=front?"#ffe0d0":"#e8b8a0";
+  var c2=front?"#f5c8b0":"#d8a088";
+  ctx.save();
+  ctx.translate(offX,hy2);
+  ctx.rotate(angle*0.75);
+  // 大腿（白丝袜以上）
+  var tg=ctx.createLinearGradient(-6,0,6,0);
+  tg.addColorStop(0,c1); tg.addColorStop(0.5,front?"#ffdcc8":"#e8b8a0"); tg.addColorStop(1,c2);
+  ctx.fillStyle=tg;
+  ctx.beginPath();
+  ctx.moveTo(-6,0);
+  ctx.quadraticCurveTo(-6.5,10,-4.2,20);
+  ctx.lineTo(4.2,20);
+  ctx.quadraticCurveTo(6.5,10,6,0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.translate(0,20);
+  ctx.rotate(-angle*0.75*1.7+(angle>0.05?0.42:-0.06));
+  // 膝盖
+  ctx.fillStyle=front?"#ffd8c4":"#e0a888";
+  ctx.beginPath();
+  ctx.ellipse(0,0,4.6,4,0,0,6.2832);
+  ctx.fill();
+  // 小腿（白丝袜）
+  var sg=ctx.createLinearGradient(-5,0,5,0);
+  sg.addColorStop(0,"#ffffff");
+  sg.addColorStop(0.5,"#f0e8f0");
+  sg.addColorStop(1,"#e0d0e0");
+  ctx.fillStyle=sg;
+  ctx.beginPath();
+  ctx.moveTo(-4.2,1);
+  ctx.quadraticCurveTo(-4.6,9,-3.2,17);
+  ctx.lineTo(3.2,17);
+  ctx.quadraticCurveTo(4.6,9,4.2,1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.translate(0,17);
+  // 脚踝
+  ctx.fillStyle="#ffffff";
+  ctx.beginPath();
+  ctx.ellipse(0,0,2.8,2,0,0,6.2832);
+  ctx.fill();
+  // 鞋（粉色）
+  var shoe=ctx.createLinearGradient(-5,-2,9,6);
+  shoe.addColorStop(0,"#ffb0d0");
+  shoe.addColorStop(0.5,"#f080b0");
+  shoe.addColorStop(1,"#c05080");
+  ctx.fillStyle=shoe;
+  ctx.beginPath();
+  ctx.moveTo(-4.5,0);
+  ctx.quadraticCurveTo(-5,3,-3,4.2);
+  ctx.lineTo(7,4.2);
+  ctx.quadraticCurveTo(8.5,3.2,7.5,0.6);
+  ctx.quadraticCurveTo(5,-1.2,2,-1.4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function animeArm(shY,angle,front){
+  ctx.save();
+  ctx.translate(-7,shY);
+  ctx.rotate(angle);
+  var g=ctx.createLinearGradient(-4,0,4,0);
+  g.addColorStop(0,front?"#ffe0d0":"#e8b8a0");
+  g.addColorStop(0.5,front?"#ffd4c0":"#d8a088");
+  g.addColorStop(1,front?"#e8b8a0":"#c08870");
+  ctx.strokeStyle=g;
+  ctx.lineWidth=6.5;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,13); ctx.stroke();
+  ctx.translate(0,13);
+  ctx.rotate(0.85);
+  ctx.lineWidth=5.5;
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,12); ctx.stroke();
+  ctx.fillStyle=front?"#ffd4c0":"#d8a088";
+  ctx.beginPath();
+  ctx.arc(0,12,2.8,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+
+function animeShootArm(shY,upperA,foreA){
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#f8f4f8",sleeveDark:"#e0d8e0",cuff:"#ffffff",skin:"#ffd0bc",hand:"#ffe0d0"});
+}
+
+/* ============================================================
+   角色3：写实格斗家（肌肉 + 皮肤质感 + 绑手带）
+============================================================ */
+function drawHeroFighter(x,y,scale,facing,frame,onGround,vx){
+  var spd=_anim.spd;
+  var runT=_anim.run;                            // 跑步状态渐进 0~1
+  var airT=_anim.air;                            // 空中状态渐进 0~1
+  var running=runT>0.25;
+  var ph=_anim.ph;                               // 相位由位移驱动（脚步咬合地面）
+  // 步幅：速度越快摆得越大；双频叠加打破机械节拍
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  // 跑步时身体重心下压（髋部随步伐起伏）
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);     // 跑姿额外前倾
+  // 腾空：双腿前后分叉（前腿抬、后腿伸），非对称预备落地
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
+
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(facing*scale,scale);
+
+  // 地面投影
+  ctx.save();
+  ctx.globalAlpha=onGround?0.3:0.14;
+  ctx.fillStyle="#c08050";
   ctx.beginPath();
   ctx.ellipse(0,0,17,5,0,0,6.2832);
   ctx.fill();
@@ -2611,39 +3186,24 @@ function drawHero(x,y,scale,facing,frame,onGround,vx){
 
   ctx.rotate(lean);
 
-  /* ===== 人体基准尺寸（7 头身）=====
-     头顶 y=-92  头顶到底 = 92
-     头高 26 → 头 1 份
-     躯干 -66 → -30（36，约 1.4 份... 用视觉比例调整）
-     腿 -30 → 0 */
   var hipY=-30+bob;
   var chestTop=-66+bob;
   var headR=13;
   var headY=-82+bob;
 
-  // ---------- 后腿（暗）----------
-  drawLeg(hipY, -4.5, -swing, false);
+  // 后腿
+  fightLeg(hipY,-4.5,-(swing+tuck*0.6),false);
+  // 后臂
+  fightArm(chestTop+6,-0.9-swing*0.35,false);
 
-  // ---------- 后臂（暗）----------
-  drawArm(chestTop+6, -0.9-swing*0.35, false);
-
-  // ---------- 躯干（锥形带腰线）----------
+  // ===== 躯干：肌肉 =====
   ctx.save();
-  // 主躯干：肩宽 16，腰宽 11，臀宽 13
   var torso=ctx.createLinearGradient(-16,0,16,0);
-  torso.addColorStop(0,"#5cd8ff");
-  torso.addColorStop(0.22,"#22b8e8");
-  torso.addColorStop(0.55,"#0d8fbf");
-  torso.addColorStop(1,"#00566f");
+  torso.addColorStop(0,"#e8b090");
+  torso.addColorStop(0.3,"#f0c0a0");
+  torso.addColorStop(0.7,"#d8a080");
+  torso.addColorStop(1,"#b88060");
   ctx.fillStyle=torso;
-  ctx.beginPath();
-  ctx.moveTo(-9,chestTop);                    // 左肩
-  ctx.lineTo(9,chestTop);                     // 右肩
-  ctx.quadraticCurveTo(12,chestTop+16,-7.5,hipY);  // 右侧腰线
-  ctx.lineTo(7.5,hipY);                       // 臀
-  ctx.lineTo(11,chestTop+10);                 // 右侧回到肩
-  ctx.closePath();
-  // 改用更清晰的路径
   ctx.beginPath();
   ctx.moveTo(-9.5,chestTop);
   ctx.lineTo(9.5,chestTop);
@@ -2653,42 +3213,1276 @@ function drawHero(x,y,scale,facing,frame,onGround,vx){
   ctx.closePath();
   ctx.fill();
 
-  // 胸肌高光
-  ctx.fillStyle="rgba(180,240,255,0.32)";
+  // 胸肌（两块大肌肉）
+  ctx.save();
+  var pm=ctx.createLinearGradient(-5,chestTop+6,5,chestTop+6);
+  pm.addColorStop(0,"rgba(240,180,150,0.5)");
+  pm.addColorStop(0.5,"rgba(255,215,190,0.7)");
+  pm.addColorStop(1,"rgba(240,180,150,0.5)");
+  ctx.fillStyle=pm;
   ctx.beginPath();
-  ctx.ellipse(-4.5,chestTop+9,5,7,-0.16,0,6.2832);
+  ctx.ellipse(-5,chestTop+9,5.5,7,-0.14,0,6.2832);
   ctx.fill();
   ctx.beginPath();
-  ctx.ellipse(4.5,chestTop+9,5,7,0.16,0,6.2832);
+  ctx.ellipse(5,chestTop+9,5.5,7,0.14,0,6.2832);
   ctx.fill();
-
-  // 腹肌分隔线
-  ctx.strokeStyle="rgba(0,60,90,0.45)";
+  // 胸肌下缘阴影
+  ctx.strokeStyle="rgba(150,90,60,0.4)";
   ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.ellipse(-5,chestTop+9,5.5,7,-0.14,0,6.2832);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(5,chestTop+9,5.5,7,0.14,0,6.2832);
+  ctx.stroke();
+  ctx.restore();
+
+  // 腹肌（6块，明显）
+  ctx.save();
+  ctx.strokeStyle="rgba(150,90,60,0.55)";
+  ctx.lineWidth=1.2;
+  // 中线
   ctx.beginPath();
   ctx.moveTo(0,chestTop+16);
   ctx.lineTo(0,hipY-3);
   ctx.stroke();
+  // 横向三条
+  var segs=[chestTop+19,chestTop+23,chestTop+27];
+  for(var i=0;i<segs.length;i++){
+    if(segs[i]>=hipY-3) break;
+    ctx.beginPath();
+    ctx.moveTo(-6,segs[i]);
+    ctx.lineTo(6,segs[i]);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 缠手带（腹肌下方）
+  ctx.save();
+  ctx.fillStyle="#e8e0d8";
   ctx.beginPath();
-  ctx.moveTo(-6,chestTop+22);
-  ctx.lineTo(6,chestTop+22);
+  ctx.moveTo(-8,hipY-3);
+  ctx.lineTo(8,hipY-3);
+  ctx.lineTo(7.5,hipY+1);
+  ctx.lineTo(-7.5,hipY+1);
+  ctx.closePath();
+  ctx.fill();
+  // 绑带纹理
+  ctx.strokeStyle="rgba(160,140,120,0.5)";
+  ctx.lineWidth=0.8;
+  for(var k=-7;k<=7;k+=3.5){
+    ctx.beginPath();
+    ctx.moveTo(k,hipY-3);
+    ctx.lineTo(k,hipY+1);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.restore();
+
+  // 前腿
+  fightLeg(hipY,4.5,swing+tuck*0.6,true);
+  // 前臂 + 枪
+  var aimA=-0.22;
+  var armSwing=running?Math.sin(ph+3.1)*0.15:Math.sin(frame*1.8)*0.05;
+  fightShootArm(chestTop+7,aimA+armSwing,aimA-0.06+armSwing*0.5);
+
+  ctx.shadowBlur=0;
+
+  // ===== 头（寸头硬汉） =====
+  ctx.save();
+  // 脖子（粗壮）
+  ctx.fillStyle="#e0a880";
+  ctx.beginPath();
+  ctx.moveTo(-4.5,headY+headR-1);
+  ctx.lineTo(4.5,headY+headR-1);
+  ctx.lineTo(5,chestTop+2);
+  ctx.lineTo(-5,chestTop+2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 脸（肤色偏深）
+  var fg=ctx.createRadialGradient(-4,headY-4,1,0,headY,headR);
+  fg.addColorStop(0,"#f0c0a0");
+  fg.addColorStop(0.7,"#e0a880");
+  fg.addColorStop(1,"#c08860");
+  ctx.fillStyle=fg;
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,0,6.2832);
+  ctx.fill();
+
+  // 寸头
+  ctx.fillStyle="#3a2a1a";
+  ctx.beginPath();
+  ctx.arc(0,headY-headR*0.35,headR*0.9,Math.PI*0.95,Math.PI*2.05);
+  ctx.fill();
+
+  // 浓眉
+  ctx.strokeStyle="#3a2a1a";
+  ctx.lineWidth=2.2;
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.6,headY-headR*0.15);
+  ctx.lineTo(-headR*0.2,headY-headR*0.1);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(headR*0.6,headY-headR*0.15);
+  ctx.lineTo(headR*0.2,headY-headR*0.1);
   ctx.stroke();
 
-  // 胸口能量核
-  ctx.fillStyle="rgba(255,0,170,0.9)";
+  // 眼睛（坚毅）
+  ctx.fillStyle="#2a1a10";
   ctx.beginPath();
-  ctx.arc(0,chestTop+11,3.2,0,6.2832);
+  ctx.ellipse(-headR*0.4,headY+headR*0.05,headR*0.14,headR*0.1,0,0,6.2832);
   ctx.fill();
-  ctx.fillStyle="rgba(255,255,255,0.95)";
   ctx.beginPath();
-  ctx.arc(-0.8,chestTop+10,1.4,0,6.2832);
+  ctx.ellipse(headR*0.4,headY+headR*0.05,headR*0.14,headR*0.1,0,0,6.2832);
   ctx.fill();
 
+  // 胡茬
+  ctx.fillStyle="rgba(80,50,30,0.25)";
+  ctx.beginPath();
+  ctx.ellipse(0,headY+headR*0.5,headR*0.6,headR*0.3,0,0,6.2832);
+  ctx.fill();
+
+  // 霓虹描边
+  ctx.lineWidth=2;
+  ctx.strokeStyle="rgba(255,160,80,0.9)";
+  ctx.shadowBlur=(FQ>=2?12:0);
+  ctx.shadowColor="#ffa050";
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,-0.75,2.05);
+  ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function fightLeg(hy2,offX,angle,front){
+  var c1=front?"#e8b090":"#c89070";
+  var c2=front?"#d8a080":"#b07858";
+  ctx.save();
+  ctx.translate(offX,hy2);
+  ctx.rotate(angle*0.75);
+  var tg=ctx.createLinearGradient(-6,0,6,0);
+  tg.addColorStop(0,c1); tg.addColorStop(0.5,front?"#e0a888":"#c08868"); tg.addColorStop(1,c2);
+  ctx.fillStyle=tg;
+  ctx.beginPath();
+  ctx.moveTo(-6,0);
+  ctx.quadraticCurveTo(-6.5,10,-4.2,20);
+  ctx.lineTo(4.2,20);
+  ctx.quadraticCurveTo(6.5,10,6,0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.translate(0,20);
+  ctx.rotate(-angle*0.75*1.7+(angle>0.05?0.42:-0.06));
+  ctx.fillStyle=front?"#e0a888":"#c08868";
+  ctx.beginPath();
+  ctx.ellipse(0,0,4.6,4,0,0,6.2832);
+  ctx.fill();
+  var sg=ctx.createLinearGradient(-5,0,5,0);
+  sg.addColorStop(0,front?"#e0a888":"#c08868");
+  sg.addColorStop(0.55,front?"#d09878":"#b07858");
+  sg.addColorStop(1,front?"#c08868":"#a06848");
+  ctx.fillStyle=sg;
+  ctx.beginPath();
+  ctx.moveTo(-4.2,1);
+  ctx.quadraticCurveTo(-4.6,9,-3.2,17);
+  ctx.lineTo(3.2,17);
+  ctx.quadraticCurveTo(4.6,9,4.2,1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.translate(0,17);
+  ctx.fillStyle=front?"#d8a080":"#b07858";
+  ctx.beginPath();
+  ctx.ellipse(0,0,2.8,2,0,0,6.2832);
+  ctx.fill();
+  // 运动鞋
+  var shoe=ctx.createLinearGradient(-5,-2,9,6);
+  shoe.addColorStop(0,"#e8e0d8");
+  shoe.addColorStop(0.5,"#c8b8a8");
+  shoe.addColorStop(1,"#908070");
+  ctx.fillStyle=shoe;
+  ctx.beginPath();
+  ctx.moveTo(-4.5,0);
+  ctx.quadraticCurveTo(-5,3,-3,4.2);
+  ctx.lineTo(7,4.2);
+  ctx.quadraticCurveTo(8.5,3.2,7.5,0.6);
+  ctx.quadraticCurveTo(5,-1.2,2,-1.4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function fightArm(shY,angle,front){
+  ctx.save();
+  ctx.translate(-7,shY);
+  ctx.rotate(angle);
+  var g=ctx.createLinearGradient(-4,0,4,0);
+  g.addColorStop(0,front?"#e8b090":"#c89070");
+  g.addColorStop(0.5,front?"#d8a080":"#b07858");
+  g.addColorStop(1,front?"#c89070":"#a06848");
+  ctx.strokeStyle=g;
+  ctx.lineWidth=7;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,13); ctx.stroke();
+  ctx.translate(0,13);
+  ctx.rotate(0.85);
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,12); ctx.stroke();
+  ctx.fillStyle=front?"#d8a080":"#b07858";
+  ctx.beginPath();
+  ctx.arc(0,12,3,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+
+function fightShootArm(shY,upperA,foreA){
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#f0c0a0",sleeveDark:"#c08860",skin:"#e0a880",hand:"#f0c0a0"});
+}
+
+
+/* ============================================================
+   角色4：赛博武士（和风 + 霓虹 + 羽织披风 + 刀）
+============================================================ */
+function drawHeroSamurai(x,y,scale,facing,frame,onGround,vx){
+  var spd=_anim.spd;
+  var runT=_anim.run;                            // 跑步状态渐进 0~1
+  var airT=_anim.air;                            // 空中状态渐进 0~1
+  var running=runT>0.25;
+  var ph=_anim.ph;                               // 相位由位移驱动（脚步咬合地面）
+  // 步幅：速度越快摆得越大；双频叠加打破机械节拍
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  // 跑步时身体重心下压（髋部随步伐起伏）
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);     // 跑姿额外前倾
+  // 腾空：双腿前后分叉（前腿抬、后腿伸），非对称预备落地
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
+
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(facing*scale,scale);
+
+  // 地面投影
+  ctx.save();
+  ctx.globalAlpha=onGround?0.3:0.14;
+  ctx.fillStyle="#c04080";
+  ctx.beginPath();
+  ctx.ellipse(0,0,17,5,0,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.rotate(lean);
+
+  var hipY=-30+bob;
+  var chestTop=-66+bob;
+  var headR=13;
+  var headY=-82+bob;
+
+  // 羽织披风（底层，飘动）
+  samuraiCloak(headY, headR, ph);
+
+  // 后腿
+  samuraiLeg(hipY,-4.5,-(swing+tuck*0.6),false);
+  // 后臂
+  samuraiArm(chestTop+6,-0.9-swing*0.35,false);
+
+  // ===== 躯干：和服 =====
+  ctx.save();
+  // 身体（肤色）
+  var body=ctx.createLinearGradient(-16,0,16,0);
+  body.addColorStop(0,"#ffdcc8");
+  body.addColorStop(0.5,"#f5c8b0");
+  body.addColorStop(1,"#e0a890");
+  ctx.fillStyle=body;
+  ctx.beginPath();
+  ctx.moveTo(-9,chestTop);
+  ctx.lineTo(9,chestTop);
+  ctx.quadraticCurveTo(11,chestTop+12,7.5,hipY);
+  ctx.lineTo(-7.5,hipY);
+  ctx.quadraticCurveTo(-11,chestTop+12,-9,chestTop);
+  ctx.closePath();
+  ctx.fill();
+
+  // 和服上衣（深色，交领）
+  ctx.save();
+  var km=ctx.createLinearGradient(-10,chestTop,10,chestTop);
+  km.addColorStop(0,"#2a1a3a");
+  km.addColorStop(0.5,"#3a2a4a");
+  km.addColorStop(1,"#1a0e2a");
+  ctx.fillStyle=km;
+  ctx.beginPath();
+  ctx.moveTo(-10,chestTop+1);
+  ctx.lineTo(10,chestTop+1);
+  ctx.lineTo(8.5,chestTop+15);
+  ctx.lineTo(6,chestTop+21);
+  ctx.lineTo(-6,chestTop+21);
+  ctx.lineTo(-8.5,chestTop+15);
+  ctx.closePath();
+  ctx.fill();
+  // 交领（右衽，亮边）
+  ctx.fillStyle="#c04080";
+  ctx.beginPath();
+  ctx.moveTo(-6,chestTop+2);
+  ctx.lineTo(6,chestTop+2);
+  ctx.lineTo(2,chestTop+14);
+  ctx.lineTo(-4,chestTop+14);
+  ctx.closePath();
+  ctx.fill();
+  // 霓虹腰带
+  ctx.fillStyle="#c04080";
+  ctx.shadowBlur=(FQ>=2?6:0);
+  ctx.shadowColor="#c04080";
+  ctx.beginPath();
+  ctx.moveTo(-8,chestTop+15);
+  ctx.lineTo(8,chestTop+15);
+  ctx.lineTo(8,chestTop+19);
+  ctx.lineTo(-8,chestTop+19);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  // 下摆（裙袴）
+  ctx.save();
+  var hk=ctx.createLinearGradient(-8,chestTop+20,8,chestTop+20);
+  hk.addColorStop(0,"#3a2a4a");
+  hk.addColorStop(0.5,"#4a3a5a");
+  hk.addColorStop(1,"#2a1a3a");
+  ctx.fillStyle=hk;
+  ctx.beginPath();
+  ctx.moveTo(-7,chestTop+19);
+  ctx.lineTo(7,chestTop+19);
+  ctx.lineTo(9,hipY-1);
+  ctx.lineTo(-9,hipY-1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  ctx.restore();
+
+  // 前腿
+  samuraiLeg(hipY,4.5,swing+tuck*0.6,true);
+  // 前臂 + 枪
+  var aimA=-0.22;
+  var armSwing=running?Math.sin(ph+3.1)*0.15:Math.sin(frame*1.8)*0.05;
+  samuraiShootArm(chestTop+7,aimA+armSwing,aimA-0.06+armSwing*0.5);
+
+  ctx.shadowBlur=0;
+
+  // ===== 头（武士 + 护额） =====
+  ctx.save();
+  // 脖子
+  ctx.fillStyle="#f5c8b0";
+  ctx.beginPath();
+  ctx.moveTo(-3.5,headY+headR-1);
+  ctx.lineTo(3.5,headY+headR-1);
+  ctx.lineTo(4,chestTop+2);
+  ctx.lineTo(-4,chestTop+2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 脸
+  var fg=ctx.createRadialGradient(-4,headY-4,1,0,headY,headR);
+  fg.addColorStop(0,"#fff0e8");
+  fg.addColorStop(0.7,"#f0d0b8");
+  fg.addColorStop(1,"#d8a888");
+  ctx.fillStyle=fg;
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,0,6.2832);
+  ctx.fill();
+
+  // 头发（扎起）
+  ctx.save();
+  ctx.fillStyle="#1a0e2a";
+  ctx.beginPath();
+  ctx.arc(0,headY-headR*0.35,headR*0.9,Math.PI*0.95,Math.PI*2.05);
+  ctx.fill();
+  // 发髻
+  ctx.beginPath();
+  ctx.arc(0,headY-headR*0.7,headR*0.4,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+
+  // 护额（金属条 + 霓虹点）
+  ctx.save();
+  ctx.fillStyle="#5a7088";
+  ctx.beginPath();
+  ctx.moveTo(-headR,headY-headR*0.15);
+  ctx.lineTo(headR,headY-headR*0.15);
+  ctx.lineTo(headR,headY-headR*0.02);
+  ctx.lineTo(-headR,headY-headR*0.02);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle="#ff40c0";
+  ctx.shadowBlur=(FQ>=2?6:0);
+  ctx.shadowColor="#ff40c0";
+  ctx.beginPath();
+  ctx.arc(0,headY-headR*0.085,2,0,6.2832);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  // 眼睛（凌厉）
+  ctx.strokeStyle="#2a1a10";
+  ctx.lineWidth=1.8;
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.55,headY+headR*0.05);
+  ctx.lineTo(-headR*0.25,headY+headR*0.08);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(headR*0.55,headY+headR*0.05);
+  ctx.lineTo(headR*0.25,headY+headR*0.08);
+  ctx.stroke();
+  ctx.fillStyle="#2a1a10";
+  ctx.beginPath();
+  ctx.arc(-headR*0.4,headY+headR*0.07,1.2,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(headR*0.4,headY+headR*0.07,1.2,0,6.2832);
+  ctx.fill();
+
+  // 霓虹描边（粉紫）
+  ctx.lineWidth=2;
+  ctx.strokeStyle="rgba(255,64,192,0.95)";
+  ctx.shadowBlur=(FQ>=2?12:0);
+  ctx.shadowColor="#ff40c0";
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,-0.75,2.05);
+  ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function samuraiCloak(hy,hr,ph){
+  ctx.save();
+  var wave=Math.sin(ph*0.5)*3;
+  var cg=ctx.createLinearGradient(-hr*0.5,hy,-hr*2.6,hy+hr*1.5);
+  cg.addColorStop(0,"#4a2a5a");
+  cg.addColorStop(0.5,"#3a1a4a");
+  cg.addColorStop(1,"#1a0a2a");
+  ctx.fillStyle=cg;
+  ctx.beginPath();
+  ctx.moveTo(-hr*0.6,hy-hr*0.2);
+  ctx.quadraticCurveTo(-hr*2.0,hy+hr*0.6+wave,-hr*2.4,hy+hr*1.8+wave);
+  ctx.quadraticCurveTo(-hr*1.0,hy+hr*1.9+wave,-hr*0.4,hy+hr*0.9);
+  ctx.quadraticCurveTo(-hr*0.5,hy+hr*0.3,-hr*0.6,hy-hr*0.2);
+  ctx.closePath();
+  ctx.fill();
+  // 羽织边（霓虹）
+  ctx.strokeStyle="rgba(255,64,192,0.6)";
+  ctx.lineWidth=1.2;
+  ctx.beginPath();
+  ctx.moveTo(-hr*0.6,hy-hr*0.2);
+  ctx.quadraticCurveTo(-hr*2.0,hy+hr*0.6+wave,-hr*2.4,hy+hr*1.8+wave);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function samuraiLeg(hy2,offX,angle,front){
+  var c1=front?"#f5c8b0":"#d8a088";
+  var c2=front?"#e0a890":"#c08868";
+  ctx.save();
+  ctx.translate(offX,hy2);
+  ctx.rotate(angle*0.75);
+  var tg=ctx.createLinearGradient(-6,0,6,0);
+  tg.addColorStop(0,c1); tg.addColorStop(0.5,front?"#e8b898":"#c89070"); tg.addColorStop(1,c2);
+  ctx.fillStyle=tg;
+  ctx.beginPath();
+  ctx.moveTo(-6,0);
+  ctx.quadraticCurveTo(-6.5,10,-4.2,20);
+  ctx.lineTo(4.2,20);
+  ctx.quadraticCurveTo(6.5,10,6,0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.translate(0,20);
+  ctx.rotate(-angle*0.75*1.7+(angle>0.05?0.42:-0.06));
+  ctx.fillStyle=front?"#e8b898":"#c89070";
+  ctx.beginPath();
+  ctx.ellipse(0,0,4.6,4,0,0,6.2832);
+  ctx.fill();
+  var sg=ctx.createLinearGradient(-5,0,5,0);
+  sg.addColorStop(0,front?"#e8b898":"#c89070");
+  sg.addColorStop(0.55,front?"#d8a888":"#b07858");
+  sg.addColorStop(1,front?"#c89070":"#a06848");
+  ctx.fillStyle=sg;
+  ctx.beginPath();
+  ctx.moveTo(-4.2,1);
+  ctx.quadraticCurveTo(-4.6,9,-3.2,17);
+  ctx.lineTo(3.2,17);
+  ctx.quadraticCurveTo(4.6,9,4.2,1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.translate(0,17);
+  ctx.fillStyle=front?"#e0a890":"#c08868";
+  ctx.beginPath();
+  ctx.ellipse(0,0,2.8,2,0,0,6.2832);
+  ctx.fill();
+  // 草鞋（木屐）
+  ctx.fillStyle="#8a6040";
+  ctx.beginPath();
+  ctx.moveTo(-4.5,0);
+  ctx.quadraticCurveTo(-5,3,-3,4.2);
+  ctx.lineTo(7,4.2);
+  ctx.quadraticCurveTo(8.5,3.2,7.5,0.6);
+  ctx.quadraticCurveTo(5,-1.2,2,-1.4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle="#c04080";
+  ctx.beginPath();
+  ctx.moveTo(-4,1);
+  ctx.lineTo(6,1);
+  ctx.lineTo(6,1.8);
+  ctx.lineTo(-4,1.8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function samuraiArm(shY,angle,front){
+  ctx.save();
+  ctx.translate(-7,shY);
+  ctx.rotate(angle);
+  var g=ctx.createLinearGradient(-4,0,4,0);
+  g.addColorStop(0,front?"#f5c8b0":"#d8a088");
+  g.addColorStop(0.5,front?"#e8b898":"#c89070");
+  g.addColorStop(1,front?"#d8a088":"#b07858");
+  ctx.strokeStyle=g;
+  ctx.lineWidth=6.5;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,13); ctx.stroke();
+  ctx.translate(0,13);
+  ctx.rotate(0.85);
+  ctx.lineWidth=5.5;
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,12); ctx.stroke();
+  ctx.fillStyle=front?"#e8b898":"#c89070";
+  ctx.beginPath();
+  ctx.arc(0,12,2.8,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+
+function samuraiShootArm(shY,upperA,foreA){
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#3a2a4a",sleeveDark:"#1a0e2a",skin:"#e8b898",hand:"#f5c8b0"});
+}
+
+/* ============================================================
+   角色5：女仆鲸娘（蓝渐变长发 + 女仆头饰 + 鲸尾 + 哥特女仆裙）
+============================================================ */
+function drawHeroMaid(x,y,scale,facing,frame,onGround,vx){
+  var spd=_anim.spd;
+  var runT=_anim.run;
+  var airT=_anim.air;
+  var running=runT>0.25;
+  var ph=_anim.ph;
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
+
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(facing*scale,scale);
+
+  // 地面投影
+  ctx.save();
+  ctx.globalAlpha=onGround?0.3:0.14;
+  ctx.fillStyle="#5080d0";
+  ctx.beginPath();
+  ctx.ellipse(0,0,16,5,0,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.rotate(lean);
+
+  var hipY=-30+bob;
+  var chestTop=-66+bob;
+  var headR=13;
+  var headY=-82+bob;
+
+  // ===== 鲸尾（画在最底层，随跑动摇摆）=====
+  maidTail(hipY, ph, runT);
+  // ===== 长发底层（飘动）=====
+  maidHairBack(headY, headR, ph, runT);
+
+  // 后腿
+  maidLeg(hipY,-4.5,-(swing+tuck*0.6),false);
+  // 后臂
+  maidArm(chestTop+6,-0.9-swing*0.35,false);
+
+  // ===== 躯干：哥特女仆裙 =====
+  ctx.save();
+  // 身体（肤色）
+  var body=ctx.createLinearGradient(-16,0,16,0);
+  body.addColorStop(0,"#fff0ea");
+  body.addColorStop(0.5,"#ffe4d8");
+  body.addColorStop(1,"#f0c8b8");
+  ctx.fillStyle=body;
+  ctx.beginPath();
+  ctx.moveTo(-9,chestTop);
+  ctx.lineTo(9,chestTop);
+  ctx.quadraticCurveTo(11,chestTop+12,7.5,hipY);
+  ctx.lineTo(-7.5,hipY);
+  ctx.quadraticCurveTo(-11,chestTop+12,-9,chestTop);
+  ctx.closePath();
+  ctx.fill();
+
+  // 女仆连衣裙主体（深蓝黑）
+  ctx.save();
+  var dk=ctx.createLinearGradient(-10,chestTop,10,chestTop);
+  dk.addColorStop(0,"#2a3050");
+  dk.addColorStop(0.5,"#1a2038");
+  dk.addColorStop(1,"#12182c");
+  ctx.fillStyle=dk;
+  ctx.beginPath();
+  ctx.moveTo(-10,chestTop+1);
+  ctx.lineTo(10,chestTop+1);
+  ctx.lineTo(9,chestTop+16);
+  ctx.lineTo(10,hipY-2);
+  ctx.lineTo(-10,hipY-2);
+  ctx.lineTo(-9,chestTop+16);
+  ctx.closePath();
+  ctx.fill();
+
+  // 白色衬衫胸前部分
+  ctx.fillStyle="#f8f4f0";
+  ctx.beginPath();
+  ctx.moveTo(-5.5,chestTop+2);
+  ctx.lineTo(5.5,chestTop+2);
+  ctx.lineTo(4.5,chestTop+15);
+  ctx.lineTo(-4.5,chestTop+15);
+  ctx.closePath();
+  ctx.fill();
+  // 胸前纽扣
+  ctx.fillStyle="#8a90a8";
+  for(var bn=0;bn<3;bn++){
+    ctx.beginPath();
+    ctx.arc(0,chestTop+5+bn*3.4,0.9,0,6.2832);
+    ctx.fill();
+  }
+
+  // 蓝宝石领结
+  ctx.save();
+  ctx.fillStyle="#1a3a6a";
+  ctx.beginPath();
+  ctx.moveTo(0,chestTop+3);
+  ctx.quadraticCurveTo(-4.5,chestTop+5.5,-3,chestTop+8);
+  ctx.quadraticCurveTo(0,chestTop+7,0,chestTop+3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0,chestTop+3);
+  ctx.quadraticCurveTo(4.5,chestTop+5.5,3,chestTop+8);
+  ctx.quadraticCurveTo(0,chestTop+7,0,chestTop+3);
+  ctx.closePath();
+  ctx.fill();
+  // 蓝宝石
+  ctx.fillStyle="#3a7ade";
+  ctx.shadowBlur=(FQ>=2?6:0);
+  ctx.shadowColor="#3a7ade";
+  ctx.beginPath();
+  ctx.arc(0,chestTop+5.2,1.4,0,6.2832);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  // 白色围裙（带鲸鱼图案）
+  ctx.fillStyle="#fbf8f4";
+  ctx.beginPath();
+  ctx.moveTo(-6,chestTop+13);
+  ctx.lineTo(6,chestTop+13);
+  ctx.lineTo(7,hipY-6);
+  ctx.quadraticCurveTo(0,hipY-4,-7,hipY-6);
+  ctx.closePath();
+  ctx.fill();
+  // 围裙上的小鲸鱼
+  ctx.fillStyle="#5a8ad0";
+  ctx.beginPath();
+  ctx.ellipse(0,chestTop+19,2.4,1.4,0,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(1.6,chestTop+19);
+  ctx.lineTo(3,chestTop+18);
+  ctx.lineTo(3,chestTop+20);
+  ctx.closePath();
+  ctx.fill();
+
+  // 裙摆（深蓝 + 白蕾丝边两层）
+  var sk=ctx.createLinearGradient(-10,0,10,0);
+  sk.addColorStop(0,"#2a3050");
+  sk.addColorStop(0.5,"#1e2440");
+  sk.addColorStop(1,"#141a30");
+  ctx.fillStyle=sk;
+  ctx.beginPath();
+  ctx.moveTo(-9,chestTop+18);
+  ctx.lineTo(9,chestTop+18);
+  ctx.lineTo(11,hipY+2);
+  ctx.lineTo(-11,hipY+2);
+  ctx.closePath();
+  ctx.fill();
+  // 蕾丝边（白色扇贝边）
+  ctx.fillStyle="#f8f4f0";
+  ctx.beginPath();
+  ctx.moveTo(-11,hipY+2);
+  for(var lc=0;lc<6;lc++){
+    var lx=-11+lc*(22/5);
+    ctx.quadraticCurveTo(lx+11/6,hipY+5,lx+22/5,hipY+2);
+  }
+  ctx.lineTo(11,hipY+0.5);
+  ctx.lineTo(-11,hipY+0.5);
+  ctx.closePath();
+  ctx.fill();
+  // 金色星星点缀（裙摆）
+  ctx.fillStyle="rgba(200,170,110,0.8)";
+  for(var st=0;st<3;st++){
+    var sx=-6+st*6, sy=chestTop+24+(st%2)*4;
+    ctx.fillRect(sx-0.8,sy-2.2,1.6,4.4);
+    ctx.fillRect(sx-2.2,sy-0.8,4.4,1.6);
+  }
+  ctx.restore();
+  ctx.restore();
+
+  // 前腿
+  maidLeg(hipY,4.5,swing+tuck*0.6,true);
+  // 前臂 + 枪
+  var aimA=-0.22;
+  var armSwing=running?Math.sin(ph+3.1)*0.15:Math.sin(frame*1.8)*0.05;
+  maidShootArm(chestTop+7,aimA+armSwing,aimA-0.06+armSwing*0.5);
+
+  ctx.shadowBlur=0;
+
+  // ===== 头 =====
+  ctx.save();
+  // 脖子
+  ctx.fillStyle="#ffe4d8";
+  ctx.beginPath();
+  ctx.moveTo(-3.5,headY+headR-1);
+  ctx.lineTo(3.5,headY+headR-1);
+  ctx.lineTo(4,chestTop+2);
+  ctx.lineTo(-4,chestTop+2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 脸
+  var fg=ctx.createRadialGradient(-4,headY-4,1,0,headY,headR);
+  fg.addColorStop(0,"#fff8f4");
+  fg.addColorStop(0.72,"#ffeee6");
+  fg.addColorStop(1,"#f5d0c0");
+  ctx.fillStyle=fg;
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,0,6.2832);
+  ctx.fill();
+
+  // 角状发鳍（两侧的深蓝色鳍耳）
+  ctx.fillStyle="#2a3a68";
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.75,headY-headR*0.25);
+  ctx.quadraticCurveTo(-headR*1.45,headY-headR*0.15,-headR*1.35,headY+headR*0.28);
+  ctx.quadraticCurveTo(-headR*0.95,headY+headR*0.12,-headR*0.68,headY+headR*0.15);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(headR*0.75,headY-headR*0.25);
+  ctx.quadraticCurveTo(headR*1.45,headY-headR*0.15,headR*1.35,headY+headR*0.28);
+  ctx.quadraticCurveTo(headR*0.95,headY+headR*0.12,headR*0.68,headY+headR*0.15);
+  ctx.closePath();
+  ctx.fill();
+  // 鳍内侧（浅蓝）
+  ctx.fillStyle="#5a7ab8";
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.85,headY-headR*0.12);
+  ctx.quadraticCurveTo(-headR*1.25,headY-headR*0.05,-headR*1.18,headY+headR*0.2);
+  ctx.quadraticCurveTo(-headR*0.95,headY+headR*0.08,-headR*0.78,headY+headR*0.1);
+  ctx.closePath();
+  ctx.fill();
+
+  // 头发主体（深蓝，刘海）
+  ctx.fillStyle="#3a4a80";
+  ctx.beginPath();
+  ctx.arc(0,headY-headR*0.42,headR*0.96,Math.PI*0.88,Math.PI*2.12);
+  ctx.fill();
+  // 锯齿刘海
+  ctx.fillStyle="#3a4a80";
+  ctx.beginPath();
+  ctx.moveTo(-headR,headY-headR*0.28);
+  ctx.lineTo(-headR*0.72,headY-headR*0.1);
+  ctx.lineTo(-headR*0.45,headY-headR*0.34);
+  ctx.lineTo(-headR*0.12,headY-headR*0.12);
+  ctx.lineTo(headR*0.2,headY-headR*0.36);
+  ctx.lineTo(headR*0.5,headY-headR*0.14);
+  ctx.lineTo(headR*0.78,headY-headR*0.34);
+  ctx.lineTo(headR,headY-headR*0.24);
+  ctx.quadraticCurveTo(headR*0.4,headY-headR*0.55,-headR*0.4,headY-headR*0.55);
+  ctx.closePath();
+  ctx.fill();
+  // 发丝高光
+  ctx.strokeStyle="rgba(120,170,240,0.55)";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.5,headY-headR*0.5);
+  ctx.quadraticCurveTo(-headR*0.3,headY-headR*0.32,-headR*0.35,headY-headR*0.14);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(headR*0.25,headY-headR*0.5);
+  ctx.quadraticCurveTo(headR*0.42,headY-headR*0.3,headR*0.36,headY-headR*0.14);
+  ctx.stroke();
+
+  // 女仆头饰（白色褶边带）
+  ctx.fillStyle="#fdfbf8";
+  ctx.beginPath();
+  ctx.ellipse(0,headY-headR*0.62,headR*0.95,headR*0.3,0,Math.PI,Math.PI*2);
+  ctx.fill();
+  // 头饰褶皱
+  ctx.strokeStyle="rgba(180,180,195,0.6)";
+  ctx.lineWidth=0.7;
+  for(var rf=-3;rf<=3;rf++){
+    var rx=rf*headR*0.26;
+    ctx.beginPath();
+    ctx.moveTo(rx,headY-headR*0.72);
+    ctx.lineTo(rx*0.9,headY-headR*0.52);
+    ctx.stroke();
+  }
+  // 头饰蓝色蝴蝶结（左侧）
+  ctx.fillStyle="#4a8ade";
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.8,headY-headR*0.5);
+  ctx.lineTo(-headR*1.15,headY-headR*0.62);
+  ctx.lineTo(-headR*1.05,headY-headR*0.38);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.8,headY-headR*0.5);
+  ctx.lineTo(-headR*0.5,headY-headR*0.66);
+  ctx.lineTo(-headR*0.52,headY-headR*0.4);
+  ctx.closePath();
+  ctx.fill();
+
+  // 大眼（水蓝色）
+  maidEyes(headY, headR);
+  // 腮红
+  ctx.fillStyle="rgba(255,150,160,0.35)";
+  ctx.beginPath();
+  ctx.ellipse(-headR*0.58,headY+headR*0.28,headR*0.16,headR*0.1,0,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(headR*0.58,headY+headR*0.28,headR*0.16,headR*0.1,0,0,6.2832);
+  ctx.fill();
+
+  // 霓虹描边（水蓝）
+  ctx.lineWidth=2;
+  ctx.strokeStyle="rgba(90,160,255,0.95)";
+  ctx.shadowBlur=(FQ>=2?12:0);
+  ctx.shadowColor="#5aa0ff";
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,-0.75,2.05);
+  ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/* --- 鲸尾（分叉尾鳍，随跑动摇摆）--- */
+function maidTail(hy, ph, runT){
+  ctx.save();
+  var wag=Math.sin(ph*0.5)*0.5*runT+Math.sin(ph*0.23)*0.25;
+  var tg=ctx.createLinearGradient(0,hy,20,hy+26);
+  tg.addColorStop(0,"#3a4a80");
+  tg.addColorStop(0.6,"#5a7ab8");
+  tg.addColorStop(1,"#8ab0e0");
+  ctx.fillStyle=tg;
+  ctx.translate(6,hy-6);
+  ctx.rotate(0.5+wag*0.3);
+  // 尾根
+  ctx.beginPath();
+  ctx.moveTo(-3,0);
+  ctx.quadraticCurveTo(6,10,10,20);
+  ctx.lineTo(4,22);
+  ctx.quadraticCurveTo(0,10,-6,2);
+  ctx.closePath();
+  ctx.fill();
+  // 分叉尾鳍
+  ctx.beginPath();
+  ctx.moveTo(10,20);
+  ctx.quadraticCurveTo(16,18,20,24);
+  ctx.quadraticCurveTo(14,24,12,28);
+  ctx.quadraticCurveTo(10,24,7,27);
+  ctx.quadraticCurveTo(6,22,10,20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/* --- 长发底层（蓝色渐变，飘动）--- */
+function maidHairBack(hy, hr, ph, runT){
+  ctx.save();
+  var wave=Math.sin(ph*0.5)*2.5*(0.4+runT*0.6);
+  var hg=ctx.createLinearGradient(-hr,hy,-hr*2.3,hy+hr*1.8);
+  hg.addColorStop(0,"#3a4a80");
+  hg.addColorStop(0.45,"#5a7ab8");
+  hg.addColorStop(0.8,"#8ab0e0");
+  hg.addColorStop(1,"#a8c8e8");
+  ctx.fillStyle=hg;
+  // 后侧长发（大波浪轮廓）
+  ctx.beginPath();
+  ctx.moveTo(-hr*0.7,hy-hr*0.3);
+  ctx.quadraticCurveTo(-hr*2.0,hy+hr*0.4+wave,-hr*2.15,hy+hr*1.7+wave);
+  ctx.quadraticCurveTo(-hr*1.7,hy+hr*1.55+wave*0.7,-hr*1.5,hy+hr*1.75+wave*0.7);
+  ctx.quadraticCurveTo(-hr*1.2,hy+hr*1.5+wave*0.5,-hr*1.0,hy+hr*1.8+wave*0.5);
+  ctx.quadraticCurveTo(-hr*0.75,hy+hr*1.5+wave*0.3,-hr*0.55,hy+hr*1.6);
+  ctx.quadraticCurveTo(-hr*0.45,hy+hr*0.5,-hr*0.7,hy-hr*0.3);
+  ctx.closePath();
+  ctx.fill();
+  // 卷发高光丝
+  ctx.strokeStyle="rgba(150,195,245,0.5)";
+  ctx.lineWidth=1.2;
+  ctx.beginPath();
+  ctx.moveTo(-hr*1.1,hy+hr*0.3+wave);
+  ctx.quadraticCurveTo(-hr*1.5,hy+hr*0.9+wave,-hr*1.6,hy+hr*1.5+wave);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-hr*0.8,hy+hr*0.5+wave*0.7);
+  ctx.quadraticCurveTo(-hr*1.05,hy+hr*1.0+wave*0.7,-hr*1.1,hy+hr*1.5+wave*0.6);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* --- 大眼（水蓝色，双高光）--- */
+function maidEyes(hy,hr){
+  var ex=hr*0.4, ey=hy+hr*0.1;
+  ctx.fillStyle="rgba(255,255,255,0.98)";
+  ctx.beginPath(); ctx.ellipse(-ex,ey,hr*0.32,hr*0.4,-0.08,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(ex,ey,hr*0.32,hr*0.4,0.08,0,6.2832); ctx.fill();
+  var p1=ctx.createRadialGradient(-ex,ey-hr*0.05,0.5,-ex,ey,hr*0.3);
+  p1.addColorStop(0,"#9ad0ff"); p1.addColorStop(0.6,"#3a7ade"); p1.addColorStop(1,"#1a3a7a");
+  ctx.fillStyle=p1;
+  ctx.beginPath(); ctx.arc(-ex,ey,hr*0.28,0,6.2832); ctx.fill();
+  var p2=ctx.createRadialGradient(ex,ey-hr*0.05,0.5,ex,ey,hr*0.3);
+  p2.addColorStop(0,"#9ad0ff"); p2.addColorStop(0.6,"#3a7ade"); p2.addColorStop(1,"#1a3a7a");
+  ctx.fillStyle=p2;
+  ctx.beginPath(); ctx.arc(ex,ey,hr*0.28,0,6.2832); ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,0.98)";
+  ctx.beginPath(); ctx.arc(-ex-hr*0.09,ey-hr*0.13,hr*0.12,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(ex-hr*0.09,ey-hr*0.13,hr*0.12,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(-ex+hr*0.09,ey+hr*0.11,hr*0.06,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(ex+hr*0.09,ey+hr*0.11,hr*0.06,0,6.2832); ctx.fill();
+  ctx.strokeStyle="rgba(30,30,60,0.9)";
+  ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.arc(-ex,ey,hr*0.36,Math.PI*1.1,Math.PI*1.95); ctx.stroke();
+  ctx.beginPath(); ctx.arc(ex,ey,hr*0.36,Math.PI*1.05,Math.PI*1.9); ctx.stroke();
+}
+
+/* --- 腿（白丝过膝袜 + 黑色高跟鞋 + 蝴蝶结）--- */
+function maidLeg(hy2,offX,angle,front){
+  var skin1=front?"#ffe4d8":"#f0c8b8";
+  var skin2=front?"#f5d5c5":"#e0b0a0";
+  ctx.save();
+  ctx.translate(offX,hy2);
+  ctx.rotate(angle*0.75);
+  // 大腿（肤色）
+  var tg=ctx.createLinearGradient(-6,0,6,0);
+  tg.addColorStop(0,skin1); tg.addColorStop(0.5,front?"#ffddd0":"#e8b8a8"); tg.addColorStop(1,skin2);
+  ctx.fillStyle=tg;
+  ctx.beginPath();
+  ctx.moveTo(-6,0);
+  ctx.quadraticCurveTo(-6.5,10,-4.2,14);
+  ctx.lineTo(4.2,14);
+  ctx.quadraticCurveTo(6.5,10,6,0);
+  ctx.closePath();
+  ctx.fill();
+  // 过膝袜口（白蕾丝）
+  ctx.fillStyle="#fdfbf8";
+  ctx.fillRect(-5.2,13,10.4,2.6);
+  ctx.fillStyle="rgba(200,200,215,0.7)";
+  for(var lc=0;lc<5;lc++){
+    ctx.beginPath();
+    ctx.arc(-5.2+lc*2.6+1.3,15.6,0.9,0,Math.PI);
+    ctx.fill();
+  }
+  // 小腿（白色丝袜）
+  ctx.translate(0,15);
+  ctx.rotate(-angle*0.75*1.7+(angle>0.05?0.42:-0.06));
+  var sg=ctx.createLinearGradient(-4.5,0,4.5,0);
+  sg.addColorStop(0,"#ffffff");
+  sg.addColorStop(0.5,"#f8f5f5");
+  sg.addColorStop(1,"#e8e0e5");
+  ctx.fillStyle=sg;
+  ctx.beginPath();
+  ctx.moveTo(-4,1);
+  ctx.quadraticCurveTo(-4.4,9,-3.1,16);
+  ctx.lineTo(3.1,16);
+  ctx.quadraticCurveTo(4.4,9,4,1);
+  ctx.closePath();
+  ctx.fill();
+  // 袜口蝴蝶结（黑色小蝴蝶结）
+  ctx.fillStyle="#1a2038";
+  ctx.beginPath();
+  ctx.ellipse(-1.6,1,1.3,0.8,0.3,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(1.6,1,1.3,0.8,-0.3,0,6.2832);
+  ctx.fill();
+  ctx.translate(0,16);
+  // 脚踝
+  ctx.fillStyle="#f0ece8";
+  ctx.beginPath();
+  ctx.ellipse(0,0,2.6,1.8,0,0,6.2832);
+  ctx.fill();
+  // 黑色高跟鞋（带跟 + 金色小蝴蝶结）
+  ctx.fillStyle="#12182c";
+  ctx.beginPath();
+  ctx.moveTo(-4.2,-1);
+  ctx.quadraticCurveTo(-4.8,2.4,-2.8,3.6);
+  ctx.lineTo(6.2,3.6);
+  ctx.quadraticCurveTo(7.8,2.6,6.8,0.2);
+  ctx.quadraticCurveTo(4.5,-1.6,1.5,-1.8);
+  ctx.closePath();
+  ctx.fill();
+  // 鞋跟
+  ctx.fillStyle="#0a0e1e";
+  ctx.fillRect(5.4,3.4,1.8,2.2);
+  // 金色小蝴蝶结
+  ctx.fillStyle="#c8a860";
+  ctx.beginPath();
+  ctx.ellipse(-0.8,0.2,1,0.6,0.3,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(1,0.2,1,0.6,-0.3,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+
+/* --- 手臂（深蓝袖 + 白蕾丝袖口）--- */
+function maidArm(shY,angle,front){
+  ctx.save();
+  ctx.translate(-7,shY);
+  ctx.rotate(angle);
+  // 袖子（深蓝泡泡袖）
+  var g=ctx.createLinearGradient(-4,0,4,0);
+  g.addColorStop(0,front?"#2e3454":"#1e2440");
+  g.addColorStop(0.5,front?"#242a48":"#161c34");
+  g.addColorStop(1,front?"#1a2038":"#101628");
+  ctx.strokeStyle=g;
+  ctx.lineWidth=6.5;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,10); ctx.stroke();
+  // 蕾丝袖口
+  ctx.strokeStyle="#f8f4f0";
+  ctx.lineWidth=5;
+  ctx.beginPath();
+  ctx.moveTo(0,10); ctx.lineTo(0,12.5); ctx.stroke();
+  // 前臂（肤色）
+  ctx.strokeStyle=front?"#ffe4d8":"#e8b8a8";
+  ctx.lineWidth=5;
+  ctx.beginPath();
+  ctx.moveTo(0,12.5); ctx.lineTo(0,22); ctx.stroke();
+  // 手
+  ctx.fillStyle=front?"#ffe4d8":"#e8b8a8";
+  ctx.beginPath();
+  ctx.arc(0,23,2.6,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+
+/* --- 持枪臂 --- */
+function maidShootArm(shY,upperA,foreA){
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#2a3050",sleeveDark:"#12182c",cuff:"#f8f4f0",skin:"#ffe4d8",hand:"#fff0ea"});
+}
+
+
+
+
+/* ============================================================
+   角色1：机甲战士（装甲板 + 肩甲 + 胸甲 + 机械关节 + 推进器）
+============================================================ */
+function drawHeroMech(x,y,scale,facing,frame,onGround,vx){
+  var spd=_anim.spd;
+  var runT=_anim.run;                            // 跑步状态渐进 0~1
+  var airT=_anim.air;                            // 空中状态渐进 0~1
+  var running=runT>0.25;
+  var ph=_anim.ph;                               // 相位由位移驱动（脚步咬合地面）
+  // 步幅：速度越快摆得越大；双频叠加打破机械节拍
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  // 跑步时身体重心下压（髋部随步伐起伏）
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);     // 跑姿额外前倾
+  // 腾空：双腿前后分叉（前腿抬、后腿伸），非对称预备落地
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
+
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(facing*scale,scale);
+
+  // 地面投影
+  ctx.save();
+  ctx.globalAlpha=onGround?0.3:0.14;
+  ctx.fillStyle="#0096d6";
+  ctx.beginPath();
+  ctx.ellipse(0,0,18,5.5,0,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.rotate(lean);
+
+  var hipY=-30+bob;
+  var chestTop=-66+bob;
+  var headR=13;
+  var headY=-82+bob;
+
+  // 推进器火焰（跑动时）
+  if(running){
+    ctx.save();
+    ctx.globalCompositeOperation="lighter";
+    var fl=ctx.createRadialGradient(0,2,1,0,2,16);
+    fl.addColorStop(0,"rgba(120,240,255,0.9)");
+    fl.addColorStop(0.4,"rgba(0,180,255,0.6)");
+    fl.addColorStop(1,"rgba(0,80,160,0)");
+    ctx.fillStyle=fl;
+    ctx.beginPath();
+    ctx.ellipse(0,6,7,14,0,0,6.2832);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 后腿
+  mechLeg(hipY,-4.5,-(swing+tuck*0.6),false);
+  // 后臂
+  mechArm(chestTop+6,-0.9-swing*0.35,false);
+
+  // ===== 躯干：机甲装甲 =====
+  ctx.save();
+  // 躯干底色（暗金属）
+  var torso=ctx.createLinearGradient(-16,0,16,0);
+  torso.addColorStop(0,"#7a8fa8");
+  torso.addColorStop(0.3,"#4a5f78");
+  torso.addColorStop(0.7,"#2e3f55");
+  torso.addColorStop(1,"#1a2838");
+  ctx.fillStyle=torso;
+  ctx.beginPath();
+  ctx.moveTo(-9.5,chestTop);
+  ctx.lineTo(9.5,chestTop);
+  ctx.quadraticCurveTo(11.5,chestTop+12,8,hipY);
+  ctx.lineTo(-8,hipY);
+  ctx.quadraticCurveTo(-11.5,chestTop+12,-9.5,chestTop);
+  ctx.closePath();
+  ctx.fill();
+
+  // 胸甲（两块独立装甲板）
+  ctx.save();
+  var ca=ctx.createLinearGradient(-5,chestTop+4,5,chestTop+4);
+  ca.addColorStop(0,"#9fb8d0");
+  ca.addColorStop(0.5,"#cfe0ef");
+  ca.addColorStop(1,"#7a8fa8");
+  ctx.fillStyle=ca;
+  // 左胸甲
+  ctx.beginPath();
+  ctx.moveTo(-9,chestTop+3);
+  ctx.lineTo(-1.5,chestTop+3);
+  ctx.lineTo(-1.5,chestTop+16);
+  ctx.quadraticCurveTo(-6,chestTop+18,-9,chestTop+14);
+  ctx.closePath();
+  ctx.fill();
+  // 右胸甲
+  ctx.beginPath();
+  ctx.moveTo(9,chestTop+3);
+  ctx.lineTo(1.5,chestTop+3);
+  ctx.lineTo(1.5,chestTop+16);
+  ctx.quadraticCurveTo(6,chestTop+18,9,chestTop+14);
+  ctx.closePath();
+  ctx.fill();
+  // 胸甲缝线
+  ctx.strokeStyle="rgba(20,40,60,0.7)";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(0,chestTop+4);
+  ctx.lineTo(0,chestTop+15);
+  ctx.stroke();
+  ctx.restore();
+
+  // 腹甲（三段横条）
+  ctx.save();
+  ctx.fillStyle="#5a7088";
+  for(var k=0;k<3;k++){
+    var yy=chestTop+18+k*6;
+    if(yy>=hipY-4) break;
+    ctx.beginPath();
+    ctx.moveTo(-7.5,yy);
+    ctx.lineTo(7.5,yy);
+    ctx.lineTo(7.5,yy+3.5);
+    ctx.lineTo(-7.5,yy+3.5);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // 胸口能量核（六边形）
+  ctx.save();
+  ctx.shadowBlur=(FQ>=2?10:0);
+  ctx.shadowColor="#00f2ff";
+  var core=ctx.createRadialGradient(0,chestTop+10,0.3,0,chestTop+10,4);
+  core.addColorStop(0,"#ffffff");
+  core.addColorStop(0.4,"#00f2ff");
+  core.addColorStop(1,"#0066aa");
+  ctx.fillStyle=core;
+  ctx.beginPath();
+  ctx.arc(0,chestTop+10,3.8,0,6.2832);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  // 肩甲（左右两块大装甲）
+  ctx.save();
+  var sg=ctx.createLinearGradient(-11,chestTop-2,11,chestTop-2);
+  sg.addColorStop(0,"#cfe0ef");
+  sg.addColorStop(0.5,"#7a8fa8");
+  sg.addColorStop(1,"#cfe0ef");
+  ctx.fillStyle=sg;
+  // 左肩甲
+  ctx.beginPath();
+  ctx.moveTo(-12,chestTop-1);
+  ctx.quadraticCurveTo(-14,chestTop+4,-12,chestTop+9);
+  ctx.lineTo(-8,chestTop+8);
+  ctx.quadraticCurveTo(-9,chestTop+2,-8,chestTop-2);
+  ctx.closePath();
+  ctx.fill();
+  // 右肩甲
+  ctx.beginPath();
+  ctx.moveTo(12,chestTop-1);
+  ctx.quadraticCurveTo(14,chestTop+4,12,chestTop+9);
+  ctx.lineTo(8,chestTop+8);
+  ctx.quadraticCurveTo(9,chestTop+2,8,chestTop-2);
+  ctx.closePath();
+  ctx.fill();
+  // 肩甲高光
+  ctx.strokeStyle="rgba(220,245,255,0.6)";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(-12,chestTop);
+  ctx.quadraticCurveTo(-13,chestTop+4,-12,chestTop+8);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(12,chestTop);
+  ctx.quadraticCurveTo(13,chestTop+4,12,chestTop+8);
+  ctx.stroke();
+  ctx.restore();
+
   // 腰带
+  ctx.save();
   var belt=ctx.createLinearGradient(-9,0,9,0);
-  belt.addColorStop(0,"#ff2a9d");
-  belt.addColorStop(0.5,"#ff6ec7");
-  belt.addColorStop(1,"#a3005c");
+  belt.addColorStop(0,"#3a4f66");
+  belt.addColorStop(0.5,"#5a7088");
+  belt.addColorStop(1,"#2e3f55");
   ctx.fillStyle=belt;
   ctx.beginPath();
   ctx.moveTo(-8.2,hipY-4);
@@ -2697,26 +4491,26 @@ function drawHero(x,y,scale,facing,frame,onGround,vx){
   ctx.lineTo(-7.6,hipY+1.5);
   ctx.closePath();
   ctx.fill();
-  // 腰带扣
   ctx.fillStyle="#ffd700";
   ctx.beginPath();
   ctx.arc(0,hipY-1.2,2.2,0,6.2832);
   ctx.fill();
   ctx.restore();
+  ctx.restore();
 
-  // ---------- 前腿（亮）----------
-  drawLeg(hipY, 4.5, swing, true);
-
-  // ---------- 前臂 + 枪 ----------
+  // 前腿
+  mechLeg(hipY,4.5,swing+tuck*0.6,true);
+  // 前臂 + 枪
   var aimA=-0.22;
   var armSwing=running?Math.sin(ph+3.1)*0.15:Math.sin(frame*1.8)*0.05;
-  drawShootingArm(chestTop+7, aimA+armSwing, aimA-0.06+armSwing*0.5);
+  mechShootArm(chestTop+7,aimA+armSwing,aimA-0.06+armSwing*0.5);
 
-  ctx.shadowBlur=(FQ>=2?0:0);
+  ctx.shadowBlur=0;
 
-  // ---------- 头部 ----------
+  // ===== 头（机甲头盔） =====
+  ctx.save();
   // 脖子
-  ctx.fillStyle="#e8a894";
+  ctx.fillStyle="#5a7088";
   ctx.beginPath();
   ctx.moveTo(-4,headY+headR-1);
   ctx.lineTo(4,headY+headR-1);
@@ -2724,61 +4518,54 @@ function drawHero(x,y,scale,facing,frame,onGround,vx){
   ctx.lineTo(-4.5,chestTop+2);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle="rgba(0,0,0,0.18)";
+
+  // 头盔主体
+  var hg=ctx.createRadialGradient(-4,headY-4,1,0,headY,headR);
+  hg.addColorStop(0,"#dceaf5");
+  hg.addColorStop(0.6,"#8aa0b8");
+  hg.addColorStop(1,"#4a5f78");
+  ctx.fillStyle=hg;
   ctx.beginPath();
-  ctx.moveTo(1,headY+headR-1);
-  ctx.lineTo(4,headY+headR-1);
-  ctx.lineTo(4.5,chestTop+2);
-  ctx.lineTo(1,chestTop+2);
-  ctx.closePath();
+  ctx.arc(0,headY,headR,0,6.2832);
   ctx.fill();
 
-  // 肩（三角形斜方肌，让脖子和身体连接自然）
-  ctx.fillStyle="#17a5d4";
+  // 头盔面罩（T字型观察窗）
+  ctx.fillStyle="#00f2ff";
+  ctx.shadowBlur=(FQ>=2?8:0);
+  ctx.shadowColor="#00f2ff";
   ctx.beginPath();
-  ctx.moveTo(-10,chestTop);
-  ctx.quadraticCurveTo(-5,chestTop-4,0,chestTop-3);
-  ctx.quadraticCurveTo(5,chestTop-4,10,chestTop);
-  ctx.lineTo(9,chestTop+4);
-  ctx.quadraticCurveTo(0,chestTop+1,-9,chestTop+4);
+  ctx.moveTo(-6,headY-3);
+  ctx.lineTo(6,headY-3);
+  ctx.lineTo(6,headY+2);
+  ctx.lineTo(2.5,headY+2);
+  ctx.lineTo(2.5,headY+7);
+  ctx.lineTo(-2.5,headY+7);
+  ctx.lineTo(-2.5,headY+2);
+  ctx.lineTo(-6,headY+2);
   ctx.closePath();
   ctx.fill();
+  ctx.shadowBlur=0;
 
-  // 头
-  if(heroHeadOk){
-    var sw=heroHeadImg.width, sh=heroHeadImg.height;
-    var cw=Math.min(sw,sh*0.86);
-    var cx0=(sw-cw)/2, cy0=sh*0.07;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(0,headY,headR,0,6.2832);
-    ctx.clip();
-    ctx.drawImage(heroHeadImg,cx0,cy0,cw,cw,-headR,headY-headR,headR*2,headR*2);
-    // 右侧暗部
-    var shd=ctx.createLinearGradient(-headR*0.1,headY-headR,headR,headY+headR*0.7);
-    shd.addColorStop(0,"rgba(0,0,30,0)");
-    shd.addColorStop(1,"rgba(0,0,30,0.4)");
-    ctx.fillStyle=shd;
-    ctx.fillRect(-headR,headY-headR,headR*2,headR*2);
-    // 顶部高光
-    var hl=ctx.createRadialGradient(-headR*0.3,headY-headR*0.4,0.5,-headR*0.3,headY-headR*0.4,headR*0.75);
-    hl.addColorStop(0,"rgba(255,255,255,0.3)");
-    hl.addColorStop(1,"rgba(255,255,255,0)");
-    ctx.fillStyle=hl;
-    ctx.fillRect(-headR,headY-headR,headR*2,headR*2);
-    ctx.restore();
-  }else{
-    var fg=ctx.createRadialGradient(-4,headY-4,1,0,headY,headR);
-    fg.addColorStop(0,"#ffeae2");
-    fg.addColorStop(0.72,"#f0c0ad");
-    fg.addColorStop(1,"#b88573");
-    ctx.fillStyle=fg;
-    ctx.beginPath();
-    ctx.arc(0,headY,headR,0,6.2832);
-    ctx.fill();
-  }
+  // 头盔顶部天线
+  ctx.strokeStyle="#cfe0ef";
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(-3,headY-headR+2);
+  ctx.lineTo(-5,headY-headR-4);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(3,headY-headR+2);
+  ctx.lineTo(5,headY-headR-4);
+  ctx.stroke();
+  ctx.fillStyle="#00f2ff";
+  ctx.beginPath();
+  ctx.arc(-5,headY-headR-4,1.5,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(5,headY-headR-4,1.5,0,6.2832);
+  ctx.fill();
 
-  // 霓虹描边（分亮暗两段，体现光照方向）
+  // 霓虹描边
   ctx.lineWidth=2;
   ctx.strokeStyle="rgba(0,235,255,0.95)";
   ctx.shadowBlur=(FQ>=2?12:0);
@@ -2786,216 +4573,97 @@ function drawHero(x,y,scale,facing,frame,onGround,vx){
   ctx.beginPath();
   ctx.arc(0,headY,headR,-0.75,2.05);
   ctx.stroke();
-  ctx.shadowBlur=(FQ>=2?4:0);
-  ctx.strokeStyle="rgba(0,130,180,0.8)";
-  ctx.beginPath();
-  ctx.arc(0,headY,headR,2.05,5.5);
-  ctx.stroke();
-  ctx.shadowBlur=(FQ>=2?0:0);
-
+  ctx.shadowBlur=0;
   ctx.restore();
 
-  /* ============ 内部：腿（锥形，膝弯） ============ */
-  function drawLeg(hipY2, offX, angle, front){
-    var thighTop=front?"#22d4ff":"#0d7aa0";
-    var thighBot=front?"#0e9dcc":"#075273";
-    var shinTop=front?"#12b4e0":"#086b8c";
-    var shinBot=front?"#0a86b3":"#043a52";
-
-    ctx.save();
-    ctx.translate(offX,hipY2);
-    ctx.rotate(angle*0.75);
-
-    // 大腿：上粗下细
-    var tg=ctx.createLinearGradient(-6,0,6,0);
-    tg.addColorStop(0,thighTop);
-    tg.addColorStop(0.5,front?"#1cbde8":"#0a6a8c");
-    tg.addColorStop(1,thighBot);
-    ctx.fillStyle=tg;
-    ctx.beginPath();
-    ctx.moveTo(-6,0);
-    ctx.quadraticCurveTo(-6.5,10,-4.2,20);
-    ctx.lineTo(4.2,20);
-    ctx.quadraticCurveTo(6.5,10,6,0);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.translate(0,20);
-    ctx.rotate(-angle*0.75*1.7+(angle>0.05?0.42:-0.06));
-
-    // 膝盖
-    ctx.fillStyle=front?"#3ad4f5":"#0d88b0";
-    ctx.beginPath();
-    ctx.ellipse(0,0,4.6,4,0,0,6.2832);
-    ctx.fill();
-
-    // 小腿：上粗下细（比大腿细）
-    var sg=ctx.createLinearGradient(-5,0,5,0);
-    sg.addColorStop(0,front?"#25c8ec":"#0b7396");
-    sg.addColorStop(0.55,front?"#1199c2":"#075272");
-    sg.addColorStop(1,front?"#0a7699":"#04384d");
-    ctx.fillStyle=sg;
-    ctx.beginPath();
-    ctx.moveTo(-4.2,1);
-    ctx.quadraticCurveTo(-4.6,9,-3.2,17);
-    ctx.lineTo(3.2,17);
-    ctx.quadraticCurveTo(4.6,9,4.2,1);
-    ctx.closePath();
-    ctx.fill();
-
-    // 脚踝
-    ctx.translate(0,17);
-    ctx.fillStyle=front?"#1ec2e6":"#0a6f90";
-    ctx.beginPath();
-    ctx.ellipse(0,0,2.8,2,0,0,6.2832);
-    ctx.fill();
-
-    // 鞋（有厚度的侧面轮廓）
-    var shoe=ctx.createLinearGradient(-5,-2,9,6);
-    shoe.addColorStop(0,"#ffffff");
-    shoe.addColorStop(0.45,"#d8ecff");
-    shoe.addColorStop(0.75,"#8db8d8");
-    shoe.addColorStop(1,"#4a7898");
-    ctx.fillStyle=shoe;
-    ctx.beginPath();
-    ctx.moveTo(-4.5,0);
-    ctx.quadraticCurveTo(-5,3,-3,4.2);
-    ctx.lineTo(7,4.2);
-    ctx.quadraticCurveTo(8.5,3.2,7.5,0.6);
-    ctx.quadraticCurveTo(5,-1.2,2,-1.4);
-    ctx.closePath();
-    ctx.fill();
-    // 鞋底阴影
-    ctx.fillStyle="rgba(0,30,50,0.5)";
-    ctx.beginPath();
-    ctx.moveTo(-3,4.2);
-    ctx.lineTo(7,4.2);
-    ctx.lineTo(7,5.2);
-    ctx.lineTo(-3,5.2);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  /* ============ 内部：后臂 ============ */
-  function drawArm(shY, angle, front){
-    ctx.save();
-    ctx.translate(-7,shY);
-    ctx.rotate(angle);
-
-    var g=ctx.createLinearGradient(-4,0,4,0);
-    g.addColorStop(0,"#c69b8f");
-    g.addColorStop(0.5,"#a87a6e");
-    g.addColorStop(1,"#7d554c");
-    ctx.strokeStyle=g;
-    ctx.lineWidth=7;
-    ctx.lineCap="round";
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.lineTo(0,13);
-    ctx.stroke();
-
-    ctx.translate(0,13);
-    ctx.rotate(0.85);
-    ctx.lineWidth=6;
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.lineTo(0,12);
-    ctx.stroke();
-
-    // 手
-    ctx.fillStyle="#a87a6e";
-    ctx.beginPath();
-    ctx.arc(0,12,3,0,6.2832);
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  /* ============ 内部：持枪前臂 ============ */
-  function drawShootingArm(shY, upperA, foreA){
-    ctx.save();
-    ctx.translate(-6,shY);
-    ctx.rotate(upperA);
-
-    // 上臂（有三角肌隆起）
-    var ua=ctx.createLinearGradient(-4.5,0,4.5,0);
-    ua.addColorStop(0,"#ffd9cb");
-    ua.addColorStop(0.35,"#f5b8a4");
-    ua.addColorStop(0.75,"#d99380");
-    ua.addColorStop(1,"#a86b5c");
-    ctx.strokeStyle=ua;
-    ctx.lineWidth=8;
-    ctx.lineCap="round";
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.lineTo(0,13);
-    ctx.stroke();
-
-    // 三角肌
-    ctx.fillStyle="#ffd0c0";
-    ctx.beginPath();
-    ctx.ellipse(0,1,5,4.5,0,0,6.2832);
-    ctx.fill();
-
-    ctx.translate(0,13);
-
-    // 肘
-    var el=ctx.createRadialGradient(-1.2,-1,0,0,0,4);
-    el.addColorStop(0,"#ffe0d4");
-    el.addColorStop(0.6,"#e3a893");
-    el.addColorStop(1,"#a86b5c");
-    ctx.fillStyle=el;
-    ctx.beginPath();
-    ctx.arc(0,0,3.8,0,6.2832);
-    ctx.fill();
-
-    ctx.rotate(foreA-upperA);
-
-    // 前臂（比上臂细）
-    var fa=ctx.createLinearGradient(-3.5,0,3.5,0);
-    fa.addColorStop(0,"#ffd9cb");
-    fa.addColorStop(0.4,"#f0b098");
-    fa.addColorStop(1,"#b07868");
-    ctx.strokeStyle=fa;
-    ctx.lineWidth=6.5;
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.lineTo(0,14);
-    ctx.stroke();
-
-    ctx.translate(0,14);
-
-    // 腕
-    ctx.fillStyle="#f0b8a4";
-    ctx.beginPath();
-    ctx.arc(0,0,3,0,6.2832);
-    ctx.fill();
-
-    // 握拳
-    ctx.fillStyle="#ffd4c4";
-    ctx.beginPath();
-    ctx.arc(0.5,2,3.6,0,6.2832);
-    ctx.fill();
-    // 手指分隔
-    ctx.strokeStyle="rgba(160,100,85,0.5)";
-    ctx.lineWidth=0.8;
-    ctx.beginPath();
-    ctx.moveTo(-2.4,2);
-    ctx.lineTo(3.4,2);
-    ctx.stroke();
-
-    // 枪
-    ctx.save();
-    ctx.rotate(-foreA*0.5);
-    ctx.translate(1.5,-1.5);
-    drawGun();
-    ctx.restore();
-
-    ctx.restore();
-  }
+  ctx.restore();
 }
+
+function mechLeg(hy2,offX,angle,front){
+  var c1=front?"#9fb8d0":"#4a5f78";
+  var c2=front?"#6a8298":"#2e3f55";
+  ctx.save();
+  ctx.translate(offX,hy2);
+  ctx.rotate(angle*0.75);
+  // 大腿
+  var tg=ctx.createLinearGradient(-6,0,6,0);
+  tg.addColorStop(0,c1); tg.addColorStop(0.5,front?"#7a90a8":"#3a5068"); tg.addColorStop(1,c2);
+  ctx.fillStyle=tg;
+  ctx.beginPath();
+  ctx.moveTo(-6,0);
+  ctx.quadraticCurveTo(-6.5,10,-4.2,20);
+  ctx.lineTo(4.2,20);
+  ctx.quadraticCurveTo(6.5,10,6,0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.translate(0,20);
+  ctx.rotate(-angle*0.75*1.7+(angle>0.05?0.42:-0.06));
+  // 膝盖（机械关节）
+  hjDot(0,0,4.6,front,"rgba(210,230,245,0.98)","rgba(90,120,150,0.92)");
+  // 小腿
+  var sg=ctx.createLinearGradient(-5,0,5,0);
+  sg.addColorStop(0,front?"#8aa0b8":"#3a5068");
+  sg.addColorStop(0.55,front?"#6a8298":"#2e3f55");
+  sg.addColorStop(1,front?"#4a5f78":"#1a2838");
+  ctx.fillStyle=sg;
+  ctx.beginPath();
+  ctx.moveTo(-4.2,1);
+  ctx.quadraticCurveTo(-4.6,9,-3.2,17);
+  ctx.lineTo(3.2,17);
+  ctx.quadraticCurveTo(4.6,9,4.2,1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.translate(0,17);
+  // 脚（机甲靴）
+  ctx.fillStyle=front?"#7a90a8":"#3a5068";
+  ctx.beginPath();
+  ctx.ellipse(0,0,2.8,2,0,0,6.2832);
+  ctx.fill();
+  var shoe=ctx.createLinearGradient(-5,-2,9,6);
+  shoe.addColorStop(0,"#cfe0ef");
+  shoe.addColorStop(0.5,"#8aa0b8");
+  shoe.addColorStop(1,"#4a5f78");
+  ctx.fillStyle=shoe;
+  ctx.beginPath();
+  ctx.moveTo(-4.5,0);
+  ctx.quadraticCurveTo(-5,3,-3,4.2);
+  ctx.lineTo(7,4.2);
+  ctx.quadraticCurveTo(8.5,3.2,7.5,0.6);
+  ctx.quadraticCurveTo(5,-1.2,2,-1.4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function mechArm(shY,angle,front){
+  ctx.save();
+  ctx.translate(-7,shY);
+  ctx.rotate(angle);
+  var g=ctx.createLinearGradient(-4,0,4,0);
+  g.addColorStop(0,front?"#8aa0b8":"#4a5f78");
+  g.addColorStop(0.5,front?"#6a8298":"#3a5068");
+  g.addColorStop(1,front?"#4a5f78":"#2e3f55");
+  ctx.strokeStyle=g;
+  ctx.lineWidth=7;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,13); ctx.stroke();
+  ctx.translate(0,13);
+  ctx.rotate(0.85);
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,12); ctx.stroke();
+  ctx.fillStyle=front?"#6a8298":"#3a5068";
+  ctx.beginPath();
+  ctx.arc(0,12,3,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+
+function mechShootArm(shY,upperA,foreA){
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#8aa0b8",sleeveDark:"#5a7088",skin:"#8aa0b8",joint:"rgba(210,230,245,0.98)",jointDark:"rgba(90,120,150,0.92)",hand:"#cfe0ef"});
+}
+
 
 
 /* ============ 世界绘制 ============ */
@@ -3211,6 +4879,78 @@ function draw(){
       ctx.shadowBlur=(FQ>=2?18:0);ctx.shadowColor="#b026ff";ctx.fillStyle="#b026ff";
       ctx.beginPath();ctx.moveTo(-e.w/2,e.h/2);ctx.lineTo(-e.w/2,-e.h/2);ctx.lineTo(e.w/2,-e.h/2+6);ctx.lineTo(e.w/2,e.h/2);ctx.closePath();ctx.fill();
       ctx.fillStyle="#fff";ctx.fillRect(-e.w/2+6,-6,e.w-12,5);
+    }else if(e.type==="turret"){
+      // 炮塔：底座 + 旋转炮管
+      ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#3aff7a";
+      ctx.fillStyle="#1a4a2a";ctx.beginPath();ctx.moveTo(-e.w/2,e.h/2);ctx.lineTo(e.w/2,e.h/2);ctx.lineTo(e.w/2-3,-e.h/2+8);ctx.lineTo(-e.w/2+3,-e.h/2+8);ctx.closePath();ctx.fill();
+      var ta=Math.atan2(player.y-e.y,player.x-e.x);
+      ctx.save();ctx.translate(0,-e.h/2+6);ctx.rotate(ta);
+      ctx.fillStyle="#3aff7a";ctx.fillRect(0,-3,e.w*0.9,6);
+      ctx.restore();
+      ctx.fillStyle="#3aff7a";ctx.beginPath();ctx.arc(0,0,7,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,3.5,0,Math.PI*2);ctx.fill();
+    }else if(e.type==="bomber"){
+      // 轰炸机：飞艇 + 挂弹
+      ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#ff8a5b";
+      ctx.fillStyle="#8a4a2a";ctx.beginPath();ctx.ellipse(0,0,e.w/2,e.h/2,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#ff8a5b";ctx.beginPath();ctx.ellipse(0,-2,e.w*0.36,e.h*0.4,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#fff";ctx.fillRect(-e.w/2,-3,e.w,4);
+      ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(0,8,4,0,Math.PI*2);ctx.fill();
+    }else if(e.type==="sniper"){
+      // 狙击手：三角躯 + 长瞄线
+      ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#ff2a6d";
+      ctx.fillStyle="#5a1020";ctx.beginPath();ctx.moveTo(-e.w/2,e.h/2);ctx.lineTo(0,-e.h/2);ctx.lineTo(e.w/2,e.h/2);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#ff2a6d";ctx.fillRect(-2,-e.h/2,4,6);
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,-3,3,0,Math.PI*2);ctx.fill();
+    }else if(e.type==="tank"){
+      // 坦克：厚装甲 + 履带
+      ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#ff2a6d";
+      ctx.fillStyle="#4a1020";ctx.fillRect(-e.w/2,-e.h/2,e.w,e.h);
+      ctx.fillStyle="#7a1a2a";ctx.fillRect(-e.w/2+3,-e.h/2+3,e.w-6,e.h-6);
+      ctx.fillStyle="#ff2a6d";ctx.fillRect(-e.w/2,-e.h/2,e.w,5);ctx.fillRect(-e.w/2,e.h/2-5,e.w,5);
+      ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(0,0,6,0,Math.PI*2);ctx.fill();
+    }else if(e.type==="splitter"){
+      // 分裂体：多面晶体
+      ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#b026ff";
+      ctx.fillStyle="#6a20c0";ctx.beginPath();ctx.moveTo(0,-e.h/2);ctx.lineTo(e.w/2,0);ctx.lineTo(0,e.h/2);ctx.lineTo(-e.w/2,0);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#b026ff";ctx.beginPath();ctx.moveTo(0,-e.h/4);ctx.lineTo(e.w/4,0);ctx.lineTo(0,e.h/4);ctx.lineTo(-e.w/4,0);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();
+    }else if(e.type==="swarmer"){
+      // 集群蜂：小三角 + 快速振翅
+      var swf=Math.sin(Date.now()/30)*0.6;
+      ctx.shadowBlur=(FQ>=2?10:0);ctx.shadowColor="#ff00aa";
+      ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(-e.w/2,0);ctx.lineTo(0,-e.h/2);ctx.lineTo(e.w/2,0);ctx.lineTo(0,e.h/2);ctx.closePath();ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,0.5)";ctx.beginPath();ctx.ellipse(-e.w/2,swf,4,2,0,0,Math.PI*2);ctx.ellipse(e.w/2,-swf,4,2,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,2.5,0,Math.PI*2);ctx.fill();
+    }else if(e.type==="shield"){
+      // 护盾兵：正面能量盾
+      var sd=e.dir||1;
+      ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#00f2ff";
+      ctx.fillStyle="#2a4a5a";ctx.fillRect(-e.w/2,-e.h/2,e.w,e.h);
+      ctx.fillStyle="#00f2ff";ctx.beginPath();ctx.arc(0,0,6,0,Math.PI*2);ctx.fill();
+      if(e.shieldT>0){
+        ctx.globalAlpha=0.6+Math.sin(Date.now()/20)*0.2;
+        ctx.fillStyle="#00f2ff";
+        ctx.beginPath();ctx.arc(sd*(e.w/2+6),0,10,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=1;
+      }
+    }else if(e.type==="teleporter"){
+      // 瞬移者：虚化身体 + 能量粒子
+      var tph=Math.sin(e.t*8)*0.3;
+      ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#7c3aed";
+      ctx.fillStyle="rgba(124,58,237,0.7)";ctx.fillRect(-e.w/2,-e.h/2,e.w,e.h);
+      ctx.globalAlpha=0.5+tph;
+      ctx.fillStyle="#b026ff";ctx.beginPath();ctx.arc(0,0,8,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,3,0,Math.PI*2);ctx.fill();
+    }else if(e.type==="laser"){
+      // 激光炮：蓄力发光核心
+      var chg=e.charge>0?1:e.charge;
+      ctx.shadowBlur=(FQ>=2?18:0);ctx.shadowColor=e.charge>0?"#ff2a6d":"#ff8a5b";
+      ctx.fillStyle="#3a1020";ctx.fillRect(-e.w/2,-e.h/2,e.w,e.h);
+      ctx.fillStyle=e.charge>0?"#ff2a6d":"#ff8a5b";
+      ctx.beginPath();ctx.arc(0,0,e.charge>0?10+Math.sin(Date.now()/30)*2:6,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,e.charge>0?5:2.5,0,Math.PI*2);ctx.fill();
     }else if(e.type==="boss"){
       ctx.shadowBlur=(FQ>=2?36:0);ctx.shadowColor="#ffe600";
       var g=ctx.createRadialGradient(0,0,10,0,0,e.w/2);
@@ -3229,9 +4969,27 @@ function draw(){
   }
 
   /* ===== 子弹渲染：子弹本体=尖刺(沿飞行方向)，按颜色合批 ===== */
+  // 激光子弹：横向拉长光束（单独渲染，不参与尖刺合批）
+  for(var _li=0;_li<world.bullets.length;_li++){
+    var _lb=world.bullets[_li];
+    if(_lb.laser){
+      var _la=Math.atan2(_lb.vy,_lb.vx);
+      ctx.save();ctx.translate(_lb.x,_lb.y);ctx.rotate(_la);
+      ctx.globalCompositeOperation="lighter";
+      ctx.shadowBlur=(FQ>=2?20:0);ctx.shadowColor=_lb.color;
+      var _lg=ctx.createLinearGradient(-_lb.r*4,0,_lb.r*4,0);
+      _lg.addColorStop(0,"rgba(255,42,109,0)");_lg.addColorStop(0.5,_lb.color);_lg.addColorStop(1,"rgba(255,42,109,0)");
+      ctx.fillStyle=_lg;
+      ctx.fillRect(-_lb.r*4,-_lb.r*0.5,_lb.r*8,_lb.r);
+      ctx.fillStyle="#fff";ctx.fillRect(-_lb.r*1.5,-_lb.r*0.25,_lb.r*3,_lb.r*0.5);
+      ctx.globalCompositeOperation="source-over";
+      ctx.restore();
+    }
+  }
   var _bGroups={},_bOrder=[];
   for(var i=0;i<world.bullets.length;i++){
     var b=world.bullets[i];
+    if(b.laser)continue;
     var g=_bGroups[b.color];
     if(!g){g=_bGroups[b.color]=[];_bOrder.push(b.color);}
     g.push(b);
