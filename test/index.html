@@ -2645,17 +2645,31 @@ try{ initHero(); }catch(e){}
    通用工具：关节球 / 手臂 / 腿（供各角色复用）
 ============================================================ */
 
-/* ============ 全局动画平滑系统 ============ */
-var _anim = { spd: 0, lean: 0, swing: 0, air: 0 };
+/* ============ 全局动画平滑系统 v2 ============ */
+var _anim = { spd: 0, lean: 0, run: 0, air: 0, ph: 0, lastX: null, vy: 0 };
 function _animUpd(dt){
-  var v = Math.abs(p.vx) / 2600;                 // 目标归一化速度
-  var k = 1 - Math.pow(0.001, (dt || 0.016));    // 帧率无关平滑系数
-  _anim.spd  += (v - _anim.spd) * k;
-  _anim.lean += (Math.max(-0.1, Math.min(0.1, p.vx / 2600)) - _anim.lean) * k;
-  _anim.swing += ((Math.abs(p.vx) > 40 && p.onGround ? 1 : 0) - _anim.swing) * k * 1.5;
-  _anim.air   += ((p.onGround ? 0 : 1) - _anim.air) * k * 2;
+  var pl = (typeof player !== "undefined" && player) ? player : null;
+  var k = 1 - Math.pow(0.002, (dt || 0.016));    // 帧率无关平滑系数
+  if(!pl){
+    _anim.spd = _anim.lean = _anim.run = _anim.air = 0;
+    return;
+  }
+  // 步频绑定实际位移：每移动 ~34px 迈一步（2π），脚步永远咬合地面
+  if(_anim.lastX === null) _anim.lastX = pl.x;
+  var dx = pl.x - _anim.lastX;
+  _anim.lastX = pl.x;
+  var spdN = Math.min(1, Math.abs(pl.vx) / 2600);
+  var onG = !!pl.onGround;
+  if(onG && Math.abs(pl.vx) > 40){
+    _anim.ph += Math.abs(dx) / 34 * Math.PI * 2;   // 位移驱动相位
+  }
+  _anim.spd += (spdN - _anim.spd) * k;
+  _anim.lean += (Math.max(-0.12, Math.min(0.12, pl.vx / 2400)) - _anim.lean) * k;
+  _anim.run += ((Math.abs(pl.vx) > 40 && onG ? 1 : 0) - _anim.run) * k * 2;
+  _anim.air += ((onG ? 0 : 1) - _anim.air) * k * 2.5;
+  _anim.vy = pl.vy || 0;
 }
-try{ /* 初始化时预填充避免第一帧跳变 */ _animUpd(1); }catch(e){}
+try{ _animUpd(1); }catch(e){}
 
 function hjDot(px,py,r,bright,c1,c2){
   var g=ctx.createRadialGradient(px-r*0.35,py-r*0.35,r*0.15,px,py,r);
@@ -2672,17 +2686,19 @@ function hjDot(px,py,r,bright,c1,c2){
 ============================================================ */
 function drawHeroAnime(x,y,scale,facing,frame,onGround,vx){
   var spd=_anim.spd;
-  var runT=_anim.swing;                          // 跑步状态渐进 0~1
+  var runT=_anim.run;                            // 跑步状态渐进 0~1
   var airT=_anim.air;                            // 空中状态渐进 0~1
-  var running=runT>0.3;
-  var ph=frame*13;
-  // 摆幅随速度渐变 + 微小漂移（避免机械感）
-  var amp=(running?0.9+spd*0.5:0.12)*runT;
-  var swing=(Math.sin(ph)+Math.sin(ph*0.37+1.7)*0.25)*amp;
-  var bob=running?Math.abs(Math.sin(ph))*-2.4*runT:Math.sin(frame*2.4)*1.2*(1-airT);
-  var lean=_anim.lean;
-  // 腾空收腿预备姿势（腿前摆、臂后摆，预备落地）
-  var tuck=airT*(0.25+0.35*Math.min(1,Math.abs(vx)/1200));
+  var running=runT>0.25;
+  var ph=_anim.ph;                               // 相位由位移驱动（脚步咬合地面）
+  // 步幅：速度越快摆得越大；双频叠加打破机械节拍
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  // 跑步时身体重心下压（髋部随步伐起伏）
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);     // 跑姿额外前倾
+  // 腾空：双腿前后分叉（前腿抬、后腿伸），非对称预备落地
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
 
   ctx.save();
   ctx.translate(x,y);
@@ -3076,17 +3092,19 @@ function animeShootArm(shY,upperA,foreA){
 ============================================================ */
 function drawHeroFighter(x,y,scale,facing,frame,onGround,vx){
   var spd=_anim.spd;
-  var runT=_anim.swing;                          // 跑步状态渐进 0~1
+  var runT=_anim.run;                            // 跑步状态渐进 0~1
   var airT=_anim.air;                            // 空中状态渐进 0~1
-  var running=runT>0.3;
-  var ph=frame*13;
-  // 摆幅随速度渐变 + 微小漂移（避免机械感）
-  var amp=(running?0.9+spd*0.5:0.12)*runT;
-  var swing=(Math.sin(ph)+Math.sin(ph*0.37+1.7)*0.25)*amp;
-  var bob=running?Math.abs(Math.sin(ph))*-2.4*runT:Math.sin(frame*2.4)*1.2*(1-airT);
-  var lean=_anim.lean;
-  // 腾空收腿预备姿势（腿前摆、臂后摆，预备落地）
-  var tuck=airT*(0.25+0.35*Math.min(1,Math.abs(vx)/1200));
+  var running=runT>0.25;
+  var ph=_anim.ph;                               // 相位由位移驱动（脚步咬合地面）
+  // 步幅：速度越快摆得越大；双频叠加打破机械节拍
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  // 跑步时身体重心下压（髋部随步伐起伏）
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);     // 跑姿额外前倾
+  // 腾空：双腿前后分叉（前腿抬、后腿伸），非对称预备落地
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
 
   ctx.save();
   ctx.translate(x,y);
@@ -3410,17 +3428,19 @@ function fightShootArm(shY,upperA,foreA){
 ============================================================ */
 function drawHeroSamurai(x,y,scale,facing,frame,onGround,vx){
   var spd=_anim.spd;
-  var runT=_anim.swing;                          // 跑步状态渐进 0~1
+  var runT=_anim.run;                            // 跑步状态渐进 0~1
   var airT=_anim.air;                            // 空中状态渐进 0~1
-  var running=runT>0.3;
-  var ph=frame*13;
-  // 摆幅随速度渐变 + 微小漂移（避免机械感）
-  var amp=(running?0.9+spd*0.5:0.12)*runT;
-  var swing=(Math.sin(ph)+Math.sin(ph*0.37+1.7)*0.25)*amp;
-  var bob=running?Math.abs(Math.sin(ph))*-2.4*runT:Math.sin(frame*2.4)*1.2*(1-airT);
-  var lean=_anim.lean;
-  // 腾空收腿预备姿势（腿前摆、臂后摆，预备落地）
-  var tuck=airT*(0.25+0.35*Math.min(1,Math.abs(vx)/1200));
+  var running=runT>0.25;
+  var ph=_anim.ph;                               // 相位由位移驱动（脚步咬合地面）
+  // 步幅：速度越快摆得越大；双频叠加打破机械节拍
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  // 跑步时身体重心下压（髋部随步伐起伏）
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);     // 跑姿额外前倾
+  // 腾空：双腿前后分叉（前腿抬、后腿伸），非对称预备落地
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
 
   ctx.save();
   ctx.translate(x,y);
@@ -3784,17 +3804,19 @@ function samuraiShootArm(shY,upperA,foreA){
 ============================================================ */
 function drawHeroMech(x,y,scale,facing,frame,onGround,vx){
   var spd=_anim.spd;
-  var runT=_anim.swing;                          // 跑步状态渐进 0~1
+  var runT=_anim.run;                            // 跑步状态渐进 0~1
   var airT=_anim.air;                            // 空中状态渐进 0~1
-  var running=runT>0.3;
-  var ph=frame*13;
-  // 摆幅随速度渐变 + 微小漂移（避免机械感）
-  var amp=(running?0.9+spd*0.5:0.12)*runT;
-  var swing=(Math.sin(ph)+Math.sin(ph*0.37+1.7)*0.25)*amp;
-  var bob=running?Math.abs(Math.sin(ph))*-2.4*runT:Math.sin(frame*2.4)*1.2*(1-airT);
-  var lean=_anim.lean;
-  // 腾空收腿预备姿势（腿前摆、臂后摆，预备落地）
-  var tuck=airT*(0.25+0.35*Math.min(1,Math.abs(vx)/1200));
+  var running=runT>0.25;
+  var ph=_anim.ph;                               // 相位由位移驱动（脚步咬合地面）
+  // 步幅：速度越快摆得越大；双频叠加打破机械节拍
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  // 跑步时身体重心下压（髋部随步伐起伏）
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);     // 跑姿额外前倾
+  // 腾空：双腿前后分叉（前腿抬、后腿伸），非对称预备落地
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
 
   ctx.save();
   ctx.translate(x,y);
