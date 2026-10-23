@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.1</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.2</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -521,21 +521,26 @@ var cand=world.platforms.filter(function(p){return p.x>cam.x+W*0.5&&p.x<cam.x+W+
 if(cand.length===0)break;
 var plat=cand[Math.floor(Math.random()*cand.length)];
  var r=Math.random();var e;
- if(r<0.32){e={type:"walker",x:plat.x+30+Math.random()*(plat.w-60),y:plat.y-36,w:40,h:44,vx:0.7+Math.random()*0.5,hp:50+wave*8,maxHp:50+wave*8,plat:plat,dir:1,score:100,shell:0,spinCd:0}}
- else if(r<0.5){e={type:"flyer",x:plat.x+plat.w/2,y:plat.y-110-Math.random()*60,w:30,h:30,hp:16+wave*3,maxHp:16+wave*3,t:Math.random()*10,score:80,orbit:0,state:0}}
- else if(r<0.6){e={type:"shooter",x:plat.x+plat.w/2,y:plat.y-120,w:34,h:34,hp:50+wave*8,maxHp:50+wave*8,cd:2.5,score:130,t:0}}
- else if(r<0.68){e={type:"charger",x:plat.x+plat.w/2,y:plat.y-30,w:40,h:40,hp:70+wave*10,maxHp:70+wave*10,cd:1.5,vx:0,score:180,ball:0}}
- else if(r<0.74){e={type:"turret",x:plat.x+plat.w/2,y:plat.y-150,w:30,h:24,hp:35+wave*6,maxHp:35+wave*6,t:Math.random()*10,score:160,baseY:plat.y-150}}
- else if(r<0.79){e={type:"bomber",x:plat.x+plat.w/2,y:plat.y-60,w:28,h:28,hp:30+wave*5,maxHp:30+wave*5,cd:2,score:200,t:0,charge:0}}
- else if(r<0.84){e={type:"sniper",x:plat.x+plat.w/2,y:plat.y-60,w:26,h:46,hp:45+wave*7,maxHp:45+wave*7,cd:2,score:220,t:0}}
- else if(r<0.87){e={type:"tank",x:plat.x+plat.w/2,y:plat.y-40,w:46,h:60,hp:240+wave*22,maxHp:240+wave*22,score:300,t:0,swing:0}}
- else if(r<0.9){e={type:"splitter",x:plat.x+plat.w/2,y:plat.y-30,w:40,h:36,hp:70+wave*10,maxHp:70+wave*10,score:250,split:2,big:true}}
- else if(r<0.94){e={type:"swarmer",x:plat.x+plat.w/2,y:plat.y-100,w:24,h:26,hp:20+wave*3,maxHp:20+wave*3,t:Math.random()*10,score:90}}
- else if(r<0.97){e={type:"shield",x:plat.x+plat.w/2,y:plat.y-36,w:40,h:50,hp:110+wave*16,maxHp:110+wave*16,dir:1,cd:0,score:260,shieldT:1,chargeT:0}}
- else if(r<0.985){e={type:"teleporter",x:plat.x+plat.w/2,y:plat.y-120,w:36,h:24,hp:70+wave*12,maxHp:70+wave*12,t:0,cd:2,score:240,tent:0}}
- else if(r<0.9){e={type:"icefly",x:plat.x+plat.w/2,y:plat.y-140,w:30,h:26,hp:30+wave*5,maxHp:30+wave*5,t:Math.random()*10,score:150}}
-  else if(r<0.95){e={type:"sandworm",x:plat.x+plat.w/2,y:plat.y-20,w:48,h:28,hp:90+wave*14,maxHp:90+wave*14,t:0,cd:2.5,score:280,under:0}}
-  else{e={type:"laser",x:plat.x+plat.w/2,y:plat.y-34,w:40,h:54,hp:120+wave*20,maxHp:120+wave*20,cd:3,charge:0,score:320}}
+ if(r<0.05){e={type:"walker",x:plat.x+30+Math.random()*(plat.w-60),y:plat.y-36,w:40,h:44,vx:0.7+Math.random()*0.5,hp:50+wave*8,maxHp:50+wave*8,plat:plat,dir:1,score:100,shell:0,spinCd:0}}
+ else if(r<0.10){e={type:"flyer",x:plat.x+plat.w/2,y:plat.y-110-Math.random()*60,w:30,h:30,hp:16+wave*3,maxHp:16+wave*3,t:Math.random()*10,score:80,orbit:0,state:0}}
+ else if(r<0.15){e={type:"shooter",x:plat.x+plat.w/2,y:plat.y-120,w:34,h:34,hp:50+wave*8,maxHp:50+wave*8,cd:2.5,score:130,t:0}}
+ else if(r<0.20){e={type:"charger",x:plat.x+plat.w/2,y:plat.y-30,w:40,h:40,hp:70+wave*10,maxHp:70+wave*10,cd:1.5,vx:0,score:180,ball:0}}
+ else if(r<0.25){e={type:"turret",x:plat.x+plat.w/2,y:plat.y-150,w:30,h:24,hp:35+wave*6,maxHp:35+wave*6,t:Math.random()*10,score:160,baseY:plat.y-150}}
+ else if(r<0.30){e={type:"bomber",x:plat.x+plat.w/2,y:plat.y-60,w:28,h:28,hp:30+wave*5,maxHp:30+wave*5,cd:2,score:200,t:0,charge:0}}
+ else if(r<0.35){e={type:"sniper",x:plat.x+plat.w/2,y:plat.y-60,w:26,h:46,hp:45+wave*7,maxHp:45+wave*7,cd:2,score:220,t:0}}
+ else if(r<0.40){e={type:"tank",x:plat.x+plat.w/2,y:plat.y-40,w:46,h:60,hp:240+wave*22,maxHp:240+wave*22,score:300,t:0,swing:0}}
+ else if(r<0.45){e={type:"splitter",x:plat.x+plat.w/2,y:plat.y-30,w:40,h:36,hp:70+wave*10,maxHp:70+wave*10,score:250,split:2,big:true}}
+ else if(r<0.50){e={type:"swarmer",x:plat.x+plat.w/2,y:plat.y-100,w:24,h:26,hp:20+wave*3,maxHp:20+wave*3,t:Math.random()*10,score:90}}
+ else if(r<0.55){e={type:"shield",x:plat.x+plat.w/2,y:plat.y-36,w:40,h:50,hp:110+wave*16,maxHp:110+wave*16,dir:1,cd:0,score:260,shieldT:1,chargeT:0}}
+ else if(r<0.60){e={type:"teleporter",x:plat.x+plat.w/2,y:plat.y-120,w:36,h:24,hp:70+wave*12,maxHp:70+wave*12,t:0,cd:2,score:240,tent:0}}
+ else if(r<0.65){e={type:"icefly",x:plat.x+plat.w/2,y:plat.y-140,w:30,h:26,hp:30+wave*5,maxHp:30+wave*5,t:Math.random()*10,score:150}}
+ else if(r<0.70){e={type:"sandworm",x:plat.x+plat.w/2,y:plat.y-20,w:48,h:28,hp:90+wave*14,maxHp:90+wave*14,t:0,cd:2.5,score:280,under:0}}
+ else if(r<0.75){e={type:"laser",x:plat.x+plat.w/2,y:plat.y-34,w:40,h:54,hp:120+wave*20,maxHp:120+wave*20,cd:3,charge:0,score:320}}
+ else if(r<0.80){e={type:"blink",x:plat.x+plat.w/2,y:plat.y-80,w:28,h:40,hp:50+wave*8,maxHp:50+wave*8,t:0,cd:1.8,score:200}}
+ else if(r<0.85){e={type:"magnet",x:plat.x+plat.w/2,y:plat.y-100,w:30,h:30,hp:60+wave*9,maxHp:60+wave*9,t:0,cd:2,score:200,mode:0}}
+ else if(r<0.90){e={type:"pylon",x:plat.x+plat.w/2,y:plat.y-30,w:24,h:60,hp:150+wave*18,maxHp:150+wave*18,t:0,score:350}}
+ else if(r<0.95){e={type:"mirror",x:plat.x+plat.w/2,y:plat.y-50,w:30,h:48,hp:40+wave*6,maxHp:40+wave*6,t:0,score:220}}
+ else{e={type:"doll",x:plat.x+plat.w/2,y:plat.y-30,w:28,h:40,hp:45+wave*7,maxHp:45+wave*7,t:0,score:180}}
 world.enemies.push(e);
 }
 if(distance>150&&distance>bossSpawned*130+129&&!bossAlive){
@@ -2565,6 +2570,11 @@ for(var i=0;i<world.enemies.length;i++){
   else if(e.type==="laser"){e.cd-=dt;if(e.cd<=0&&e.charge===0){e.charge=1.5;e.cd=1.5;world.texts.push({x:e.x,y:e.y-40,text:"蓄力激光!",life:0.6,vy:-25})}else if(e.charge>0){e.charge-=dt;if(e.charge<=0){e.charge=0;e.cd=3.5;var ldir=(p.x>e.x?1:-1);world.bullets.push({x:e.x,y:e.y,vx:ldir*560,vy:0,r:16,life:1.6,owner:"enemy",color:"#ff2a6d",laser:true,big:true})}}}
   else if(e.type==="icefly"){e.t=(e.t||0)+dt;var ix=p.x-e.x,iy=p.y-e.y;var idist=Math.sqrt(ix*ix+iy*iy)||0.001;e.x+=Math.cos(e.t*2)*1.2;e.y+=Math.sin(e.t*1.3)*0.8;if(idist<180){e.x-=ix/idist*40*dt}else{e.x+=ix/idist*50*dt;e.y+=iy/idist*30*dt}if(e._ice===undefined)e._ice=0;e._ice++;if(e._ice%120===0){world.ices.push({x:e.x,y:H-30,w:120,t:0})}}
   else if(e.type==="sandworm"){e.t=(e.t||0)+dt;if(e.under===undefined)e.under=0;if(e.cd===undefined)e.cd=2.5;e.cd-=dt;if(e.under>0){e.under-=dt;if(e.under<=0){e.under=0;e.x=p.x;e.y=H-80;world.flash=0.2;spawnShockRing(e.x,e.y,"#ff8a5b",90);cam.shake=10;e.cd=2.5}}else if(e.cd<=0){e.under=1.2;world.texts.push({x:p.x,y:H-120,text:"小心脚下!",life:0.8,vy:-25})}}
+  else if(e.type==="blink"){e.t=(e.t||0)+dt;e.cd-=dt;if(e.cd<=0){e.cd=1.8;var bl=Math.floor(Math.random()*4);var bx=p.x+(bl===0?90:bl===1?-90:0),by=p.y+(bl===2?70:bl===3?-70:0);e.x=bx;e.y=by;world.flash=0.15;spawnShockRing(e.x,e.y,"#a855f7",50);for(var bkn=0;bkn<1;bkn++){world.bullets.push({x:e.x,y:e.y,vx:(p.x>e.x?1:-1)*260,vy:0,r:5,life:0.4,owner:"enemy",color:"#c084fc",stab:true})}}}
+  else if(e.type==="magnet"){e.t=(e.t||0)+dt;e.cd-=dt;e.mode=(e.mode||0);if(e.cd<=0){e.cd=2.4;e.mode=(e.mode+1)%2;if(e.mode===0){world.texts.push({x:e.x,y:e.y-40,text:"吸引!",life:0.5,vy:-20})}else{world.texts.push({x:e.x,y:e.y-40,text:"排斥!",life:0.5,vy:-20})}}var md=p.x-e.x,mdy=p.y-e.y;var mdd=Math.sqrt(md*md+mdy*mdy)||0.001;if(e.mode===0){p.x-=md/mdd*160*dt;p.y-=mdy/mdd*160*dt}else{p.x+=md/mdd*200*dt;p.y+=mdy/mdd*200*dt}}
+  else if(e.type==="pylon"){e.t=(e.t||0)+dt;for(var j=0;j<world.enemies.length;j++){var oe=world.enemies[j];if(oe.type!=="pylon"&&Math.abs(oe.x-e.x)<200&&Math.abs(oe.y-e.y)<200){if(oe.hp<oe.maxHp)oe.hp=Math.min(oe.maxHp,oe.hp+2*dt)}}}
+  else if(e.type==="mirror"){e.t=(e.t||0)+dt;e.y+=Math.sin(e.t*2)*0.4}
+  else if(e.type==="doll"){e.t=(e.t||0)+dt;var ddx=p.x-e.x,ddy=p.y-e.y;var ddd=Math.sqrt(ddx*ddx+ddy*ddy)||0.001;e.x+=ddx/ddd*Math.min(70,ddd)*dt*0.8;e.y+=Math.abs(Math.sin(e.t*6))*2;if(ddd<50&&e._atk===undefined){e._atk=0}e.cd=(e.cd||0)-dt;if(e.cd<=0&&ddd<60){e.cd=1.2;world.bullets.push({x:e.x,y:e.y,vx:(p.x>e.x?1:-1)*220,vy:0,r:5,life:0.4,owner:"enemy",color:"#f0abfc",snip:true})}}
   else if(e.type==="boss"){
   e.phase+=dt;
   e.y+=Math.sin(e.phase*1.2)*0.8;
@@ -3048,13 +3058,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v3.1");
+    localStorage.setItem("njs_patch","v3.2");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v3.1"){
+    if(seen!=="v3.2"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -5856,6 +5866,83 @@ function draw(){
         // 发光眼
         ctx.fillStyle="#ffd700";ctx.beginPath();ctx.arc(-e.w*0.1,-e.h*0.25,2.5,0,Math.PI*2);ctx.fill();
       }
+    }else if(e.type==="blink"){
+      // 瞬移者：紫色故障像素幽灵
+      ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#a855f7";
+      // 半透明紫色轮廓
+      ctx.fillStyle="rgba(168,85,247,0.6)";
+      ctx.beginPath();ctx.ellipse(0,0,e.w*0.4,e.h*0.45,0,0,Math.PI*2);ctx.fill();
+      // 故障像素马赛克
+      ctx.fillStyle="rgba(192,132,252,0.8)";
+      for(var gx=0;gx<4;gx++){var gpx=(Math.random()-0.5)*e.w, gpy=(Math.random()-0.5)*e.h;ctx.fillRect(gpx-2,gpy-2,4,4);}
+      // 细长白缝眼
+      ctx.fillStyle="#fff";ctx.fillRect(-6,-6,5,2);ctx.fillRect(1,-6,5,2);
+      // 撕碎数据流下摆
+      ctx.strokeStyle="rgba(168,85,247,0.7)";ctx.lineWidth=2;
+      for(var st=0;st<3;st++){var stx=(st-1)*e.w*0.2;ctx.beginPath();ctx.moveTo(stx,e.h*0.3);ctx.lineTo(stx+Math.sin(e.t*8+st)*4,e.h*0.55);ctx.stroke();}
+    }else if(e.type==="magnet"){
+      // 磁铁怪：U形磁铁，红N蓝S
+      ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#ff2a6d";
+      // U形磁铁身体
+      ctx.strokeStyle="#8a8a9a";ctx.lineWidth=6;ctx.lineCap="round";
+      ctx.beginPath();ctx.moveTo(-e.w*0.35,-e.h*0.35);ctx.lineTo(-e.w*0.35,e.h*0.35);ctx.lineTo(e.w*0.35,e.h*0.35);ctx.lineTo(e.w*0.35,-e.h*0.35);ctx.stroke();
+      // 红N极（上）
+      ctx.fillStyle="#ff2a6d";ctx.fillRect(-e.w*0.42,-e.h*0.42,e.w*0.14,e.h*0.2);
+      // 蓝S极（上右）
+      ctx.fillStyle="#3b82f6";ctx.fillRect(e.w*0.28,-e.h*0.42,e.w*0.14,e.h*0.2);
+      // 圆圆小眼睛
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(-4,-2,3,0,Math.PI*2);ctx.arc(4,-2,3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#111";ctx.beginPath();ctx.arc(-4,-2,1.5,0,Math.PI*2);ctx.arc(4,-2,1.5,0,Math.PI*2);ctx.fill();
+      // 两极光晕拖尾
+      ctx.fillStyle="rgba(255,42,109,0.3)";ctx.beginPath();ctx.arc(-e.w*0.35,-e.h*0.35,5,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="rgba(59,130,246,0.3)";ctx.beginPath();ctx.arc(e.w*0.35,-e.h*0.35,5,0,Math.PI*2);ctx.fill();
+    }else if(e.type==="pylon"){
+      // 充电桩：紫黑柱 + 放电电弧球
+      ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#7c3aed";
+      // 紫黑柱身
+      ctx.fillStyle="#1a1030";ctx.fillRect(-e.w*0.35,-e.h*0.3,e.w*0.7,e.h*0.6);
+      // 发光符文底座
+      ctx.fillStyle="#7c3aed";ctx.fillRect(-e.w*0.4,e.h*0.3,e.w*0.8,4);
+      // 顶端放电电弧球
+      var arcF=Math.sin(e.t*5)*0.4+0.6;
+      ctx.fillStyle="rgba(125,211,252,"+arcF+")";
+      ctx.beginPath();ctx.arc(0,-e.h*0.4,6+Math.sin(e.t*8)*2,0,Math.PI*2);ctx.fill();
+      // 蓝白电弧
+      ctx.strokeStyle="rgba(255,255,255,0.8)";ctx.lineWidth=1.5;
+      for(var ak=0;ak<3;ak++){var aka=Math.random()*Math.PI*2;ctx.beginPath();ctx.moveTo(0,-e.h*0.4);ctx.lineTo(Math.cos(aka)*12,-e.h*0.4+Math.sin(aka)*12);ctx.stroke();}
+    }else if(e.type==="mirror"){
+      // 镜面体：流动镜面人形
+      ctx.shadowBlur=(FQ>=2?12:0);ctx.shadowColor="#9fb8e8";
+      // 镜面身体（反射光）
+      var mrg=ctx.createLinearGradient(-e.w/2,0,e.w/2,0);
+      mrg.addColorStop(0,"#c8d8f0");mrg.addColorStop(0.5,"#8a9ac0");mrg.addColorStop(1,"#c8d8f0");
+      ctx.fillStyle=mrg;
+      ctx.fillRect(-e.w*0.3,-e.h*0.4,e.w*0.6,e.h*0.8);
+      // 头（镜面圆）
+      ctx.beginPath();ctx.arc(0,-e.h*0.4,e.w*0.28,0,Math.PI*2);ctx.fill();
+      // 表面波纹
+      ctx.strokeStyle="rgba(255,255,255,0.5)";ctx.lineWidth=1.5;
+      for(var wv=0;wv<2;wv++){var wvy=wv*10-5;ctx.beginPath();ctx.arc(0,wvy,e.w*0.25,0.2,2.9);ctx.stroke();}
+    }else if(e.type==="doll"){
+      // 傀儡娃娃：破旧布偶 + 纽扣眼 + 小剪刀
+      ctx.shadowBlur=(FQ>=2?12:0);ctx.shadowColor="#f0abfc";
+      // 布偶身体
+      ctx.fillStyle="#8a5a8a";ctx.fillRect(-e.w*0.3,-e.h*0.2,e.w*0.6,e.h*0.6);
+      // 头
+      ctx.fillStyle="#c8a0c8";ctx.beginPath();ctx.arc(0,-e.h*0.35,e.w*0.3,0,Math.PI*2);ctx.fill();
+      // 纽扣眼（缝线）
+      ctx.fillStyle="#5a3a5a";
+      ctx.beginPath();ctx.arc(-6,-e.h*0.35,3,0,Math.PI*2);ctx.arc(6,-e.h*0.35,3,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="#5a3a5a";ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(-6,-e.h*0.35);ctx.lineTo(-6,-e.h*0.38);ctx.moveTo(6,-e.h*0.35);ctx.lineTo(6,-e.h*0.38);ctx.stroke();
+      // 歪嘴缝线
+      ctx.strokeStyle="#5a3a5a";ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(-4,-e.h*0.2);ctx.lineTo(4,-e.h*0.18);ctx.stroke();
+      // 补丁发光
+      ctx.fillStyle="rgba(240,171,252,0.6)";ctx.fillRect(-e.w*0.2,e.h*0.05,6,6);
+      // 小剪刀
+      ctx.strokeStyle="#c0c0d0";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(e.w*0.3,e.h*0.2);ctx.lineTo(e.w*0.45,e.h*0.3);ctx.lineTo(e.w*0.4,e.h*0.4);ctx.stroke();
     }else if(e.type==="boss"){
       var bk = e.bk||0;
       var tt = e.phase||0;
@@ -7269,7 +7356,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.1</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.2</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7300,6 +7387,15 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 02:36:39",items:[
+      "✨ 小怪大换血完成（第4批）：瞬移者 / 磁铁怪 / 充电桩 / 镜面体 / 傀儡娃娃",
+      "⚙️ 瞬移者：随机闪现4方向，现身戳刀",
+      "⚙️ 磁铁怪：吸引/排斥循环，扰乱走位",
+      "⚙️ 充电桩：给周围小怪持续回血（优先拆）",
+      "⚙️ 镜面体：血薄但会小幅度闪避",
+      "⚙️ 傀儡娃娃：蹦跳靠近挥剪刀",
+      "⭐ 全部 20 种小怪换血完成"
+    ]},
     {time:"2026-10-24 02:32:28",items:[
       "🐛 修复第3批新小怪导致的卡死闪退（除零+变量冲突+字段未初始化）"
     ]},
@@ -7363,7 +7459,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 02:32:28";
+    pd.textContent="更新于 2026 年 10 月 24 日 02:36:39";
   }
 })();
 </script>
