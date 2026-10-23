@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v2.6</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v2.7</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -591,10 +591,10 @@ if(Math.random()<(smartMode?0.08:0.18))world.pickups.push({x:e.x,y:e.y-20,t:0,ki
 if(Math.random()<(smartMode?0.15:0.3))player.hp=Math.min(player.maxHp,player.hp+(smartMode?3:5));
 player.en=Math.min(player.maxEn,player.en+15);
 if(e.type==="boss"){
-  showToast("BOSS击破!丰厚奖励!");score+=8000;world.flash=0.6;cam.shake=22;bossAlive=false;
+  showToast("BOSS击破!丰厚奖励!");score+=15000;world.flash=0.6;cam.shake=22;bossAlive=false;
   // 丰厚奖励：金币+回血+武器升级+护盾
-  coinCount+=60;
-  player.hp=Math.min(player.maxHp,player.hp+50);
+  coinCount+=120;
+  player.hp=Math.min(player.maxHp,player.hp+80);
   player.en=Math.min(player.maxEn,player.en+40);
   player.shield=Math.max(player.shield||0,3);
   gunLevel=Math.min(50,gunLevel+1);
@@ -3044,56 +3044,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v2.6");
+    localStorage.setItem("njs_patch","v2.7");
   }catch(e){}
 }
 (function(){
   try{
-    // ===== 公告列表（最新在前，unshift 插顶部）=====
-    var patchList=[
-      {time:"2026-10-24 01:50:37",items:[
-        "✨ 小怪大换血（第1批）：尖刺龟 / 集群蜂 / 自爆球 / 霓虹史莱姆 / 火苗怪",
-        "⚙️ 尖刺龟：靠近缩壳高速旋转冲撞",
-        "⚙️ 集群蜂：绕圈俯冲自爆，溅出减速电雾",
-        "⚙️ 自爆球：蓄红光2秒大爆炸",
-        "⚙️ 霓虹史莱姆：击杀分裂成两只小史莱姆",
-        "⚙️ 火苗怪：追踪贴近爆炸8向火球"
-      ]},
-      {time:"2026-10-24 01:20:00",items:[
-        "✨ 新增 4 个三阶段 Boss：暴食金猪·猪八旺 / 伪善学究·凌算机 / 深渊女仆鲸娘 / 霓虹执行者K.Volt",
-        "🐛 修复 Boss 被子弹击飞飞出屏幕的问题",
-        "⚙️ 所有 Boss 统一降到屏幕下方，不再飞出视野"
-      ]},
-      {time:"2026-10-23 22:40:00",items:[
-        "✨ 新增 2 个 Boss：暗影男孩（紫色魔法弹幕+黑乌鸦）、菌丝卫衣少年（孢子弹+毒雾）",
-        "⚙️ Boss 改为随机生成，不再按固定顺序"
-      ]}
-    ];
-    // 渲染公告列表
-    var _box=document.getElementById("patchListBox");
-    if(_box){
-      var _html="";
-      for(var pi=0;pi<patchList.length;pi++){
-        var _it=patchList[pi];
-        if(pi===0){
-          _html+='<div style="color:#ff2fd6;font-weight:600;margin-bottom:6px;font-size:13px">🔥 最新更新 <span style="font-size:10px;color:#9fb8e8">· '+_it.time+'</span></div>';
-        }else{
-          _html+='<div style="color:#ffd54a;font-weight:600;margin:12px 0 4px;font-size:12px">· '+_it.time+'</div>';
-        }
-        for(var ii=0;ii<_it.items.length;ii++){
-          _html+='<div>· '+_it.items[ii]+'</div>';
-        }
-      }
-      _box.innerHTML=_html;
-    }
-    // 日期填充（精确到秒）
-    var _pd=document.getElementById("patchDateText");
-    if(_pd){
-      _pd.textContent="更新于 2026 年 10 月 24 日 01:50:37";
-    }
-    // 版本判断
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v2.6"){
+    if(seen!=="v2.7"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7185,7 +7142,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v2.6</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v2.7</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7214,10 +7171,50 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   },{passive:false,capture:true});
   el.addEventListener("touchend",function(){on=false;id=null},{passive:true,capture:true});
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
-  /* 日期填充：元素已存在，必然能填上（精确到秒） */
+  /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
+  var patchList=[
+    {time:"2026-10-24 01:59:56",items:[
+      "💰 Boss 击杀奖励大幅提升：+15000分 +120金币 +回血80",
+      "🐛 修复公告内容不显示的问题"
+    ]},
+    {time:"2026-10-24 01:50:37",items:[
+      "✨ 小怪大换血（第1批）：尖刺龟 / 集群蜂 / 自爆球 / 霓虹史莱姆 / 火苗怪",
+      "⚙️ 尖刺龟：靠近缩壳高速旋转冲撞",
+      "⚙️ 集群蜂：绕圈俯冲自爆，溅出减速电雾",
+      "⚙️ 自爆球：蓄红光2秒大爆炸",
+      "⚙️ 霓虹史莱姆：击杀分裂成两只小史莱姆",
+      "⚙️ 火苗怪：追踪贴近爆炸8向火球"
+    ]},
+    {time:"2026-10-24 01:20:00",items:[
+      "✨ 新增 4 个三阶段 Boss：暴食金猪·猪八旺 / 伪善学究·凌算机 / 深渊女仆鲸娘 / 霓虹执行者K.Volt",
+      "🐛 修复 Boss 被子弹击飞飞出屏幕的问题",
+      "⚙️ 所有 Boss 统一降到屏幕下方，不再飞出视野"
+    ]},
+    {time:"2026-10-23 22:40:00",items:[
+      "✨ 新增 2 个 Boss：暗影男孩（紫色魔法弹幕+黑乌鸦）、菌丝卫衣少年（孢子弹+毒雾）",
+      "⚙️ Boss 改为随机生成，不再按固定顺序"
+    ]}
+  ];
+  var _box=document.getElementById("patchListBox");
+  if(_box){
+    var _html="";
+    for(var pi=0;pi<patchList.length;pi++){
+      var _it=patchList[pi];
+      if(pi===0){
+        _html+='<div style="color:#ff2fd6;font-weight:600;margin-bottom:6px;font-size:13px">🔥 最新更新 <span style="font-size:10px;color:#9fb8e8">· '+_it.time+'</span></div>';
+      }else{
+        _html+='<div style="color:#ffd54a;font-weight:600;margin:12px 0 4px;font-size:12px">· '+_it.time+'</div>';
+      }
+      for(var ii=0;ii<_it.items.length;ii++){
+        _html+='<div>· '+_it.items[ii]+'</div>';
+      }
+    }
+    _box.innerHTML=_html;
+  }
+  /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 01:50";
+    pd.textContent="更新于 2026 年 10 月 24 日 01:59:56";
   }
 })();
 </script>
