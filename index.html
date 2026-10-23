@@ -3747,7 +3747,7 @@ function lbRender(){
   var box=document.getElementById("overBoard");
   if(!box) return;
   if(typeof _bindDrag==="function"){_bindDrag(box)}
-  var arr=(lbView==="all")?lbCacheAll:lbCacheMe;
+  var arr=(lbView==="all"||lbView==="smart")?lbCacheAll:lbCacheMe;
   while(box.firstChild) box.removeChild(box.firstChild);
   if(!arr || !arr.length){
     var emp=document.createElement("div");
@@ -3801,7 +3801,8 @@ function lbFetchAll(){
           if(!seen[k]){ seen[k]=1; uniq.push(row); }
         }
         lbCacheAll=uniq;
-        lbRender();
+        try{ lbRender(); }catch(e){}
+        try{ if(typeof homeRankRender==="function")homeRankRender(); }catch(e){}
         lbStat(uniq.length?("全网 "+uniq.length+" 位玩家"):"还没有记录");
       }catch(e){ lbStat("数据异常"); }
     } else { lbStat("离线模式"); }
@@ -3833,7 +3834,8 @@ function lbFetchMe(){
   }
   lbCacheMe=filtered;
   lbCacheMe.sort(function(x,y){return (y.score||0)-(x.score||0)});
-  lbRender();
+  try{ lbRender(); }catch(e){}
+  try{ if(typeof homeRankRender==="function")homeRankRender(); }catch(e){}
   lbStat("本机 "+(wantSmart?"聪明人":"普通")+" "+lbCacheMe.length+" 条");
 }
 
@@ -3955,7 +3957,7 @@ function homeRankRender(){
   var box=document.getElementById("hrBoard");
   if(!box)return;
   _bindDrag(box);
-  var arr=(lbView==="all")?lbCacheAll:lbCacheMe;
+  var arr=(lbView==="all"||lbView==="smart")?lbCacheAll:lbCacheMe;
   while(box.firstChild)box.removeChild(box.firstChild);
   if(!arr||!arr.length){
     var em=document.createElement("div");
