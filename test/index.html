@@ -112,8 +112,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   </div>
 <button class="btn btn-main" onclick="startGame(false)">开 始 游 戏</button>
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
-  <button onclick="openPatchNote()" style="display:block;margin:10px auto 0;padding:8px 26px;border-radius:20px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:14px;cursor:pointer">📢 更新公告</button>
-  <button id="homeRankBtn" onclick="openHomeRank()" style="display:block;margin:10px auto 0;padding:8px 26px;border-radius:20px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:14px;cursor:pointer">🏆 排行榜</button>
+  <div style="display:flex;gap:8px;justify-content:center;margin:8px auto 0">
+    <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
+    <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
+  </div>
   <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.0</div>
   
   <div style="margin-top:10px;text-align:center">
@@ -4952,56 +4954,76 @@ function drawAnimeSky(){
       var silC="rgb("+Math.round(sc[0])+","+Math.round(sc[1])+","+Math.round(sc[2])+")";
       c2.fillStyle=silC;
       var grow=Math.min(1,d/1800);
-      var step=44-Math.min(14,stage*2);
       var hor2=H*0.62;
-      for(var bx=-120;bx<W+360;bx+=step){
-        var seed=Math.floor(bx/step);
-        var bh=(30+((seed*7919)%60))*(0.65+grow*0.6)+(stage*3);
-        var bw=16+((seed*31)%36);
-        c2.fillRect(bx,hor2-bh,bw,bh);
-        var rt=(seed*7)%5;
-        if(rt===0){c2.fillRect(bx+bw*0.25,hor2-bh-8,6,8);c2.fillRect(bx+bw*0.25-2,hor2-bh-11,10,3)}
-        else if(rt===1){c2.beginPath();c2.moveTo(bx+bw*0.2,hor2-bh);c2.lineTo(bx+bw*0.5,hor2-bh-14);c2.lineTo(bx+bw*0.8,hor2-bh);c2.closePath();c2.fill()}
-        else if(rt===2){c2.fillRect(bx+bw/2-1,hor2-bh-16,2,16);c2.fillRect(bx+bw/2-4,hor2-bh-14,8,2)}
-        else if(rt===3){c2.fillRect(bx+bw/2-1,hor2-bh-12,2,12);c2.beginPath();c2.moveTo(bx+bw/2-1,hor2-bh-12);c2.lineTo(bx+bw/2+6,hor2-bh-9);c2.lineTo(bx+bw/2-1,hor2-bh-9);c2.closePath();c2.fill()}
-        if(seed%3===0){
-          if(stage>=2){c2.fillRect(bx+bw/2-1,hor2-bh-16,2,16);c2.beginPath();c2.moveTo(bx+bw/2-3,hor2-bh-16);c2.lineTo(bx+bw/2+3,hor2-bh-16);c2.lineTo(bx+bw/2,hor2-bh-24);c2.closePath();c2.fill()}
-          else{c2.fillRect(bx+bw/2-1,hor2-bh-12,2,12)}
-        }
-        // 亮窗：夜里亮暖黄，白天暗淡
-        var winA=dayN<0.35?0.55:(dayN<0.5?0.55*(1-(dayN-0.35)/0.15):0.06);
-        if(seed%2===0&&winA>0.02){
-          c2.fillStyle="rgba(255,220,140,"+winA+")";
-          for(var wy=hor2-bh+8;wy<hor2-8;wy+=12){
-            for(var wx=bx+5;wx<bx+bw-4;wx+=9){
-              if((wx*13+wy*7+seed)%5<2){c2.fillRect(wx,wy,3,5)}
+      if(stage<=2){
+        /* 霓虹街区/离子风暴/虚空边缘：城市天际线 */
+        var step=44-Math.min(14,stage*2);
+        for(var bx=-120;bx<W+360;bx+=step){
+          var seed=Math.floor(bx/step);
+          var bh=(30+((seed*7919)%60))*(0.65+grow*0.6)+(stage*3);
+          var bw=16+((seed*31)%36);
+          c2.fillRect(bx,hor2-bh,bw,bh);
+          var rt=(seed*7)%5;
+          if(rt===0){c2.fillRect(bx+bw*0.25,hor2-bh-8,6,8);c2.fillRect(bx+bw*0.25-2,hor2-bh-11,10,3)}
+          else if(rt===1){c2.beginPath();c2.moveTo(bx+bw*0.2,hor2-bh);c2.lineTo(bx+bw*0.5,hor2-bh-14);c2.lineTo(bx+bw*0.8,hor2-bh);c2.closePath();c2.fill()}
+          else if(rt===2){c2.fillRect(bx+bw/2-1,hor2-bh-16,2,16);c2.fillRect(bx+bw/2-4,hor2-bh-14,8,2)}
+          else if(rt===3){c2.fillRect(bx+bw/2-1,hor2-bh-12,2,12);c2.beginPath();c2.moveTo(bx+bw/2-1,hor2-bh-12);c2.lineTo(bx+bw/2+6,hor2-bh-9);c2.lineTo(bx+bw/2-1,hor2-bh-9);c2.closePath();c2.fill()}
+          var winA=dayN<0.35?0.55:(dayN<0.5?0.55*(1-(dayN-0.35)/0.15):0.06);
+          if(seed%2===0&&winA>0.02){
+            c2.fillStyle="rgba(255,220,140,"+winA+")";
+            for(var wy=hor2-bh+8;wy<hor2-8;wy+=12){
+              for(var wx=bx+5;wx<bx+bw-4;wx+=9){
+                if((wx*13+wy*7+seed)%5<2){c2.fillRect(wx,wy,3,5)}
+              }
             }
+            c2.fillStyle=silC;
+          }
+          if(stage>=1&&seed%4===1&&dayN<0.6){
+            c2.fillStyle=seed%2?"rgba(255,0,170,0.7)":"rgba(0,242,255,0.7)";
+            c2.fillRect(bx+3,hor2-bh+4,bw-6,4);
+            c2.fillStyle=silC;
           }
         }
-        // 霓虹招牌（霓虹街区阶段，夜里亮）
-        if(stage>=1&&stage<=2&&seed%4===1&&dayN<0.6){
-          c2.fillStyle=seed%2?"rgba(255,0,170,0.7)":"rgba(0,242,255,0.7)";
-          c2.fillRect(bx+3,hor2-bh+4,bw-6,4);
+      }else if(stage===3){
+        /* 熔火深渊：火山群 */
+        for(var vx2=-80;vx2<W+360;vx2+=170){
+          var vs=Math.floor(vx2/170);
+          var vh=60+((vs*5323)%70);
+          c2.beginPath();c2.moveTo(vx2-90,hor2);c2.lineTo(vx2,hor2-vh);c2.lineTo(vx2+90,hor2);c2.closePath();c2.fill();
+          c2.fillStyle="rgba(255,120,20,0.75)";
+          c2.beginPath();c2.moveTo(vx2-14,hor2-vh+10);c2.lineTo(vx2,hor2-vh+2);c2.lineTo(vx2+14,hor2-vh+10);c2.closePath();c2.fill();
+          c2.fillStyle=silC;
+        }
+      }else if(stage===4){
+        /* 翡翠遗迹：森林树海 */
+        for(var tx=-60;tx<W+360;tx+=52){
+          var ts=Math.floor(tx/52);
+          var th=44+((ts*3571)%58);
+          c2.beginPath();c2.moveTo(tx,hor2);c2.lineTo(tx+26,hor2-th);c2.lineTo(tx+52,hor2);c2.closePath();c2.fill();
+          c2.fillRect(tx+22,hor2-14,8,14);
+          if(ts%3===0){c2.beginPath();c2.arc(tx+26,hor2-th-6,7,0,6.2832);c2.fill()}
+        }
+      }else if(stage===5){
+        /* 黄金王座：宫殿尖塔群 */
+        for(var px2=-70;px2<W+360;px2+=110){
+          var ps=Math.floor(px2/110);
+          var ph=70+((ps*7919)%80);
+          c2.fillRect(px2+10,hor2-ph,60,ph);
+          c2.beginPath();c2.moveTo(px2+10,hor2-ph);c2.lineTo(px2+40,hor2-ph-36);c2.lineTo(px2+70,hor2-ph);c2.closePath();c2.fill();
+          c2.beginPath();c2.arc(px2+40,hor2-ph-40,6,0,6.2832);c2.fill();
+          if(ps%2===0){c2.fillStyle="rgba(255,215,40,0.4)";c2.fillRect(px2+24,hor2-ph+18,32,5);c2.fillStyle=silC}
+        }
+      }else{
+        /* 终焉裂隙：破碎晶体尖刺 */
+        for(var cx4=-40;cx4<W+360;cx4+=55){
+          var cs2=Math.floor(cx4/55);
+          var ch=40+((cs2*3571)%60);
+          c2.beginPath();c2.moveTo(cx4,hor2);c2.lineTo(cx4+14,hor2-ch);c2.lineTo(cx4+28,hor2);c2.closePath();c2.fill();
+          if(cs2%2===0){c2.beginPath();c2.moveTo(cx4+28,hor2);c2.lineTo(cx4+40,hor2-ch*0.6);c2.lineTo(cx4+52,hor2);c2.closePath();c2.fill()}
         }
       }
       c2.fillStyle="rgb("+Math.round(sc[0]*0.55)+","+Math.round(sc[1]*0.55)+","+Math.round(sc[2]*0.6)+")";
       c2.fillRect(0,hor2,W+360,H-hor2);
-      // 远山（熔火/翡翠）
-      if(stage>=3&&stage<=4){
-        for(var mx2=-60;mx2<W+360;mx2+=90){
-          var mseed=Math.floor(mx2/90);
-          var mh=30+((mseed*5323)%48);
-          c2.beginPath();c2.moveTo(mx2,hor2);c2.lineTo(mx2+45,hor2-mh);c2.lineTo(mx2+90,hor2);c2.closePath();c2.fill();
-        }
-      }
-      // 尖刺晶体（终焉）
-      if(stage===6){
-        for(var cx3=-40;cx3<W+360;cx3+=55){
-          var cseed=Math.floor(cx3/55);
-          var ch=40+((cseed*3571)%60);
-          c2.beginPath();c2.moveTo(cx3,hor2);c2.lineTo(cx3+14,hor2-ch);c2.lineTo(cx3+28,hor2);c2.closePath();c2.fill();
-        }
-      }
       _skyCache.city=cc;
     }catch(e){ _skyCache.city=document.createElement("canvas"); }
   }
@@ -6215,11 +6237,26 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
 </div>
 <script>
 (function(){
-  function _pb(){
-    var sc=document.getElementById("patchScroll");
-    if(sc){try{_bindDrag(sc);}catch(e){}}
-  }
-  _pb(); setTimeout(_pb,300); setTimeout(_pb,1500);
+  var el=document.getElementById("patchScroll");
+  if(!el)return;
+  if(el._scBound)return; el._scBound=true;
+  var sy=0,ss=0,on=false,id=null;
+  el.addEventListener("touchstart",function(ev){
+    on=true;id=ev.touches[0].identifier;sy=ev.touches[0].clientY;ss=el.scrollTop;
+  },{passive:true,capture:true});
+  el.addEventListener("touchmove",function(ev){
+    if(!on)return;
+    for(var i=0;i<ev.changedTouches.length;i++){
+      if(ev.changedTouches[i].identifier===id){
+        el.scrollTop=ss-(ev.changedTouches[i].clientY-sy);
+        if(ev.cancelable)ev.preventDefault();
+        ev.stopPropagation();
+        break;
+      }
+    }
+  },{passive:false,capture:true});
+  el.addEventListener("touchend",function(){on=false;id=null},{passive:true,capture:true});
+  el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
 })();
 </script>
 </body>
