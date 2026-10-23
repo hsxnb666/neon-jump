@@ -113,11 +113,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 <button class="btn btn-main" onclick="startGame(false)">开 始 游 戏</button>
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
   <button id="homeRankBtn" onclick="openHomeRank()" style="display:block;margin:10px auto 0;padding:8px 26px;border-radius:20px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:14px;cursor:pointer">🏆 排行榜</button>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">多角色版 H1</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.0</div>
   <div id="patchNote" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(5,8,20,.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px">
     <div style="max-width:420px;width:100%;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15)">
       <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
-      <div style="text-align:center;font-size:11px;color:#6a7fb8;margin-bottom:12px">多角色版 H1 · 2025-06</div>
+      <div id="patchDate" style="text-align:center;font-size:11px;color:#6a7fb8;margin-bottom:12px">正式版 v1.0</div>
       <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
         <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 全新内容</div>
         <div>· 5 大角色自由切换：机甲战士 / 二次元少女 / 写实格斗家 / 赛博武士 / 女仆鲸娘</div>
@@ -2675,12 +2675,19 @@ try{ initHero(); }catch(e){}
 function closePatchNote(){
   var d=document.getElementById("patchNote");
   if(d)d.style.display="none";
-  try{ localStorage.setItem("njs_patch","H1"); }catch(e){}
+  try{ localStorage.setItem("njs_patch","v1.0"); }catch(e){}
 }
 (function(){
   try{
+    // 动态填充更新日期（真实当前日期，永不写死）
+    var _pd=document.getElementById("patchDate");
+    if(_pd){
+      var _now=new Date();
+      var _yy=_now.getFullYear(),_mm=String(_now.getMonth()+1).padStart(2,"0"),_dd=String(_now.getDate()).padStart(2,"0");
+      _pd.textContent="正式版 v1.0 · 更新于 "+_yy+"-"+_mm+"-"+_dd;
+    }
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="H1"){
+    if(seen!=="v1.0"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
     }
