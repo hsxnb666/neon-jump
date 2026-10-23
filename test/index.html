@@ -114,6 +114,26 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
   <button id="homeRankBtn" onclick="openHomeRank()" style="display:block;margin:10px auto 0;padding:8px 26px;border-radius:20px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:14px;cursor:pointer">🏆 排行榜</button>
   <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">多角色版 H1</div>
+  <div id="patchNote" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(5,8,20,.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px">
+    <div style="max-width:420px;width:100%;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15)">
+      <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
+      <div style="text-align:center;font-size:11px;color:#6a7fb8;margin-bottom:12px">多角色版 H1 · 2025-06</div>
+      <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
+        <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 全新内容</div>
+        <div>· 5 大角色自由切换：机甲战士 / 二次元少女 / 写实格斗家 / 赛博武士 / 女仆鲸娘</div>
+        <div>· 女仆鲸娘全新登场：蓝发女仆裙 + 鲸尾巴 + 白丝过膝袜</div>
+        <div>· 4 种新小怪：集群蜂 / 护盾兵 / 瞬移者 / 激光炮</div>
+        <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">⚡ 体验优化</div>
+        <div>· 跑步动画重做：脚步咬合地面、起跳收腿、速度渐变</div>
+        <div>· 持枪姿势修正：枪真正握在手里，子弹从枪口射出</div>
+        <div>· 冰风颠倒时长 1.5s → 0.6s</div>
+        <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">🗑 清理</div>
+        <div>· 删除 7 种作用微小的陷阱（镜像/黑幕/锁屏等）</div>
+        <div>· 修复部分小怪隐形不显示的 bug</div>
+      </div>
+      <button onclick="closePatchNote()" style="display:block;margin:14px auto 0;padding:9px 38px;border-radius:20px;font-size:14px;background:rgba(0,242,255,.15);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:600">开始游戏</button>
+    </div>
+  </div>
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
     <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:0 8px">
@@ -593,9 +613,9 @@ if(world.challenge){world.challenge.kills++;world.challenge.score+=20;if(world.c
 /* ========== 聪明人模式：40种陷阱与套路 ========== */
 var TRAP_KINDS=[
 "fake_floor","disappear","crush","saw","poison_spike","magnet","reverse","dark","ice_wind","fake_gem",
-"fake_coin","fake_portal","fake_checkpoint","spike_wall","arrow","fire_jet","laser_grid","mine","gravity","slow_zone",
-"bounce_trap","sticky","mirror","invisible","electric","acid","swing","pendulum","falling_block","crusher",
-"ambush","feint","decoy","swap","lock","reverse_ctrl","blind","drain","ghost_hit","final_boss"
+"fake_coin","fake_portal","spike_wall","arrow","fire_jet","laser_grid","mine","gravity","slow_zone",
+"bounce_trap","sticky","invisible","electric","acid","swing","pendulum","falling_block","crusher",
+"ambush","decoy","swap","reverse_ctrl","final_boss"
 ];
 var trapNames={fake_floor:"假地板",disappear:"消失平台",crush:"压路机",saw:"电锯",poison_spike:"毒刺",magnet:"反向磁力",reverse:"反向操作",dark:"视野封锁",ice_wind:"冰风颠倒",fake_gem:"假宝石",fake_coin:"假金币",fake_portal:"假传送门",fake_checkpoint:"假存档点",spike_wall:"尖刺墙",arrow:"暗箭",fire_jet:"喷火口",laser_grid:"激光网",mine:"地雷",gravity:"重力反转",slow_zone:"腐蚀泥沼",bounce_trap:"恶意弹板",sticky:"酸液黏胶",mirror:"镜像陷阱",invisible:"隐形怪",electric:"电弧",acid:"酸雨",swing:"旋锤",pendulum:"摆动刀",falling_block:"落石",crusher:"液压压板",ambush:"伏击怪",feint:"假退真攻",decoy:"诱饵分身",swap:"位置交换",lock:"屏幕锁定",reverse_ctrl:"键位颠倒",blind:"屏幕黑幕",drain:"吸血红光",ghost_hit:"穿墙怪",final_boss:"最终守门"};
 
@@ -606,8 +626,8 @@ var trapNames={fake_floor:"假地板",disappear:"消失平台",crush:"压路机"
    环境型：区域效果，有明确出路
 */
 var TRAP_DANGER=["saw","poison_spike","spike_wall","fire_jet","laser_grid","mine","electric","acid","swing","pendulum","falling_block","crusher","ambush","final_boss"];
-var TRAP_DISTURB=["magnet","reverse","dark","ice_wind","gravity","slow_zone","bounce_trap","sticky","mirror","invisible","swap","lock","reverse_ctrl","blind","drain","ghost_hit","arrow","fake_floor","disappear"];
-var TRAP_BAIT=["fake_gem","fake_coin","fake_portal","fake_checkpoint","feint","decoy"];
+var TRAP_DISTURB=["magnet","reverse","dark","ice_wind","gravity","slow_zone","bounce_trap","sticky","invisible","swap","reverse_ctrl","arrow","fake_floor","disappear"];
+var TRAP_BAIT=["fake_gem","fake_coin","fake_portal","decoy"];
 
 /* 按平台生成陷阱：保证可通关
    规则：
@@ -2273,7 +2293,8 @@ var ang=0;if(tg)ang=Math.atan2(tg.y-p.y,tg.x-p.x);else ang=p.facing>0?0:Math.PI;
 p.shootCd=0.13;p.en-=8;p.muzzle=0.09;var spd=680;
 var rd=rageTimer>0?2:1;
 function mk(a,off,col,r,dmg,home){
-  var _mx=p.x+Math.cos(a)*34,_my=p.y+Math.sin(a)*16+off;
+  var _fx=(p.facing||1);
+  var _mx=p.x+_fx*36,_my=p.y-31+off;
   world.bullets.push({x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:dmg*rd,home:home});
   // 枪口喷射粒子（每次开火都喷）
   spawnMuzzle(_mx,_my,a,col,r>=8?1.8:1.1);
@@ -2650,6 +2671,21 @@ function initHero(){
   try{ setHero(HERO); }catch(e){}
 }
 try{ initHero(); }catch(e){}
+/* 更新公告：仅新版首次进入显示 */
+function closePatchNote(){
+  var d=document.getElementById("patchNote");
+  if(d)d.style.display="none";
+  try{ localStorage.setItem("njs_patch","H1"); }catch(e){}
+}
+(function(){
+  try{
+    var seen=localStorage.getItem("njs_patch");
+    if(seen!=="H1"){
+      var d=document.getElementById("patchNote");
+      if(d)d.style.display="flex";
+    }
+  }catch(e){}
+})();
 
 /* ============================================================
    通用工具：关节球 / 手臂 / 腿（供各角色复用）
@@ -2680,6 +2716,70 @@ function _animUpd(dt){
   _anim.vy = pl.vy || 0;
 }
 try{ _animUpd(1); }catch(e){}
+
+
+/* ============ 统一水平持枪臂（5 角色共用骨架，配色区分）============ */
+function heroGunArm(shY, aimA, pal){
+  // pal = {sleeve, sleeveDark, cuff, skin, hand} 颜色组
+  ctx.save();
+  ctx.translate(-4,shY);
+  ctx.rotate(aimA*0.35);           // 轻微跟随瞄准方向
+  // 上臂（袖子）：肩→肘
+  var g1=ctx.createLinearGradient(-4,0,4,0);
+  g1.addColorStop(0,pal.sleeve);
+  g1.addColorStop(1,pal.sleeveDark);
+  ctx.strokeStyle=g1;
+  ctx.lineWidth=7.5;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(8,4);
+  ctx.stroke();
+  // 肘关节球
+  if(pal.joint){
+    hjDot(8,4,3.4,true,pal.joint,pal.jointDark||pal.sleeveDark);
+  }else{
+    ctx.fillStyle=pal.sleeve;
+    ctx.beginPath();
+    ctx.arc(8,4,3.4,0,6.2832);
+    ctx.fill();
+  }
+  // 前臂（袖/肤色）：肘→手（水平向前）
+  var g2=ctx.createLinearGradient(0,0,0,10);
+  g2.addColorStop(0,pal.skin);
+  g2.addColorStop(1,pal.sleeveDark);
+  ctx.strokeStyle=pal.skin;
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.moveTo(8,4);
+  ctx.lineTo(17,2);
+  ctx.stroke();
+  // 蕾丝/护腕袖口（如果有）
+  if(pal.cuff){
+    ctx.strokeStyle=pal.cuff;
+    ctx.lineWidth=6.4;
+    ctx.beginPath();
+    ctx.moveTo(13,2.7);
+    ctx.lineTo(16,2.4);
+    ctx.stroke();
+  }
+  // 手掌（握枪）
+  ctx.fillStyle=pal.skin;
+  ctx.beginPath();
+  ctx.arc(17.5,2,3,0,6.2832);
+  ctx.fill();
+  ctx.fillStyle=pal.hand||pal.skin;
+  ctx.beginPath();
+  ctx.arc(18.5,2.5,2.6,0,6.2832);
+  ctx.fill();
+  // 枪：drawGun 自带 y+8 内偏移，translate(0,-10) 让枪身贴住手掌
+  ctx.save();
+  ctx.rotate(aimA*0.5);           // 枪口微微跟随瞄准
+  ctx.translate(12,-10);
+  drawGun();
+  ctx.restore();
+  ctx.restore();
+}
 
 function hjDot(px,py,r,bright,c1,c2){
   var g=ctx.createRadialGradient(px-r*0.35,py-r*0.35,r*0.15,px,py,r);
@@ -3049,52 +3149,7 @@ function animeArm(shY,angle,front){
 }
 
 function animeShootArm(shY,upperA,foreA){
-  ctx.save();
-  ctx.translate(-6,shY);
-  ctx.rotate(upperA);
-  var ua=ctx.createLinearGradient(-4.5,0,4.5,0);
-  ua.addColorStop(0,"#ffe0d0");
-  ua.addColorStop(0.4,"#ffd0bc");
-  ua.addColorStop(1,"#e0a890");
-  ctx.strokeStyle=ua;
-  ctx.lineWidth=7;
-  ctx.lineCap="round";
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(0,13); ctx.stroke();
-  // 袖子（白色泡泡袖）
-  ctx.fillStyle="#f8f4f8";
-  ctx.beginPath();
-  ctx.ellipse(0,1,5,4.5,0,0,6.2832);
-  ctx.fill();
-  ctx.translate(0,13);
-  ctx.fillStyle="#ffd0bc";
-  ctx.beginPath();
-  ctx.arc(0,0,3.5,0,6.2832);
-  ctx.fill();
-  ctx.rotate(foreA-upperA);
-  var fa=ctx.createLinearGradient(-3.5,0,3.5,0);
-  fa.addColorStop(0,"#ffe0d0");
-  fa.addColorStop(0.4,"#ffd0bc");
-  fa.addColorStop(1,"#e0a890");
-  ctx.strokeStyle=fa;
-  ctx.lineWidth=5.5;
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(0,14); ctx.stroke();
-  ctx.translate(0,14);
-  ctx.fillStyle="#ffd0bc";
-  ctx.beginPath();
-  ctx.arc(0,0,2.8,0,6.2832);
-  ctx.fill();
-  ctx.fillStyle="#ffe0d0";
-  ctx.beginPath();
-  ctx.arc(0.5,2,3.4,0,6.2832);
-  ctx.fill();
-  ctx.save();
-  ctx.rotate(-foreA*0.5);
-  ctx.translate(1.5,-1.5);
-  drawGun();
-  ctx.restore();
-  ctx.restore();
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#f8f4f8",sleeveDark:"#e0d8e0",cuff:"#ffffff",skin:"#ffd0bc",hand:"#ffe0d0"});
 }
 
 /* ============================================================
@@ -3384,52 +3439,7 @@ function fightArm(shY,angle,front){
 }
 
 function fightShootArm(shY,upperA,foreA){
-  ctx.save();
-  ctx.translate(-6,shY);
-  ctx.rotate(upperA);
-  var ua=ctx.createLinearGradient(-4.5,0,4.5,0);
-  ua.addColorStop(0,"#f0c0a0");
-  ua.addColorStop(0.4,"#e0a880");
-  ua.addColorStop(1,"#c08860");
-  ctx.strokeStyle=ua;
-  ctx.lineWidth=8;
-  ctx.lineCap="round";
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(0,13); ctx.stroke();
-  // 三角肌（隆起）
-  ctx.fillStyle="#f0c0a0";
-  ctx.beginPath();
-  ctx.ellipse(0,1,5.5,5,0,0,6.2832);
-  ctx.fill();
-  ctx.translate(0,13);
-  ctx.fillStyle="#e0a880";
-  ctx.beginPath();
-  ctx.arc(0,0,3.8,0,6.2832);
-  ctx.fill();
-  ctx.rotate(foreA-upperA);
-  var fa=ctx.createLinearGradient(-3.5,0,3.5,0);
-  fa.addColorStop(0,"#f0c0a0");
-  fa.addColorStop(0.4,"#e0a880");
-  fa.addColorStop(1,"#c08860");
-  ctx.strokeStyle=fa;
-  ctx.lineWidth=6.5;
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(0,14); ctx.stroke();
-  ctx.translate(0,14);
-  ctx.fillStyle="#e0a880";
-  ctx.beginPath();
-  ctx.arc(0,0,3,0,6.2832);
-  ctx.fill();
-  ctx.fillStyle="#f0c0a0";
-  ctx.beginPath();
-  ctx.arc(0.5,2,3.6,0,6.2832);
-  ctx.fill();
-  ctx.save();
-  ctx.rotate(-foreA*0.5);
-  ctx.translate(1.5,-1.5);
-  drawGun();
-  ctx.restore();
-  ctx.restore();
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#f0c0a0",sleeveDark:"#c08860",skin:"#e0a880",hand:"#f0c0a0"});
 }
 
 
@@ -3759,52 +3769,7 @@ function samuraiArm(shY,angle,front){
 }
 
 function samuraiShootArm(shY,upperA,foreA){
-  ctx.save();
-  ctx.translate(-6,shY);
-  ctx.rotate(upperA);
-  var ua=ctx.createLinearGradient(-4.5,0,4.5,0);
-  ua.addColorStop(0,"#f5c8b0");
-  ua.addColorStop(0.4,"#e8b898");
-  ua.addColorStop(1,"#c89070");
-  ctx.strokeStyle=ua;
-  ctx.lineWidth=7;
-  ctx.lineCap="round";
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(0,13); ctx.stroke();
-  // 肩（和服袖）
-  ctx.fillStyle="#3a2a4a";
-  ctx.beginPath();
-  ctx.ellipse(0,1,5.5,5,0,0,6.2832);
-  ctx.fill();
-  ctx.translate(0,13);
-  ctx.fillStyle="#e8b898";
-  ctx.beginPath();
-  ctx.arc(0,0,3.5,0,6.2832);
-  ctx.fill();
-  ctx.rotate(foreA-upperA);
-  var fa=ctx.createLinearGradient(-3.5,0,3.5,0);
-  fa.addColorStop(0,"#f5c8b0");
-  fa.addColorStop(0.4,"#e8b898");
-  fa.addColorStop(1,"#c89070");
-  ctx.strokeStyle=fa;
-  ctx.lineWidth=5.5;
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(0,14); ctx.stroke();
-  ctx.translate(0,14);
-  ctx.fillStyle="#e8b898";
-  ctx.beginPath();
-  ctx.arc(0,0,2.8,0,6.2832);
-  ctx.fill();
-  ctx.fillStyle="#f5c8b0";
-  ctx.beginPath();
-  ctx.arc(0.5,2,3.4,0,6.2832);
-  ctx.fill();
-  ctx.save();
-  ctx.rotate(-foreA*0.5);
-  ctx.translate(1.5,-1.5);
-  drawGun();
-  ctx.restore();
-  ctx.restore();
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#3a2a4a",sleeveDark:"#1a0e2a",skin:"#e8b898",hand:"#f5c8b0"});
 }
 
 /* ============================================================
@@ -4330,48 +4295,7 @@ function maidArm(shY,angle,front){
 
 /* --- 持枪臂 --- */
 function maidShootArm(shY,upperA,foreA){
-  ctx.save();
-  ctx.translate(-6,shY);
-  ctx.rotate(upperA);
-  var ua=ctx.createLinearGradient(-4.5,0,4.5,0);
-  ua.addColorStop(0,"#323858");
-  ua.addColorStop(0.4,"#262c4a");
-  ua.addColorStop(1,"#181e36");
-  ctx.strokeStyle=ua;
-  ctx.lineWidth=7;
-  ctx.lineCap="round";
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(0,10); ctx.stroke();
-  // 泡泡袖隆起
-  ctx.fillStyle="#2a3050";
-  ctx.beginPath();
-  ctx.ellipse(0,1,5.2,4.8,0,0,6.2832);
-  ctx.fill();
-  // 蕾丝袖口
-  ctx.strokeStyle="#f8f4f0";
-  ctx.lineWidth=5.5;
-  ctx.beginPath();
-  ctx.moveTo(0,10); ctx.lineTo(0,12.5); ctx.stroke();
-  // 肤色前臂
-  ctx.strokeStyle="#ffe4d8";
-  ctx.lineWidth=5;
-  ctx.beginPath();
-  ctx.moveTo(0,12.5); ctx.lineTo(0,24); ctx.stroke();
-  // 手 + 握拳
-  ctx.fillStyle="#ffe4d8";
-  ctx.beginPath();
-  ctx.arc(0,25.5,2.8,0,6.2832);
-  ctx.fill();
-  ctx.fillStyle="#fff0ea";
-  ctx.beginPath();
-  ctx.arc(0.5,27,3.2,0,6.2832);
-  ctx.fill();
-  ctx.save();
-  ctx.rotate(-foreA*0.5);
-  ctx.translate(1.5,-1.5);
-  drawGun();
-  ctx.restore();
-  ctx.restore();
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#2a3050",sleeveDark:"#12182c",cuff:"#f8f4f0",skin:"#ffe4d8",hand:"#fff0ea"});
 }
 
 
@@ -4737,49 +4661,7 @@ function mechArm(shY,angle,front){
 }
 
 function mechShootArm(shY,upperA,foreA){
-  ctx.save();
-  ctx.translate(-6,shY);
-  ctx.rotate(upperA);
-  var ua=ctx.createLinearGradient(-4.5,0,4.5,0);
-  ua.addColorStop(0,"#b8c8d8");
-  ua.addColorStop(0.4,"#8aa0b8");
-  ua.addColorStop(1,"#5a7088");
-  ctx.strokeStyle=ua;
-  ctx.lineWidth=8;
-  ctx.lineCap="round";
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(0,13); ctx.stroke();
-  // 肩甲小片
-  ctx.fillStyle="#cfe0ef";
-  ctx.beginPath();
-  ctx.ellipse(0,1,5,4.5,0,0,6.2832);
-  ctx.fill();
-  ctx.translate(0,13);
-  hjDot(0,0,3.8,true,"rgba(210,230,245,0.98)","rgba(90,120,150,0.92)");
-  ctx.rotate(foreA-upperA);
-  var fa=ctx.createLinearGradient(-3.5,0,3.5,0);
-  fa.addColorStop(0,"#b8c8d8");
-  fa.addColorStop(0.4,"#8aa0b8");
-  fa.addColorStop(1,"#5a7088");
-  ctx.strokeStyle=fa;
-  ctx.lineWidth=6.5;
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(0,14); ctx.stroke();
-  ctx.translate(0,14);
-  ctx.fillStyle="#8aa0b8";
-  ctx.beginPath();
-  ctx.arc(0,0,3,0,6.2832);
-  ctx.fill();
-  ctx.fillStyle="#cfe0ef";
-  ctx.beginPath();
-  ctx.arc(0.5,2,3.6,0,6.2832);
-  ctx.fill();
-  ctx.save();
-  ctx.rotate(-foreA*0.5);
-  ctx.translate(1.5,-1.5);
-  drawGun();
-  ctx.restore();
-  ctx.restore();
+  heroGunArm(shY, (upperA+foreA)/2, {sleeve:"#8aa0b8",sleeveDark:"#5a7088",skin:"#8aa0b8",joint:"rgba(210,230,245,0.98)",jointDark:"rgba(90,120,150,0.92)",hand:"#cfe0ef"});
 }
 
 
