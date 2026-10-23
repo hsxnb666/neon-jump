@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.0</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.1</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -536,12 +536,12 @@ var plat=cand[Math.floor(Math.random()*cand.length)];
  else{e={type:"laser",x:plat.x+plat.w/2,y:plat.y-34,w:40,h:54,hp:120+wave*20,maxHp:120+wave*20,cd:3,charge:0,score:320}}
 world.enemies.push(e);
 }
-if(distance>1200&&distance>bossSpawned*1000+999){
+if(distance>700&&distance>bossSpawned*600+599){
 bossWave++;bossSpawned=bossWave;
 var cols=["#ffe600","#ff2a6d","#7fdcff","#b026ff","#ff8a5b"];
-var bc=cols[(bossWave-1)%5],hp=1000+bossWave*500;
+var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=(bossWave-1)%4;
 showToast("BOSS Wave "+bossWave+"!");sfx(60,"sawtooth",1.2,0.15,30);
-world.enemies.push({type:"boss",x:player.x+900,y:H/2-70,w:110,h:110,hp:hp,maxHp:hp,cd:0,phase:0,score:4000+bossWave*1000,bc:bc,bw:bossWave})}}
+world.enemies.push({type:"boss",x:player.x+760,y:H/2-90,w:150,h:150,hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
 
 function showToast(m){if(!ui.toast)return;ui.toast.textContent=m;ui.toast.classList.add("show");if(showToast._t)clearTimeout(showToast._t);showToast._t=setTimeout(function(){ui.toast.classList.remove("show")},1900)}
 
@@ -2546,7 +2546,82 @@ for(var i=0;i<world.enemies.length;i++){
   else if(e.type==="shield"){e.dir=(p.x>e.x?1:-1);e.x+=e.dir*0.6*dt*60;e.cd-=dt;if(e.cd<=0){e.cd=2;e.shieldT=0.6}if(e.shieldT>0)e.shieldT-=dt}
   else if(e.type==="teleporter"){e.t+=dt;e.cd-=dt;if(e.cd<=0){e.cd=2.2;e.x=p.x+(p.facing||1)*140;e.y=p.y-40;world.flash=0.15;spawnShockRing(e.x,e.y,"#7c3aed",50)}}
   else if(e.type==="laser"){e.cd-=dt;if(e.cd<=0&&e.charge===0){e.charge=1;e.cd=1.2;world.texts.push({x:e.x,y:e.y-40,text:"蓄力激光!",life:0.6,vy:-25})}else if(e.charge>0){e.charge-=dt;if(e.charge<=0){e.charge=0;e.cd=3;var ldir=(p.x>e.x?1:-1);world.bullets.push({x:e.x,y:e.y,vx:ldir*520,vy:0,r:13,life:1.5,owner:"enemy",color:"#ff2a6d",laser:true,big:true})}}}
-  else if(e.type==="boss"){e.phase+=dt;e.y+=Math.sin(e.phase*1.5)*1;e.cd-=dt;if(e.cd<=0){e.cd=Math.max(0.5,1.2-(e.bw||1)*0.08);var dirs=8+(e.bw||1);for(var k=0;k<dirs;k++){var ba=e.phase+k*Math.PI*2/dirs;var bsp=220+(e.bw||1)*15;world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ba)*bsp,vy:Math.sin(ba)*bsp,r:6,life:4,owner:"enemy",color:e.bc||"#ffe600"})}}}
+  else if(e.type==="boss"){
+  e.phase+=dt;
+  e.y+=Math.sin(e.phase*1.2)*0.8;
+  // 三阶段狂暴：HP<66% / <33% 提速
+  var hpr=e.hp/e.maxHp;
+  e.rage = hpr<0.33 ? 2 : (hpr<0.66 ? 1 : 0);
+  var spdUp = 1 + e.rage*0.45;
+  e.cd -= dt*spdUp;
+  if(e.cd<=0){
+    var bk=e.bk||0;
+    var bw=e.bw||1;
+    e.cd = Math.max(0.85, 2.1 - bw*0.09 - e.rage*0.35);
+    e.atkMode = (e.atkMode||0)+1;
+
+    if(bk===0){
+      /* 赛博水母：链状闪电 + 红色病毒块 */
+      if(e.atkMode%2===1){
+        // 链状闪电：朝玩家方向扇形放电
+        var pdx=p.x-e.x, pdy=p.y-e.y;
+        var baseA=Math.atan2(pdy,pdx);
+        for(var k=0;k<5+e.rage;k++){
+          var ba=baseA+(k-2)*0.22;
+          var bsp=340;
+          world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ba)*bsp,vy:Math.sin(ba)*bsp,r:5,life:3.2,owner:"enemy",color:"#4df0ff",chain:true});
+        }
+      }else{
+        // 红色病毒块：小方块慢速扩散
+        for(var k2=0;k2<6+e.rage*3;k2++){
+          var ba2=e.phase+k2*Math.PI*2/(6+e.rage*3);
+          var bsp2=180;
+          world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ba2)*bsp2,vy:Math.sin(ba2)*bsp2,r:6,life:4.5,owner:"enemy",color:"#ff2255",block:true});
+        }
+      }
+    }else if(bk===1){
+      /* 蒸汽战争机器：旋转齿轮 + 底部蒸汽柱 */
+      if(e.atkMode%2===1){
+        // 旋转齿轮弹（螺旋）
+        for(var k3=0;k3<8+e.rage*2;k3++){
+          var ba3=e.phase*1.4+k3*Math.PI*2/(8+e.rage*2);
+          var bsp3=250;
+          world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ba3)*bsp3,vy:Math.sin(ba3)*bsp3,r:9,life:4,owner:"enemy",color:"#d4a017",gear:true,spin:0});
+        }
+      }else{
+        // 底部蒸汽柱：向上喷射
+        for(var k4=0;k4<4+e.rage;k4++){
+          var sx2=e.x+(k4-2)*38;
+          world.bullets.push({x:sx2,y:H-60,vx:(Math.random()-0.5)*40,vy:-380,r:10,life:2.2,owner:"enemy",color:"#cfd8dc",steam:true});
+        }
+      }
+    }else if(bk===2){
+      /* 破碎沙漏：时间泡 + 时钟指针飞镖 */
+      if(e.atkMode%2===1){
+        // 时间泡：慢速追踪大泡
+        for(var k5=0;k5<3+Math.min(2,e.rage);k5++){
+          var ta=Math.atan2(p.y-e.y,p.x-e.x)+(k5-1)*0.4;
+          world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ta)*130,vy:Math.sin(ta)*130,r:12,life:5,owner:"enemy",color:"#a855f7",timeBubble:true,home:true});
+        }
+      }else{
+        // 时钟指针飞镖：高速直线
+        var ta2=Math.atan2(p.y-e.y,p.x-e.x);
+        for(var k6=0;k6<4+e.rage;k6++){
+          var ta3=ta2+(k6-1.5)*0.28;
+          world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ta3)*620,vy:Math.sin(ta3)*620,r:7,life:1.6,owner:"enemy",color:"#fbbf24",clockHand:true});
+        }
+      }
+    }else{
+      /* 恶魔卡带机：三层 neon 粉声波 */
+      for(var tier=0;tier<3;tier++){
+        var ty=e.y-42+tier*42;
+        for(var k7=0;k7<2+e.rage;k7++){
+          world.bullets.push({x:e.x,y:ty,vx:(-380-Math.random()*120),vy:0,r:9,life:3.5,owner:"enemy",color:"#ff2fd6",soundwave:true,wob:tier});
+        }
+      }
+    }
+  }
+}
 }
 // 子弹
 for(var i=0;i<world.bullets.length;i++){
@@ -2668,7 +2743,7 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v2.0");
+    localStorage.setItem("njs_patch","v2.1");
   }catch(e){}
 }
 (function(){
@@ -2682,7 +2757,7 @@ function closePatchNote(){
       _pd.textContent="更新于 "+_yy+" 年 "+_mm+" 月 "+_dd+" 日 "+_hh+":"+_mi+":"+_ss;
     }
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v2.0"){
+    if(seen!=="v2.1"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -5313,14 +5388,177 @@ function draw(){
       ctx.beginPath();ctx.arc(0,0,e.charge>0?10+Math.sin(Date.now()/30)*2:6,0,Math.PI*2);ctx.fill();
       ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,e.charge>0?5:2.5,0,Math.PI*2);ctx.fill();
     }else if(e.type==="boss"){
-      ctx.shadowBlur=(FQ>=2?36:0);ctx.shadowColor="#ffe600";
-      var g=ctx.createRadialGradient(0,0,10,0,0,e.w/2);
-      g.addColorStop(0,"#fff");g.addColorStop(0.5,"#ffe600");g.addColorStop(1,"rgba(255,0,170,0.2)");
-      ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,e.w/2,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#000";ctx.beginPath();ctx.arc(-18,-4,12,0,Math.PI*2);ctx.arc(18,-4,12,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.arc(-18,-4,5,0,Math.PI*2);ctx.arc(18,-4,5,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#330011";ctx.fillRect(-e.w/2,-e.h/2-20,e.w,8);
-      ctx.fillStyle="#ff00aa";ctx.fillRect(-e.w/2,-e.h/2-20,e.w*(e.hp/e.maxHp),8);
+      var bk = e.bk||0;
+      var tt = e.phase||0;
+      var rr = e.rage||0;
+      var R  = e.w/2;
+
+      if(bk===0){
+        /* ===== 1. 赛博水母：半透明胶质体 + 电路纹 + 4条数据触手 ===== */
+        // 4 条触手（左右摆动）
+        ctx.strokeStyle="rgba(77,240,255,0.75)";ctx.lineWidth=5;ctx.lineCap="round";
+        for(var ti=0;ti<4;ti++){
+          var tx0=(-R*0.6)+ti*(R*0.4);
+          var sw=Math.sin(tt*2.2+ti*1.5)*R*0.35;
+          ctx.beginPath();
+          ctx.moveTo(tx0,R*0.5);
+          ctx.quadraticCurveTo(tx0+sw*0.5,R*1.0,tx0+sw,R*1.6);
+          ctx.stroke();
+        }
+        // 半透明伞盖
+        var jg=ctx.createRadialGradient(0,-R*0.2,R*0.15,0,0,R);
+        jg.addColorStop(0,"rgba(180,240,255,0.92)");
+        jg.addColorStop(0.55,"rgba(60,150,230,0.78)");
+        jg.addColorStop(1,"rgba(20,40,120,0.42)");
+        ctx.fillStyle=jg;
+        ctx.beginPath();ctx.ellipse(0,0,R,R*0.82,0,Math.PI,0);ctx.fill();
+        ctx.beginPath();ctx.ellipse(0,0,R,R*0.28,0,0,Math.PI);ctx.fill();
+        // 内部电路纹（发光线条）
+        ctx.strokeStyle="rgba(255,60,180,"+(0.55+Math.sin(tt*4)*0.25)+")";ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.moveTo(-R*0.55,R*0.1);ctx.lineTo(-R*0.2,-R*0.35);ctx.lineTo(R*0.15,R*0.05);ctx.lineTo(R*0.5,-R*0.3);
+        ctx.stroke();
+        ctx.beginPath();ctx.moveTo(-R*0.35,R*0.22);ctx.lineTo(0,R*0.32);ctx.lineTo(R*0.35,R*0.18);ctx.stroke();
+        for(var ci2=0;ci2<4;ci2++){
+          ctx.fillStyle="rgba(255,255,255,"+(0.4+Math.sin(tt*6+ci2)*0.4)+")";
+          ctx.beginPath();ctx.arc(-R*0.45+ci2*R*0.3,-R*0.12+Math.sin(ci2)*R*0.1,2.5,0,6.2832);ctx.fill();
+        }
+        // 双眼
+        ctx.fillStyle="#04121f";ctx.beginPath();ctx.arc(-R*0.28,-R*0.12,R*0.14,0,6.2832);ctx.arc(R*0.28,-R*0.12,R*0.14,0,6.2832);ctx.fill();
+        ctx.fillStyle="#ff2fd6";ctx.beginPath();ctx.arc(-R*0.28,-R*0.12,R*0.07,0,6.2832);ctx.arc(R*0.28,-R*0.12,R*0.07,0,6.2832);ctx.fill();
+      }
+      else if(bk===1){
+        /* ===== 2. 蒸汽战争机器：黄铜齿轮 + 履带 + 红色炉心 ===== */
+        // 履带底座
+        ctx.fillStyle="#3a3026";
+        ctx.fillRect(-R*1.05,R*0.55,R*2.1,R*0.5);
+        ctx.fillStyle="#5a4a36";
+        for(var tr=0;tr<7;tr++){
+          var txp=-R*1.0+tr*R*0.3;
+          ctx.beginPath();ctx.arc(txp,R*0.8,R*0.09,0,6.2832);ctx.fill();
+        }
+        // 机身
+        var bg2=ctx.createLinearGradient(0,-R,0,R*0.6);
+        bg2.addColorStop(0,"#c9a349");bg2.addColorStop(0.5,"#8d6f2c");bg2.addColorStop(1,"#5a4520");
+        ctx.fillStyle=bg2;
+        ctx.beginPath();ctx.roundRect?ctx.roundRect(-R*0.9,-R*0.85,R*1.8,R*1.5,R*0.18):ctx.rect(-R*0.9,-R*0.85,R*1.8,R*1.5);ctx.fill();
+        // 顶部烟囱
+        ctx.fillStyle="#6b5327";ctx.fillRect(-R*0.62,-R*1.15,R*0.26,R*0.35);ctx.fillRect(R*0.34,-R*1.15,R*0.26,R*0.35);
+        // 两侧齿轮（旋转）
+        ctx.save();
+        ctx.rotate(tt*1.6);
+        for(var gs=0;gs<8;gs++){
+          ctx.save();ctx.rotate(gs*Math.PI/4);
+          ctx.fillStyle="#b99544";ctx.fillRect(-3,-R*0.95,6,R*0.16);ctx.restore();
+        }
+        ctx.restore();
+        ctx.fillStyle="#8d6f2c";ctx.beginPath();ctx.arc(0,-R*0.85,R*0.16,0,6.2832);ctx.fill();
+        // 红色炉心（脉动）
+        var coreP=0.8+Math.sin(tt*5)*0.2;
+        var cg=ctx.createRadialGradient(0,0,2,0,0,R*0.34);
+        cg.addColorStop(0,"#fff6c0");cg.addColorStop(0.35,"rgba(255,120,20,"+coreP+")");cg.addColorStop(1,"rgba(120,20,0,0)");
+        ctx.fillStyle=cg;ctx.beginPath();ctx.arc(0,0,R*0.34,0,6.2832);ctx.fill();
+        ctx.fillStyle="#ff8a1e";ctx.beginPath();ctx.arc(0,0,R*0.13,0,6.2832);ctx.fill();
+        // 眼睛（红点）
+        ctx.fillStyle="rgba(255,40,20,"+(0.6+rr*0.2)+")";
+        ctx.beginPath();ctx.arc(-R*0.42,-R*0.5,R*0.07,0,6.2832);ctx.arc(R*0.42,-R*0.5,R*0.07,0,6.2832);ctx.fill();
+      }
+      else if(bk===2){
+        /* ===== 3. 破碎沙漏：眼球+尖叫嘴+紫色时间液 ===== */
+        // 沙漏轮廓（上宽下宽中间收）
+        ctx.beginPath();
+        ctx.moveTo(-R*0.85,-R);
+        ctx.lineTo(R*0.85,-R);
+        ctx.lineTo(R*0.18,0);
+        ctx.lineTo(R*0.85,R);
+        ctx.lineTo(-R*0.85,R);
+        ctx.lineTo(-R*0.18,0);
+        ctx.closePath();
+        var hg=ctx.createLinearGradient(0,-R,0,R);
+        hg.addColorStop(0,"rgba(168,85,247,0.55)");
+        hg.addColorStop(0.5,"rgba(120,40,200,0.35)");
+        hg.addColorStop(1,"rgba(168,85,247,0.55)");
+        ctx.fillStyle=hg;ctx.fill();
+        ctx.strokeStyle="#fbbf24";ctx.lineWidth=4;ctx.stroke();
+        // 上半破碎裂痕
+        ctx.strokeStyle="rgba(255,255,255,0.7)";ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(-R*0.5,-R*0.85);ctx.lineTo(-R*0.2,-R*0.5);ctx.lineTo(-R*0.4,-R*0.2);ctx.stroke();
+        // 眼球（漂浮）
+        for(var eb=0;eb<2;eb++){
+          var ex=(eb?1:-1)*R*0.34;
+          var ey=-R*0.55+Math.sin(tt*2+eb*2)*R*0.1;
+          ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(ex,ey,R*0.16,0,6.2832);ctx.fill();
+          ctx.fillStyle="#2a0845";ctx.beginPath();ctx.arc(ex+Math.sin(tt+eb)*R*0.04,ey,R*0.08,0,6.2832);ctx.fill();
+          ctx.fillStyle="#fbbf24";ctx.beginPath();ctx.arc(ex+Math.sin(tt+eb)*R*0.04,ey,R*0.035,0,6.2832);ctx.fill();
+        }
+        // 尖叫嘴（下半张开的椭圆）
+        ctx.fillStyle="#1a0326";
+        ctx.beginPath();ctx.ellipse(0,R*0.55,R*0.22,R*0.3+Math.sin(tt*3)*R*0.05,0,0,6.2832);ctx.fill();
+        ctx.fillStyle="#fbbf24";
+        ctx.beginPath();ctx.arc(0,R*0.55,R*0.06,0,6.2832);ctx.fill();
+        // 紫色时间液滴落
+        for(var dp=0;dp<3;dp++){
+          var dpy=((tt*80+dp*40)%(R*1.2));
+          ctx.fillStyle="rgba(168,85,247,0.7)";
+          ctx.beginPath();ctx.arc((dp-1)*R*0.12, R*0.2+dpy, 3.5, 0, 6.2832);ctx.fill();
+        }
+      }
+      else{
+        /* ===== 4. 恶魔卡带机：锈铁 + 双扬声器 + 磁带触手 ===== */
+        // 磁带触手（下方蠕动）
+        ctx.strokeStyle="rgba(40,40,50,0.95)";ctx.lineWidth=9;ctx.lineCap="round";
+        for(var mti=0;mti<3;mti++){
+          var mtx=(-R*0.55)+mti*(R*0.55);
+          var msw=Math.sin(tt*3+mti*1.8)*R*0.3;
+          ctx.beginPath();
+          ctx.moveTo(mtx,R*0.55);
+          ctx.quadraticCurveTo(mtx+msw,R*0.85,mtx+msw*1.4,R*1.25);
+          ctx.stroke();
+          // 磁带孔
+          ctx.fillStyle="#111";ctx.beginPath();ctx.arc(mtx+msw*1.4,R*1.25,3,0,6.2832);ctx.fill();
+        }
+        // 机身体（锈铁）
+        var cig=ctx.createLinearGradient(0,-R,0,R*0.6);
+        cig.addColorStop(0,"#6b5b3e");cig.addColorStop(0.5,"#4a3f2a");cig.addColorStop(1,"#2e2719");
+        ctx.fillStyle=cig;
+        ctx.fillRect(-R*0.95,-R*0.9,R*1.9,R*1.55);
+        ctx.strokeStyle="#8a7550";ctx.lineWidth=2.5;ctx.strokeRect(-R*0.95,-R*0.9,R*1.9,R*1.55);
+        // 顶部卷轴孔
+        ctx.fillStyle="#1a1610";
+        ctx.beginPath();ctx.arc(-R*0.5,-R*0.55,R*0.13,0,6.2832);ctx.arc(R*0.5,-R*0.55,R*0.13,0,6.2832);ctx.fill();
+        ctx.fillStyle="#8a7550";
+        ctx.beginPath();ctx.arc(-R*0.5,-R*0.55,R*0.05,0,6.2832);ctx.arc(R*0.5,-R*0.55,R*0.05,0,6.2832);ctx.fill();
+        // 双扬声器（像尖叫的嘴）
+        for(var spk=0;spk<2;spk++){
+          var sx3=(spk?1:-1)*R*0.48;
+          ctx.fillStyle="#14100a";
+          ctx.beginPath();ctx.ellipse(sx3,R*0.2,R*0.26,R*0.34,0,0,6.2832);ctx.fill();
+          // 格栅线
+          ctx.strokeStyle="rgba(255,47,214,0.65)";ctx.lineWidth=1.6;
+          for(var gl=0;gl<4;gl++){
+            ctx.beginPath();
+            ctx.moveTo(sx3-R*0.22,R*0.05+gl*R*0.12);
+            ctx.lineTo(sx3+R*0.22,R*0.05+gl*R*0.12);
+            ctx.stroke();
+          }
+          // 发光边
+          ctx.strokeStyle="rgba(0,242,255,"+(0.4+Math.sin(tt*5+spk)*0.3)+")";ctx.lineWidth=2.5;
+          ctx.beginPath();ctx.ellipse(sx3,R*0.2,R*0.26,R*0.34,0,0,6.2832);ctx.stroke();
+        }
+        // 中央磁带窗
+        ctx.fillStyle="rgba(255,47,214,0.28)";
+        ctx.fillRect(-R*0.3,-R*0.18,R*0.6,R*0.34);
+        ctx.strokeStyle="#ff2fd6";ctx.lineWidth=2;ctx.strokeRect(-R*0.3,-R*0.18,R*0.6,R*0.34);
+      }
+
+      // 血条（统一）
+      ctx.fillStyle="#1a0a20";ctx.fillRect(-e.w/2,-e.h/2-20,e.w,8);
+      ctx.fillStyle= rr>=2?"#ff2255":(rr>=1?"#ff8a1e":"#ff00aa");
+      ctx.fillRect(-e.w/2,-e.h/2-20,e.w*(e.hp/e.maxHp),8);
+      // 阶段刻度
+      ctx.fillStyle="rgba(0,0,0,0.6)";
+      ctx.fillRect(-e.w/2+e.w*0.33,-e.h/2-20,2,8);
+      ctx.fillRect(-e.w/2+e.w*0.66,-e.h/2-20,2,8);
     }
     ctx.restore();
     if(e.type!=="boss"){
@@ -6216,21 +6454,21 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026-10-23</div>
   </div>
     <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
-      <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 全新内容</div>
-      <div>· 5 大角色自由切换：机甲战士 / 二次元少女 / 写实格斗家 / 赛博武士 / 女仆鲸娘</div>
-      <div>· 女仆鲸娘全新登场：蓝发女仆裙 + 鲸尾巴 + 白丝过膝袜</div>
-      <div>· 4 种新小怪：集群蜂 / 护盾兵 / 瞬移者 / 激光炮</div>
+      <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 本次更新</div>
+      <div>· 背景全新重构：月亮东升西落的日夜循环（夜→黎明→白天→黄昏）</div>
+      <div>· 7 大地景随距离切换：城市 / 火山 / 森林 / 宫殿 / 晶体</div>
+      <div>· 天空元素：星星 140 颗、白云、流星、成群小鸟</div>
+      <div>· 建筑多样化：水塔 / 尖顶 / 天线 / 起重机塔</div>
       <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">⚡ 体验优化</div>
-      <div>· 跑步动画重做：脚步咬合地面、起跳收腿、速度渐变</div>
-      <div>· 持枪姿势修正：枪真正握在手里，子弹从枪口射出</div>
-      <div>· 冰风颠倒时长 1.5s → 0.6s</div>
-      <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">🗑 清理</div>
-      <div>· 删除 7 种作用微小的陷阱（镜像/黑幕/锁屏等）</div>
-      <div>· 修复部分小怪隐形不显示的 bug</div>
-      <div style="color:#7fdcff;font-weight:600;margin:8px 0 2px">🎨 背景焕新</div>
-      <div>· 二次元动漫天空：月亮 / 城市 / 流星 / 云</div>
-      <div>· 城市剪影随距离动态变化 + 视差滚动</div>
-      <div>· 多风格背景：樱花 / 雪夜 / 赛博 / 火山</div>
+      <div>· 主页新增「📢 公告」按钮，公告内容可上下滑动</div>
+      <div>· 公告缩放/按钮合并，昵称不再被挤出屏幕</div>
+      <div>· 背景离屏缓存渲染，消除卡顿</div>
+      <div>· 修复背景闪退问题</div>
+      <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">🎮 玩法内容</div>
+      <div>· 5 大角色自由切换：机甲 / 二次元少女 / 格斗家 / 赛博武士 / 女仆鲸娘</div>
+      <div>· 12 种小怪：集群蜂 / 护盾兵 / 瞬移者 / 激光炮等</div>
+      <div>· 子弹全等级自动追踪敌人</div>
+      <div>· 跑步动画重做、持枪姿势修正</div>
     </div>
     <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
   </div>
