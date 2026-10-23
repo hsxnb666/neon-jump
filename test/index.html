@@ -539,10 +539,11 @@ world.enemies.push(e);
 if(distance>150&&distance>bossSpawned*130+129&&!bossAlive){
 bossWave++;bossSpawned=bossWave;bossAlive=true;
 var cols=["#ffe600","#ff2a6d","#7fdcff","#b026ff","#ff8a5b"];
-var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=(bossWave-1)%5;
-var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊"];
+var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=Math.floor(Math.random()*7);
+var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊","暗影男孩","菌丝卫衣少年"];
+var by=bk===0?H-300:H-240;
 showToast("BOSS "+bnames[bk]+" 来袭!");sfx(60,"sawtooth",1.2,0.15,30);
-world.enemies.push({type:"boss",x:player.x+620,y:H-240,w:150,h:150,hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
+world.enemies.push({type:"boss",x:player.x+620,y:by,w:150,h:150,hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
 
 function showToast(m){if(!ui.toast)return;ui.toast.textContent=m;ui.toast.classList.add("show");if(showToast._t)clearTimeout(showToast._t);showToast._t=setTimeout(function(){ui.toast.classList.remove("show")},1900)}
 
@@ -2640,6 +2641,35 @@ for(var i=0;i<world.enemies.length;i++){
           world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ra)*rsp,vy:Math.sin(ra)*rsp-80,r:8,life:4,owner:"enemy",color:"#8b5cf6",rag:true});
         }
       }
+    }else if(bk===5){
+      /* 暗影男孩：双眼环形紫色魔法弹幕(波浪轨迹) + 3只黑乌鸦直线突袭 */
+      if(e.atkMode%2===1){
+        for(var wb=0;wb<8+e.rage*4;wb++){
+          var wa=e.phase*1.2+wb*Math.PI*2/8;
+          var wspeed=210+e.rage*35;
+          world.bullets.push({x:e.x,y:e.y,vx:Math.cos(wa)*wspeed,vy:Math.sin(wa)*wspeed+Math.sin(e.phase*2)*60,r:7,life:3.2,owner:"enemy",color:"#a855f7",wave:true});
+        }
+      }else{
+        for(var cr=0;cr<3+e.rage;cr++){
+          var cdir=(p.x>e.x?1:-1);
+          var cy2=e.y-30+cr*30;
+          world.bullets.push({x:e.x,y:cy2,vx:cdir*430,vy:(Math.random()-0.5)*30,r:9,life:2.5,owner:"enemy",color:"#1a1a1a",crow:true});
+        }
+      }
+    }else if(bk===6){
+      /* 菌丝卫衣少年：碎裂镜片12发孢子弹 + 帽子大嘴喷紫色毒雾 */
+      if(e.atkMode%2===1){
+        for(var gp=0;gp<12+e.rage*4;gp++){
+          var ga=e.phase*1.4+gp*Math.PI*2/12;
+          var gspeed=190+e.rage*30;
+          world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ga)*gspeed,vy:Math.sin(ga)*gspeed,r:6,life:3.4,owner:"enemy",color:"#b06df0",irregular:true});
+        }
+      }else{
+        for(var pn=0;pn<4+e.rage*2;pn++){
+          var pa=(p.x>e.x?1:-1);
+          world.bullets.push({x:e.x,y:e.y-20,vx:pa*(120+Math.random()*60),vy:(Math.random()-0.5)*40,r:12,life:5,owner:"enemy",color:"#7c3aed",poison:true,pslow:0.4});
+        }
+      }
     }else{
       /* 恶魔卡带机：三层 neon 粉声波 */
       for(var tier=0;tier<3;tier++){
@@ -2772,7 +2802,7 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v2.3");
+    localStorage.setItem("njs_patch","v2.4");
   }catch(e){}
 }
 (function(){
@@ -2780,10 +2810,10 @@ function closePatchNote(){
     // 动态填充更新日期（真实当前日期，永不写死）
     var _pd=document.getElementById("patchDateText");
     if(_pd){
-      _pd.textContent="更新于 2026 年 10 月 23 日 16:58:00";
+      _pd.textContent="更新于 2026 年 10 月 23 日 17:10:00";
     }
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v2.3"){
+    if(seen!=="v2.4"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -5573,6 +5603,98 @@ function draw(){
         ctx.strokeStyle="rgba(255,255,255,0.3)";ctx.lineWidth=1.5;
         for(var zl=0;zl<5;zl++){ctx.beginPath();ctx.moveTo(-R*0.04,-R*0.05+zl*R*0.12);ctx.lineTo(R*0.04,-R*0.02+zl*R*0.12);ctx.stroke();}
       }
+      else if(bk===5){
+        /* ===== 6. 暗影男孩：黑发炸起 + 睿智嫌弃眼 + 破旧暗黑衣 + 紫影环绕 ===== */
+        // 紫色暗影环绕
+        var sg6=ctx.createRadialGradient(0,0,R*0.3,0,0,R*1.2);
+        sg6.addColorStop(0,"rgba(120,60,220,0)");
+        sg6.addColorStop(0.7,"rgba(120,60,220,0.25)");
+        sg6.addColorStop(1,"rgba(120,60,220,0)");
+        ctx.fillStyle=sg6;ctx.beginPath();ctx.arc(0,0,R*1.2,0,6.2832);ctx.fill();
+        // 身体（破旧缝补暗黑布料）
+        var b6=ctx.createLinearGradient(0,-R,0,R);
+        b6.addColorStop(0,"#3a3a44");b6.addColorStop(1,"#1c1c24");
+        ctx.fillStyle=b6;
+        ctx.beginPath();ctx.roundRect?ctx.roundRect(-R*0.55,R*0.05,R*1.1,R*0.95,R*0.15):ctx.rect(-R*0.55,R*0.05,R*1.1,R*0.95);ctx.fill();
+        // 缝补线
+        ctx.strokeStyle="rgba(160,160,180,0.5)";ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(-R*0.4,R*0.4);ctx.lineTo(R*0.3,R*0.35);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(-R*0.2,R*0.2);ctx.lineTo(R*0.4,R*0.55);ctx.stroke();
+        // 头（圆脸微胖）
+        var f6=ctx.createRadialGradient(-R*0.1,-R*0.55,R*0.1,0,-R*0.45,R*0.65);
+        f6.addColorStop(0,"#ffe8dc");f6.addColorStop(1,"#f2c8b8");
+        ctx.fillStyle=f6;ctx.beginPath();ctx.arc(0,-R*0.5,R*0.5,0,6.2832);ctx.fill();
+        // 黑色蓬松炸起的头发
+        ctx.fillStyle="#1a1a1a";
+        ctx.beginPath();ctx.arc(0,-R*0.65,R*0.52,Math.PI*1.05,Math.PI*1.95);ctx.fill();
+        for(var hs=0;hs<7;hs++){
+          var hx=-R*0.4+hs*R*0.13;
+          var hy=-R*0.9+Math.abs(Math.sin(hs*1.3))*R*0.1;
+          ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(hx+2,hy-R*0.22-hs*0.4);ctx.lineTo(hx+5,hy);ctx.closePath();ctx.fill();
+        }
+        // 眉毛微皱（嫌弃）
+        ctx.strokeStyle="#3a2a20";ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.moveTo(-R*0.3,-R*0.58);ctx.lineTo(-R*0.12,-R*0.52);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(R*0.12,-R*0.52);ctx.lineTo(R*0.3,-R*0.58);ctx.stroke();
+        // 眼睛微眯（睿智嫌弃）
+        ctx.strokeStyle="#2a1a12";ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.arc(-R*0.2,-R*0.45,R*0.11,Math.PI*0.15,Math.PI*0.85);ctx.stroke();
+        ctx.beginPath();ctx.arc(R*0.2,-R*0.45,R*0.11,Math.PI*0.15,Math.PI*0.85);ctx.stroke();
+        ctx.fillStyle="#7c5a3a";ctx.beginPath();ctx.arc(-R*0.2,-R*0.47,R*0.04,0,6.2832);ctx.arc(R*0.2,-R*0.47,R*0.04,0,6.2832);ctx.fill();
+        // 深灰圆领（白色包边）
+        ctx.strokeStyle="rgba(255,255,255,0.7)";ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.arc(0,-R*0.02,R*0.28,0,Math.PI);ctx.stroke();
+      }
+      else if(bk===6){
+        /* ===== 7. 菌丝卫衣少年：粉卫衣 + 碎裂眼镜 + 帽子大嘴 + 绿色菌丝 ===== */
+        // 身体（宽松粉色连帽卫衣，破旧）
+        var b7=ctx.createLinearGradient(0,-R,0,R);
+        b7.addColorStop(0,"#e8a0b0");b7.addColorStop(1,"#b06a80");
+        ctx.fillStyle=b7;
+        ctx.beginPath();ctx.roundRect?ctx.roundRect(-R*0.7,R*0.0,R*1.4,R*1.0,R*0.25):ctx.rect(-R*0.7,R*0.0,R*1.4,R*1.0);ctx.fill();
+        // 黑色缝线裂口 + 绿色菌丝
+        ctx.strokeStyle="rgba(30,30,30,0.7)";ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(-R*0.3,R*0.3);ctx.lineTo(R*0.1,R*0.25);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(R*0.2,R*0.5);ctx.lineTo(R*0.6,R*0.45);ctx.stroke();
+        ctx.strokeStyle="rgba(125,255,106,"+(0.5+Math.sin(tt*3)*0.3)+")";ctx.lineWidth=3;ctx.lineCap="round";
+        for(var gz=0;gz<3;gz++){
+          var gzx=-R*0.2+gz*R*0.25;
+          ctx.beginPath();ctx.moveTo(gzx,R*0.4);ctx.quadraticCurveTo(gzx+Math.sin(tt*2+gz)*R*0.1,R*0.55,gzx,R*0.65);ctx.stroke();
+        }
+        // 头（瘦长脸）
+        var f7=ctx.createRadialGradient(0,-R*0.5,R*0.1,0,-R*0.45,R*0.55);
+        f7.addColorStop(0,"#fff0e8");f7.addColorStop(1,"#f0c8b0");
+        ctx.fillStyle=f7;ctx.beginPath();ctx.ellipse(0,-R*0.45,R*0.4,R*0.52,0,0,6.2832);ctx.fill();
+        // 黑色蓬松碎发（空气感，刘海遮右眉）
+        ctx.fillStyle="#202020";
+        ctx.beginPath();ctx.ellipse(0,-R*0.75,R*0.48,R*0.4,0,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.moveTo(-R*0.4,-R*0.6);ctx.quadraticCurveTo(-R*0.1,-R*0.4,R*0.2,-R*0.65);ctx.lineTo(R*0.35,-R*0.5);ctx.lineTo(R*0.2,-R*0.85);ctx.lineTo(-R*0.2,-R*0.9);ctx.closePath();ctx.fill();
+        // 帽子大嘴（长满尖牙）
+        ctx.fillStyle="#1a1a24";
+        ctx.beginPath();ctx.ellipse(0,-R*0.8,R*0.4,R*0.25,0,0,6.2832);ctx.fill();
+        ctx.fillStyle="#fff";
+        for(var fz=0;fz<5;fz++){
+          var fzx=-R*0.3+fz*R*0.15;
+          ctx.beginPath();ctx.moveTo(fzx,-R*0.95);ctx.lineTo(fzx+R*0.04,-R*0.72);ctx.lineTo(fzx+R*0.08,-R*0.95);ctx.closePath();ctx.fill();
+        }
+        // 碎裂眼镜（黑粗方框）
+        ctx.strokeStyle="#15151a";ctx.lineWidth=3;
+        ctx.strokeRect(-R*0.5,-R*0.62,R*0.42,R*0.34);
+        ctx.strokeRect(R*0.08,-R*0.62,R*0.42,R*0.34);
+        ctx.beginPath();ctx.moveTo(-R*0.08,-R*0.5);ctx.lineTo(R*0.08,-R*0.5);ctx.stroke();
+        // 镜片碎裂裂纹 + 琥珀眼
+        ctx.strokeStyle="rgba(255,255,255,0.6)";ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.moveTo(-R*0.35,-R*0.55);ctx.lineTo(-R*0.25,-R*0.4);ctx.lineTo(-R*0.15,-R*0.5);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(R*0.15,-R*0.55);ctx.lineTo(R*0.28,-R*0.38);ctx.stroke();
+        ctx.fillStyle="#b8860b";ctx.beginPath();ctx.arc(-R*0.29,-R*0.45,R*0.08,0,6.2832);ctx.arc(R*0.29,-R*0.45,R*0.08,0,6.2832);ctx.fill();
+        ctx.fillStyle="#5a3a10";ctx.beginPath();ctx.arc(-R*0.29,-R*0.45,R*0.035,0,6.2832);ctx.arc(R*0.29,-R*0.45,R*0.035,0,6.2832);ctx.fill();
+        // 白色抽绳垂落
+        ctx.strokeStyle="#eee";ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.moveTo(0,-R*0.05);ctx.quadraticCurveTo(-R*0.05,R*0.15,-R*0.02,R*0.35);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,-R*0.05);ctx.quadraticCurveTo(R*0.05,R*0.15,R*0.02,R*0.35);ctx.stroke();
+        ctx.fillStyle="#ccc";
+        ctx.beginPath();ctx.arc(-R*0.02,R*0.35,R*0.03,0,6.2832);ctx.arc(R*0.02,R*0.35,R*0.03,0,6.2832);ctx.fill();
+      }
       else{
         /* ===== 4. 恶魔卡带机：锈铁 + 双扬声器 + 磁带触手 ===== */
         // 磁带触手（下方蠕动）
@@ -6521,15 +6643,15 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
     <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v1.2</div>
-    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 23 日 16:58:00</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 23 日 17:10:00</div>
   </div>
     <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
-      <div style="color:#ff2fd6;font-weight:600;margin-bottom:2px;font-size:13px">🔥 最新更新</div>
-      <div>· 全新第 5 个 Boss：缝合布偶熊（孢子弹螺旋 + 碎布条弹幕）</div>
-      <div>· Boss 不再叠加：上一个打死才出下一个</div>
-      <div>· Boss 位置下移，不再飞出屏幕</div>
+      <div style="color:#ff2fd6;font-weight:600;margin-bottom:2px;font-size:13px">🔥 最新更新 <span style="font-size:10px;color:#9fb8e8">· 2026 年 10 月 23 日 17:10:00</span></div>
+      <div>· 新增 2 个 Boss：暗影男孩（紫色魔法弹幕+黑乌鸦）、菌丝卫衣少年（孢子弹+毒雾）</div>
+      <div>· Boss 改为随机生成，不再按固定顺序</div>
+      <div>· 赛博水母位置单独降低，不再飞出屏幕</div>
       <div>· 击杀 Boss 丰厚奖励：+8000分 +60金币 +回血50 +武器升级 +护盾</div>
-      <div style="color:#ffd54a;font-weight:600;margin:10px 0 2px">👾 Boss 系统（上一版）</div>
+      <div style="color:#ffd54a;font-weight:600;margin:10px 0 2px">👾 Boss 系统（2026 年 10 月 23 日 16:58:00）</div>
       <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 本次更新</div>
       <div>· 背景全新重构：月亮东升西落的日夜循环（夜→黎明→白天→黄昏）</div>
       <div>· 7 大地景随距离切换：城市 / 火山 / 森林 / 宫殿 / 晶体</div>
@@ -6578,7 +6700,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充：元素已存在，必然能填上（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 23 日 16:58:00";
+    pd.textContent="更新于 2026 年 10 月 23 日 17:10:00";
   }
 })();
 </script>
