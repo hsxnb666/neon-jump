@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.6</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.7</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -2703,9 +2703,20 @@ for(var i=0;i<world.enemies.length;i++){
             world.bullets.push({x:e.x,y:e.y-40,vx:pa3*(200+qb*40),vy:(qb-1.5)*50,r:10,life:4,owner:"enemy",color:"#ff6b35",bun:true,home:true});
           }
         }else{
-          // 金猪压顶：全屏警告后砸下（大范围弹幕从上往下）
-          for(var qc=0;qc<8;qc++){
-            world.bullets.push({x:e.x+(qc-3.5)*70,y:-30,vx:0,vy:420,r:18,life:2.5,owner:"enemy",color:"#ffd700",pigTop:true});
+          // 招牌「吃」：张开大嘴吞噬玩家子弹回血 + 吸玩家靠近 + 喷出消化液
+          e.eatT=(e.eatT||0)+1;
+          world.texts.push({x:e.x,y:e.y-90,text:"开吃啦~",life:0.7,vy:-25});
+          for(var j=world.bullets.length-1;j>=0;j--){
+            var pb=world.bullets[j];
+            if(pb.owner==="player"&&Math.abs(pb.x-e.x)<260&&Math.abs(pb.y-e.y)<200){
+              world.bullets.splice(j,1);
+              e.hp=Math.min(e.maxHp,e.hp+3);
+            }
+          }
+          world.bullets.push({x:e.x,y:e.y,vx:0,vy:0,r:70,life:1.1,owner:"enemy",color:"#ff6b35",eat:true,vortex:true,home:true});
+          for(var qc=0;qc<5;qc++){
+            var qcA=e.phase+qc*Math.PI*2/5;
+            world.bullets.push({x:e.x,y:e.y+20,vx:Math.cos(qcA)*200,vy:Math.sin(qcA)*200,r:9,life:2.6,owner:"enemy",color:"#ffd700",digest:true});
           }
         }
       }else if(e.rage>=1){
@@ -2767,8 +2778,14 @@ for(var i=0;i<world.enemies.length;i++){
           var pa6=(p.x>e.x?1:-1);
           world.bullets.push({x:e.x,y:e.y,vx:pa6*300,vy:0,r:26,life:1.5,owner:"enemy",color:"#f87171",audit:true});
         }else{
-          // 结算墙推移（需打破缺口）
-          world.bullets.push({x:e.x-500,y:e.y-10,vx:180,vy:0,r:40,life:5,owner:"enemy",color:"#dc2626",wall:true});
+          // 招牌「规则」：翻旧账点名 + 违规记录追踪弹 + 判定红叉
+          world.texts.push({x:e.x,y:e.y-90,text:"你·违·规·了",life:0.8,vy:-25});
+          var paW=(p.x>e.x?1:-1);
+          for(var fj=0;fj<6;fj++){
+            var fjA=Math.atan2(p.y-e.y,p.x-e.x)+(fj-2.5)*0.28;
+            world.bullets.push({x:e.x,y:e.y,vx:Math.cos(fjA)*300,vy:Math.sin(fjA)*300,r:8,life:3.6,owner:"enemy",color:"#ef4444",rule:true,home:true});
+          }
+          world.bullets.push({x:e.x,y:e.y-10,vx:paW*200,vy:0,r:22,life:1.6,owner:"enemy",color:"#dc2626",judge:true});
         }
       }else if(e.rage>=1){
         /* P2 符文环转召唤陈年账目书页螺旋 + 审查光柱 + 抄写员小怪 */
@@ -2826,10 +2843,16 @@ for(var i=0;i<world.enemies.length;i++){
             world.enemies.push({type:"turret",x:e.x+Math.cos(maoA)*150,y:e.y+Math.sin(maoA)*150,w:20,h:20,hp:40,maxHp:40,cd:99,score:0,anchor:true});
           }
         }else{
-          // 宝石弱点暴露：高伤害水弹
-          for(var bb=0;bb<6+e.rage*2;bb++){
+          // 招牌「潮汐」：水位上升减速 + 涨潮波横扫 + 落潮回流水弹
+          world.texts.push({x:e.x,y:e.y-90,text:"涨潮啦~",life:0.8,vy:-25});
+          world.bullets.push({x:e.x,y:H-60,vx:0,vy:0,r:50,life:1.4,owner:"enemy",color:"#38bdf8",tide:true});
+          var paT=(p.x>e.x?1:-1);
+          for(var tx=0;tx<8;tx++){
+            world.bullets.push({x:e.x-300,y:H-30-tx*14,vx:paT*260,vy:0,r:10,life:3,owner:"enemy",color:"#7dd3fc",tideWave:true});
+          }
+          for(var bb=0;bb<5+e.rage*2;bb++){
             var bbA=e.phase+bb*Math.PI*2/(6+e.rage*2);
-            world.bullets.push({x:e.x,y:e.y-10,vx:Math.cos(bbA)*300,vy:Math.sin(bbA)*300,r:9,life:3.2,owner:"enemy",color:"#22d3ee",water:true});
+            world.bullets.push({x:e.x,y:e.y-10,vx:Math.cos(bbA)*280,vy:Math.sin(bbA)*280,r:9,life:3,owner:"enemy",color:"#22d3ee",water:true});
           }
         }
       }else if(e.rage>=1){
@@ -2892,8 +2915,15 @@ for(var i=0;i<world.enemies.length;i++){
             world.bullets.push({x:e.x,y:e.y+(cy-2)*25,vx:pa13*(420+cy*40),vy:0,r:10,life:1.3,owner:"enemy",color:real?"#facc15":"#7c3aed",slash:true,real:real});
           }
         }else{
-          // 长刀劈地电流裂缝（持续5秒分割场地）
-          world.bullets.push({x:e.x,y:H-80,vx:0,vy:0,r:20,life:5,owner:"enemy",color:"#fbbf24",crack:true});
+          // 招牌「闪电」：零点雷暴 + 闪电链劈下 + 残影突进
+          world.texts.push({x:e.x,y:e.y-90,text:"零·点·雷·暴!",life:0.9,vy:-25});
+          for(var lt2=0;lt2<8;lt2++){
+            world.bullets.push({x:p.x+(Math.random()-0.5)*480,y:H-40,vx:0,vy:0,r:13,life:0.9,owner:"enemy",color:"#facc15",strike:true,mark:true});
+          }
+          var paV=(p.x>e.x?1:-1);
+          for(var ln=0;ln<3;ln++){
+            world.bullets.push({x:e.x,y:e.y+(ln-1)*30,vx:paV*460,vy:0,r:9,life:1.5,owner:"enemy",color:"#fde047",bolt:true,afterimage:true});
+          }
         }
       }else if(e.rage>=1){
         /* P2 磁力拉扯后全屏电爆(躲掩体) + 电磁囚笼紫圈 + 浮游盾三棱钻头 */
@@ -3066,13 +3096,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v3.6");
+    localStorage.setItem("njs_patch","v3.7");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v3.6"){
+    if(seen!=="v3.7"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7389,7 +7419,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.6</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.7</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7420,6 +7450,9 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 06:56:59",items:[
+      "✨ Boss 招牌攻击：逼格=吃(吞子弹回血) / 眼镜=规则(翻旧账点名) / 鲸娘=潮汐(涨潮) / K.Volt=闪电(零点雷暴)"
+    ]},
     {time:"2026-10-24 06:49:15",items:[
       "⚠️ 危险区域可视化：落雷/裂缝/囚笼/鲸吞等大招都有半透明红圈预警"
     ]},
@@ -7506,7 +7539,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 06:49:15";
+    pd.textContent="更新于 2026 年 10 月 24 日 06:56:59";
   }
 })();
 </script>
