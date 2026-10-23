@@ -129,9 +129,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div class="logo" style="font-size:clamp(26px,8vw,42px)">游戏结束</div>
   <div id="finalScore" style="color:#a0a8ff;margin-top:12px;font-size:14px">得分 0</div>
   <div id="board" style="display:none"></div>
-    <div id="lbTabs" style="display:flex;gap:8px;justify-content:center;margin:10px 0 6px">
-    <div class="tb on" id="lbTabAll" onclick="switchBoard('all')" style="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none">🌐 全网榜</div>
-    <div class="tb" id="lbTabMe" onclick="switchBoard('me')" style="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none">📱 本机榜</div>
+    <div id="lbTabs" style="display:flex;gap:5px;justify-content:center;margin:8px 0 5px;flex-wrap:nowrap">
+    <div class="tb on" id="lbTabAll" onclick="switchBoard('all')" style="padding:5px 8px;border-radius:14px;font-size:11px;cursor:pointer;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none;white-space:nowrap">🌐普通</div>
+    <div class="tb" id="lbTabSmart" onclick="switchBoard('smart')" style="padding:5px 8px;border-radius:14px;font-size:11px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none;white-space:nowrap">🧠聪明</div>
+    <div class="tb" id="lbTabMe" onclick="switchBoard('me')" style="padding:5px 8px;border-radius:14px;font-size:11px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none;white-space:nowrap">📱本机</div>
+    <div class="tb" id="lbTabMeSmart" onclick="switchBoard('mesmart')" style="padding:5px 8px;border-radius:14px;font-size:11px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none;white-space:nowrap">📱聪明</div>
   </div>
   <div id="overBoard" style="width:min(90vw,480px);height:170px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;margin:0 auto;padding:6px 10px;border-radius:12px;background:rgba(0,242,255,.05);border:1px solid rgba(0,242,255,.2);color:#7fdcff;font-size:12px;text-align:left;box-sizing:border-box"></div>
   <div id="lbStatus" style="font-size:10px;color:#7fb8e0;margin-top:4px;min-height:14px;text-align:center"></div>
@@ -3572,6 +3574,7 @@ function saveScore(sc,ds){
   var nm=lbGetName();
   arr.push({name:nm,score:sc,dist:ds,s:sc,d:ds,
             lv:(typeof gunLevel!=="undefined"?gunLevel:1),
+            gamemode:(smartMode?"smart":"normal"),
             t:Date.now()});
   // 统一字段：兼容旧数据
   for(var i=0;i<arr.length;i++){
@@ -3592,7 +3595,7 @@ function gameOver(){
   ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel;
   saveScore(score,distance);
   lbSubmit(score,distance);
-  switchBoard("all");
+  switchBoard(smartMode?"smart":"all");
   ui.over.classList.remove("hidden");
   ui.hud.classList.add("hidden");
 }
@@ -3627,7 +3630,7 @@ function doGiveUp(){
   ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+(smartMode?" · 🧠聪明人":"");
   saveScore(score,distance);
   lbSubmit(score,distance);
-  switchBoard("all");
+  switchBoard(smartMode?"smart":"all");
   ui.over.classList.remove("hidden");
   ui.hud.classList.add("hidden");
 }
@@ -3756,7 +3759,7 @@ function lbRender(){
   for(var i=0;i<arr.length;i++){
     var r=arr[i]||{};
     var nm=r.name||"玩家";
-    var isMe=(lbView==="all")?isMyRow(r):false;
+    var isMe=(lbView==="all"||lbView==="smart")?isMyRow(r):true;
     var row=document.createElement("div");
     row.style.cssText="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;margin-bottom:2px;"+(isMe?"background:rgba(255,213,74,.12);":"background:rgba(255,255,255,.03);");
     var s1=document.createElement("span");
@@ -3779,7 +3782,8 @@ function lbRender(){
 function lbFetchAll(){
   if(typeof homeRankRender==="function"){try{homeRankRender()}catch(e){}}
   lbStat("加载中…");
-  var url=LB_URL+"/rest/v1/scores?select=id,name,score,dist,lv,created_at&order=score.desc&limit=50";
+  var _gm=(lbView==="smart"||lbView==="mesmart")?"smart":"normal";
+  var url=LB_URL+"/rest/v1/scores?select=id,name,score,dist,lv,created_at,gamemode&order=score.desc&limit=50&gamemode=eq."+_gm;
   var x=new XMLHttpRequest();
   x.open("GET",url,true);
   x.setRequestHeader("apikey",LB_KEY);
@@ -3818,10 +3822,19 @@ function lbFetchMe(){
     if(a.score===undefined&&a.s!==undefined)a.score=a.s;
     if(a.dist===undefined&&a.d!==undefined)a.dist=a.d;
     if(!a.name)a.name="玩家";
+    if(!a.gamemode)a.gamemode="normal";
   }
+  // 按当前模式过滤
+  var wantSmart=(lbView==="mesmart");
+  var filtered=[];
+  for(var k=0;k<lbCacheMe.length;k++){
+    var w=lbCacheMe[k].gamemode==="smart";
+    if(w===wantSmart)filtered.push(lbCacheMe[k]);
+  }
+  lbCacheMe=filtered;
   lbCacheMe.sort(function(x,y){return (y.score||0)-(x.score||0)});
   lbRender();
-  lbStat("本机 "+lbCacheMe.length+" 条");
+  lbStat("本机 "+(wantSmart?"聪明人":"普通")+" "+lbCacheMe.length+" 条");
 }
 
 function lbSubmit(sc,ds){
@@ -3834,7 +3847,7 @@ function lbSubmit(sc,ds){
   if(!nm){ try{ nm=localStorage.getItem("njs_name")||""; }catch(e){ nm=""; } }
   if(!nm)nm=lbGetName();
   lbSetName(nm);
-  var body=JSON.stringify({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1)});
+  var body=JSON.stringify({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal")});
   var _submitT=Date.now();
   var x=new XMLHttpRequest();
   x.open("POST",LB_URL+"/rest/v1/scores",true);
@@ -3865,13 +3878,16 @@ function lbSubmit(sc,ds){
 
 function switchBoard(v){
   lbView=v;
-  var a=document.getElementById("lbTabAll"), b=document.getElementById("lbTabMe");
   var onCss="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none";
   var offCss="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none";
-  if(a) a.style.cssText=(v==="all"?onCss:offCss);
-  if(b) b.style.cssText=(v==="me"?onCss:offCss);
+  var ids=["lbTabAll","lbTabSmart","lbTabMe","lbTabMeSmart"];
+  var vals=["all","smart","me","mesmart"];
+  for(var i=0;i<ids.length;i++){
+    var el=document.getElementById(ids[i]);
+    if(el) el.style.cssText=(v===vals[i]?onCss:offCss);
+  }
   lbRender();
-  if(v==="all") lbFetchAll(); else lbFetchMe();
+  if(v==="all"||v==="smart") lbFetchAll(); else lbFetchMe();
   if(typeof homeRankRender==="function"){try{homeRankRender()}catch(e){}}
 }
 
@@ -3951,7 +3967,7 @@ function homeRankRender(){
   for(var i=0;i<arr.length;i++){
     var r=arr[i]||{};
     var nm=r.name||"玩家";
-    var isMe=(lbView==="all")?isMyRow(r):false;
+    var isMe=(lbView==="all"||lbView==="smart")?isMyRow(r):true;
     var row=document.createElement("div");
     row.style.cssText="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;margin-bottom:4px;font-size:13px;"+
       (isMe?"background:rgba(255,213,74,.14);border:1px solid rgba(255,213,74,.35);":"background:rgba(255,255,255,.045);");
@@ -3974,15 +3990,18 @@ function homeRankRender(){
 
 function homeRankSwitch(v){
   lbView=v;
-  var a=document.getElementById("hrTabAll"),b=document.getElementById("hrTabMe");
-  var onCss="flex:1;padding:8px 0;border-radius:18px;font-size:13px;cursor:pointer;text-align:center;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none";
-  var offCss="flex:1;padding:8px 0;border-radius:18px;font-size:13px;cursor:pointer;text-align:center;background:rgba(255,255,255,.07);color:#8fb8d8;user-select:none";
-  if(a)a.style.cssText=(v==="all"?onCss:offCss);
-  if(b)b.style.cssText=(v==="me"?onCss:offCss);
+  var onCss="flex:1;padding:7px 0;border-radius:16px;font-size:12px;cursor:pointer;text-align:center;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none";
+  var offCss="flex:1;padding:7px 0;border-radius:16px;font-size:12px;cursor:pointer;text-align:center;background:rgba(255,255,255,.07);color:#8fb8d8;user-select:none";
+  var ids=["hrTabAll","hrTabSmart","hrTabMe","hrTabMeSmart"];
+  var vals=["all","smart","me","mesmart"];
+  for(var i=0;i<ids.length;i++){
+    var el=document.getElementById(ids[i]);
+    if(el) el.style.cssText=(v===vals[i]?onCss:offCss);
+  }
   homeRankRender();
   var st=document.getElementById("hrStatus");
-  if(v==="all"){ if(st)st.textContent="加载中..."; lbFetchAll(); }
-  else { if(st)st.textContent="本机记录"; else {} lbFetchMe(); }
+  if(v==="all"||v==="smart"){ if(st)st.textContent="加载中..."; lbFetchAll(); }
+  else { if(st)st.textContent="本机记录"; lbFetchMe(); }
 }
 
 /* ===== 打开/关闭浮层 ===== */
@@ -4030,8 +4049,10 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div style="width:min(94vw,520px);max-height:86vh;display:flex;flex-direction:column;background:linear-gradient(160deg,rgba(20,14,48,.98),rgba(10,6,26,.98));border:1.5px solid rgba(0,242,255,.35);border-radius:16px;padding:14px;box-shadow:0 0 40px rgba(0,242,255,.18)">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#ffd54a;margin-bottom:10px;letter-spacing:2px">🏆 排 行 榜</div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
-      <div id="hrTabAll" onclick="homeRankSwitch('all')">🌐 全网榜</div>
-      <div id="hrTabMe" onclick="homeRankSwitch('me')">📱 本机榜</div>
+      <div id="hrTabAll" onclick="homeRankSwitch('all')">🌐普通</div>
+      <div id="hrTabSmart" onclick="homeRankSwitch('smart')">🧠聪明</div>
+      <div id="hrTabMe" onclick="homeRankSwitch('me')">📱本机</div>
+      <div id="hrTabMeSmart" onclick="homeRankSwitch('mesmart')">📱聪明</div>
     </div>
     <div id="hrBoard" style="flex:1;min-height:120px;max-height:56vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:2px;touch-action:pan-y"></div>
     <div id="hrStatus" style="text-align:center;font-size:12px;color:#7c86c8;margin-top:8px">加载中...</div>
