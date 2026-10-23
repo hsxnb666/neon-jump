@@ -133,7 +133,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <div class="tb on" id="lbTabAll" onclick="switchBoard('all')" style="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none">🌐 全网榜</div>
     <div class="tb" id="lbTabMe" onclick="switchBoard('me')" style="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none">📱 本机榜</div>
   </div>
-  <div id="overBoard" style="width:min(90vw,480px);height:170px;overflow-y:auto;margin:0 auto;padding:6px 10px;border-radius:12px;background:rgba(0,242,255,.05);border:1px solid rgba(0,242,255,.2);color:#7fdcff;font-size:12px;text-align:left;box-sizing:border-box"></div>
+  <div id="overBoard" style="width:min(90vw,480px);height:170px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;margin:0 auto;padding:6px 10px;border-radius:12px;background:rgba(0,242,255,.05);border:1px solid rgba(0,242,255,.2);color:#7fdcff;font-size:12px;text-align:left;box-sizing:border-box"></div>
   <div id="lbStatus" style="font-size:10px;color:#7fb8e0;margin-top:4px;min-height:14px;text-align:center"></div>
 <button class="btn btn-main" onclick="startGame(smartMode)">重新开始</button>
   <button onclick="backToHome()" style="margin-top:10px;padding:9px 34px;border-radius:20px;background:rgba(255,255,255,.07);border:1.5px solid rgba(160,168,255,.5);color:#b8c0ff;font-size:14px;cursor:pointer">🏠 回 主 页</button>
@@ -3007,7 +3007,8 @@ function bgRgb(c,a){
 
 function bgUpdate(dt){
   var tgt=bgPick(distance);
-  var t=Math.min(1,dt*1.6);
+  // 只做极轻的平滑（8% 每秒），避免距离瞬间跳变导致颜色闪动
+  var t=Math.min(1,dt*3.0);
   for(var j=0;j<3;j++){
     bgCur.top[j]=bgLerp(bgCur.top[j],tgt.top[j],t);
     bgCur.bot[j]=bgLerp(bgCur.bot[j],tgt.bot[j],t);
@@ -3638,9 +3639,12 @@ function lbEsc(t){
 }
 
 function lbGetName(){
-  if(lbName) return lbName;
+  if(lbName&&lbName!=="") return lbName;
   try{ lbName=localStorage.getItem("njs_name")||""; }catch(e){ lbName=""; }
-  if(!lbName){ lbName="玩家"+Math.floor(Math.random()*900+100); }
+  if(!lbName){
+    lbName="玩家"+Math.floor(Math.random()*900+100);
+    try{ localStorage.setItem("njs_name",lbName); }catch(e){}
+  }
   return lbName;
 }
 
@@ -3661,6 +3665,7 @@ function lbStat(t){
 function lbRender(){
   var box=document.getElementById("overBoard");
   if(!box) return;
+  if(typeof _bindDrag==="function"){_bindDrag(box)}
   var arr=(lbView==="all")?lbCacheAll:lbCacheMe;
   while(box.firstChild) box.removeChild(box.firstChild);
   if(!arr || !arr.length){
@@ -3695,6 +3700,7 @@ function lbRender(){
 }
 
 function lbFetchAll(){
+  if(typeof homeRankRender==="function"){try{homeRankRender()}catch(e){}}
   lbStat("加载中…");
   var url=LB_URL+"/rest/v1/scores?select=name,score,dist,lv,created_at&order=score.desc&limit=50";
   var x=new XMLHttpRequest();
@@ -3757,20 +3763,12 @@ function switchBoard(v){
   if(b) b.style.cssText=(v==="me"?onCss:offCss);
   lbRender();
   if(v==="all") lbFetchAll(); else lbFetchMe();
+  if(typeof homeRankRender==="function"){try{homeRankRender()}catch(e){}}
 }
 
-function openHomeRank(){
-  var lay=document.getElementById("rankLayer");
-  if(lay) lay.style.display="flex";
-  lbView="all";
-  lbRender();
-  lbFetchAll();
-}
+function openHomeRank(){ try{ openHomeRankFixed(); }catch(e){ try{console.log(e.message)}catch(_){} } }
 
-function closeHomeRank(){
-  var lay=document.getElementById("rankLayer");
-  if(lay) lay.style.display="none";
-}
+function closeHomeRank(){ try{ closeHomeRankFixed(); }catch(e){} }
 
 function backToHome(){
   try{ if(typeof stopBgm==="function") stopBgm(); }catch(e){}
@@ -3791,6 +3789,146 @@ function initStartName(){
   if(inp){ inp.value=lbGetName(); }
 }
 
+
+/* ===== 首页排行榜浮层（独立于 #ui，避免 pointer-events 失效） ===== */
+var _dragging=false,_dragStartY=0,_dragStartScroll=0,_dragTarget=null;
+
+function _bindDrag(el){
+  if(!el||el._dragBound)return;
+  el._dragBound=true;
+  el.addEventListener("touchstart",function(ev){
+    if(ev.touches.length!==1)return;
+    _dragging=true;
+    _dragTarget=el;
+    _dragStartY=ev.touches[0].clientY;
+    _dragStartScroll=el.scrollTop;
+  },{passive:true});
+  el.addEventListener("touchmove",function(ev){
+    if(!_dragging||_dragTarget!==el)return;
+    var dy=ev.touches[0].clientY-_dragStartY;
+    el.scrollTop=_dragStartScroll-dy;
+    if(ev.cancelable)ev.preventDefault();
+  },{passive:false});
+  el.addEventListener("touchend",function(){_dragging=false;_dragTarget=null;},{passive:true});
+  el.addEventListener("touchcancel",function(){_dragging=false;_dragTarget=null;},{passive:true});
+  // 鼠标端（桌面浏览器）
+  el.addEventListener("mousedown",function(ev){
+    _dragging=true;_dragTarget=el;
+    _dragStartY=ev.clientY;_dragStartScroll=el.scrollTop;
+    ev.preventDefault();
+  });
+  el.addEventListener("mousemove",function(ev){
+    if(!_dragging||_dragTarget!==el)return;
+    el.scrollTop=_dragStartScroll-(ev.clientY-_dragStartY);
+  });
+  el.addEventListener("mouseup",function(){_dragging=false;_dragTarget=null;});
+  el.addEventListener("mouseleave",function(){_dragging=false;_dragTarget=null;});
+}
+
+/* ===== 排行榜浮层渲染（createElement，无 innerHTML 拼接） ===== */
+function homeRankRender(){
+  var box=document.getElementById("hrBoard");
+  if(!box)return;
+  _bindDrag(box);
+  var arr=(lbView==="all")?lbCacheAll:lbCacheMe;
+  while(box.firstChild)box.removeChild(box.firstChild);
+  if(!arr||!arr.length){
+    var em=document.createElement("div");
+    em.style.cssText="color:#7c86c8;text-align:center;padding:20px;font-size:13px";
+    em.textContent="暂无记录";
+    box.appendChild(em);
+    return;
+  }
+  var my=lbGetName();
+  for(var i=0;i<arr.length;i++){
+    var r=arr[i]||{};
+    var nm=r.name||"玩家";
+    var isMe=(nm===my);
+    var row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;margin-bottom:4px;font-size:13px;"+
+      (isMe?"background:rgba(255,213,74,.14);border:1px solid rgba(255,213,74,.35);":"background:rgba(255,255,255,.045);");
+    var s1=document.createElement("span");
+    s1.style.cssText="width:26px;text-align:right;color:#6a7fb8;font-size:12px";
+    s1.textContent=String(i+1);
+    var s2=document.createElement("span");
+    s2.style.cssText="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"+(isMe?"color:#ffd54a;font-weight:700;":"color:#cfe8ff;");
+    s2.textContent=nm;
+    var s3=document.createElement("span");
+    s3.style.cssText="color:#00f2ff;font-weight:700;min-width:64px;text-align:right";
+    s3.textContent=String(r.score||0);
+    var s4=document.createElement("span");
+    s4.style.cssText="color:#7c86c8;font-size:11px;min-width:48px;text-align:right";
+    s4.textContent=String(r.dist||0)+"m";
+    row.appendChild(s1);row.appendChild(s2);row.appendChild(s3);row.appendChild(s4);
+    box.appendChild(row);
+  }
+}
+
+function homeRankSwitch(v){
+  lbView=v;
+  var a=document.getElementById("hrTabAll"),b=document.getElementById("hrTabMe");
+  var onCss="flex:1;padding:8px 0;border-radius:18px;font-size:13px;cursor:pointer;text-align:center;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none";
+  var offCss="flex:1;padding:8px 0;border-radius:18px;font-size:13px;cursor:pointer;text-align:center;background:rgba(255,255,255,.07);color:#8fb8d8;user-select:none";
+  if(a)a.style.cssText=(v==="all"?onCss:offCss);
+  if(b)b.style.cssText=(v==="me"?onCss:offCss);
+  homeRankRender();
+  var st=document.getElementById("hrStatus");
+  if(v==="all"){ if(st)st.textContent="加载中..."; lbFetchAll(); }
+  else { if(st)st.textContent="本机记录"; else {} lbFetchMe(); }
+}
+
+/* ===== 打开/关闭浮层 ===== */
+function openHomeRankFixed(){
+  var lay=document.getElementById("rankLayer");
+  if(!lay){return}
+  lay.style.display="flex";
+  lbView="all";
+  homeRankSwitch("all");
+}
+
+function closeHomeRankFixed(){
+  var lay=document.getElementById("rankLayer");
+  if(lay)lay.style.display="none";
+}
+
+/* ===== 昵称持久化：输入即保存 ===== */
+function bindNameInput(){
+  var inp=document.getElementById("startNameInput");
+  if(!inp)return;
+  var saved=lbGetName();
+  if(saved)inp.value=saved;
+  if(inp._nb)return;
+  inp._nb=true;
+  inp.addEventListener("input",function(){
+    var v=this.value.replace(/\s+/g,"").slice(0,12);
+    if(v)lbSetName(v);
+  });
+  inp.addEventListener("change",function(){
+    var v=this.value.replace(/\s+/g,"").slice(0,12);
+    if(v)lbSetName(v);
+  });
+  inp.addEventListener("blur",function(){
+    var v=this.value.replace(/\s+/g,"").slice(0,12);
+    if(v){lbSetName(v);this.value=v}
+    else{this.value=lbGetName()}
+  });
+}
+
+try{ bindNameInput(); }catch(e){}
+try{ setTimeout(bindNameInput,300); }catch(e){}
+try{ setTimeout(bindNameInput,1200); }catch(e){}
 </script>
+<div id="rankLayer" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;z-index:8000;background:rgba(5,3,18,.97);flex-direction:column;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;touch-action:none">
+  <div style="width:min(94vw,520px);max-height:86vh;display:flex;flex-direction:column;background:linear-gradient(160deg,rgba(20,14,48,.98),rgba(10,6,26,.98));border:1.5px solid rgba(0,242,255,.35);border-radius:16px;padding:14px;box-shadow:0 0 40px rgba(0,242,255,.18)">
+    <div style="text-align:center;font-size:17px;font-weight:700;color:#ffd54a;margin-bottom:10px;letter-spacing:2px">🏆 排 行 榜</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div id="hrTabAll" onclick="homeRankSwitch('all')">🌐 全网榜</div>
+      <div id="hrTabMe" onclick="homeRankSwitch('me')">📱 本机榜</div>
+    </div>
+    <div id="hrBoard" style="flex:1;min-height:120px;max-height:56vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:2px;touch-action:pan-y"></div>
+    <div id="hrStatus" style="text-align:center;font-size:12px;color:#7c86c8;margin-top:8px">加载中...</div>
+    <button onclick="closeHomeRank()" style="margin-top:10px;padding:10px 0;width:100%;border-radius:22px;background:rgba(255,255,255,.07);border:1.5px solid rgba(160,168,255,.45);color:#b8c0ff;font-size:14px;cursor:pointer">← 返 回</button>
+  </div>
+</div>
 </body>
 </html>
