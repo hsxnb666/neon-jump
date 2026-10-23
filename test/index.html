@@ -116,7 +116,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.9</div>
+  <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
+    <button onclick="openCodex(0)" style="padding:6px 13px;border-radius:18px;background:rgba(255,42,109,.08);border:1.5px solid rgba(255,42,109,.5);color:#ff7ba0;font-size:12px;cursor:pointer">🔫 武器</button>
+    <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
+    <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
+  </div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.0</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -450,7 +455,7 @@ var smartMode=false;
 
 function resetGame(){
   bgStageIdx=-1;bgCur={top:[22,10,58],bot:[10,14,70],glow:[90,60,255],hill:[26,12,62]};
-setCL();gunLevel=1;combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;
+setCL();combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;var _cxEq=1;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;}catch(_){}gunLevel=_cxEq;
 player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:100,maxHp:100,en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
 world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
@@ -2544,6 +2549,25 @@ if(world.doublePickup){var dp2=world.doublePickup;dp2.t=(dp2.t||0)+dt;if(!dp2.go
 // 怪物AI
 for(var i=0;i<world.enemies.length;i++){
   var e=world.enemies[i];
+  // 图鉴：遇到即解锁（内存缓存 + 节流，避免每帧读写 localStorage）
+  if(!world._cxCache){
+    world._cxCache={mobs:{},boss:{}};
+    try{var _c0=JSON.parse(localStorage.getItem("njs_codex")||"{}");var _cm=_c0.mobs||[],_cb=_c0.boss||[];for(var _ci=0;_ci<_cm.length;_ci++)world._cxCache.mobs[_cm[_ci]]=1;for(var _ci2=0;_ci2<_cb.length;_ci2++)world._cxCache.boss[_cb[_ci2]]=1;}catch(_){}
+  }
+  try{
+    var _kind=null,_key=null;
+    if(e.type==="boss"){_kind="boss";_key=e.bk;}
+    else{
+      var _t=e.type;
+      if(_t==="walker"||_t==="flyer"||_t==="shooter"||_t==="charger"||_t==="turret"||_t==="bomber"||_t==="sniper"||_t==="tank"||_t==="splitter"||_t==="swarmer"||_t==="shield"||_t==="teleporter"||_t==="icefly"||_t==="sandworm"||_t==="laser"||_t==="blink"||_t==="magnet"||_t==="pylon"||_t==="mirror"||_t==="doll"){_kind="mobs";_key=_t;}
+    }
+    if(_kind&&_key!==null&&!world._cxCache[_kind][_key]){
+      world._cxCache[_kind][_key]=1;
+      var _o=JSON.parse(localStorage.getItem("njs_codex")||"{}");
+      var _arr=_o[_kind]||[];
+      if(_arr.indexOf(_key)<0){_arr.push(_key);_o[_kind]=_arr;localStorage.setItem("njs_codex",JSON.stringify(_o));}
+    }
+  }catch(_){}
   // 击退物理：受击后向外弹开再回落
   if(e._kbx||e._kby){
     e.x+=e._kbx*dt*6;
@@ -3096,13 +3120,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v3.9");
+    localStorage.setItem("njs_patch","v4.0");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v3.9"){
+    if(seen!=="v4.0"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -6945,6 +6969,13 @@ function gameOver(){
   gameState="over";
   stopBgm();
   sfx(110,"sawtooth",1,0.12,40);
+  // 图鉴：本局金币结算入跨局 gold
+  try{
+    var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
+    if(typeof _c.gold!=="number")_c.gold=0;
+    _c.gold+=coinCount;
+    localStorage.setItem("njs_codex",JSON.stringify(_c));
+  }catch(_){}
   ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel;
   saveScore(score,distance);
   lbSubmit(score,distance);
@@ -7419,7 +7450,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.9</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.0</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7450,6 +7481,9 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 07:18:37",items:[
+      "✨ 图鉴系统上线：🔫武器(金币解锁50把) / 👾小怪(遇到即解锁20种) / 💀Boss(遇到即解锁11个)"
+    ]},
     {time:"2026-10-24 07:09:57",items:[
       "⚙️ Boss 出现间隔拉大：从约5秒改为约18秒一个，节奏舒缓"
     ]},
@@ -7545,7 +7579,253 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 07:09:57";
+    pd.textContent="更新于 2026 年 10 月 24 日 07:18:37";
+  }
+})();
+
+<!-- ============ 图鉴系统 ============ -->
+<div id="codexPanel" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;z-index:9200;background:rgba(5,8,20,.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:12px;box-sizing:border-box;overflow:hidden;pointer-events:auto">
+  <div id="codexBox" style="width:min(92vw,440px);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(160deg,#151038,#0d0b1e);border:1px solid rgba(167,139,250,.4);border-radius:18px;padding:14px 14px 12px;box-shadow:0 0 44px rgba(167,139,250,.22);pointer-events:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="codexTitle" style="font-size:16px;font-weight:700;color:#c084fc;letter-spacing:1px;text-shadow:0 0 12px rgba(192,132,252,.6)">武器图鉴</div>
+        <div id="codexGold" style="font-size:12px;color:#ffd54a;background:rgba(255,200,0,.1);border:1px solid rgba(255,200,0,.35);border-radius:12px;padding:3px 10px">🪙 0</div>
+      </div>
+      <button onclick="closeCodex()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.25);color:#c8d8f0;font-size:16px;line-height:1;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button id="codexTab0" onclick="codexSwitch(0)" style="flex:1;padding:7px 0;border-radius:12px;background:linear-gradient(135deg,#ff2a6d,#ff8a5b);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer">🔫 武器</button>
+      <button id="codexTab1" onclick="codexSwitch(1)" style="flex:1;padding:7px 0;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(61,255,122,.3);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
+      <button id="codexTab2" onclick="codexSwitch(2)" style="flex:1;padding:7px 0;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(176,38,255,.3);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
+    </div>
+    <div id="codexGrid" style="flex:1;min-height:200px;max-height:62vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:2px"></div>
+    <div id="codexDetail" style="display:none;flex:1;min-height:200px;max-height:62vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:2px"></div>
+  </div>
+</div>
+<script>
+(function(){
+  /* ===== 图鉴数据 ===== */
+  var CX_WEAPONS=[];
+  for(var w=1;w<=50;w++){
+    var nm="Lv."+w, ic="🔫", tp="基础", dmg=10+w*2, spd="中速", bal="直线", sp="无";
+    if(w<=5){ic="🔫";tp="起始枪";bal="直线单发";sp="初始武器"}
+    else if(w<=10){ic="💥";tp="散射";bal="多向散射";sp="近距离爆发"}
+    else if(w<=15){ic="⚡";tp="速射";bal="高速直线";sp="射速极快"}
+    else if(w<=20){ic="🔱";tp="穿刺";bal="贯穿弹";sp="穿透敌人"}
+    else if(w<=25){ic="🌀";tp="回旋";bal="回旋弹";sp="环绕攻击"}
+    else if(w<=30){ic="💎";tp="分裂";bal="命中分裂";sp="分裂弹幕"}
+    else if(w<=35){ic="🌊";tp="波动";bal="波形弹道";sp="波浪前进"}
+    else if(w<=40){ic="☄️";tp="重炮";bal="高伤重弹";sp="单发高伤"}
+    else if(w<=45){ic="🌈";tp="光谱";bal="多色弹";sp="彩虹弹幕"}
+    else {ic="👑";tp="终极";bal="全屏弹幕";sp="满级火力"}
+    CX_WEAPONS.push({lv:w,name:nm,icon:ic,type:tp,dmg:dmg,spd:spd,bal:bal,sp:sp,price:100+w*30});
+  }
+  var CX_MOBS=[
+    {k:"walker",n:"尖刺龟",ic:"🐢",tp:"近战",hp:50,sc:100,atk:"靠近后缩壳高速旋转冲撞，壳上尖刺全程伤害"},
+    {k:"flyer",n:"集群蜂",ic:"🐝",tp:"自爆",hp:16,sc:80,atk:"绕圈飞行后俯冲自爆，命中留毒云"},
+    {k:"shooter",n:"泡泡鱼",ic:"🐟",tp:"远程",hp:50,sc:130,atk:"喷 6 向泡泡弹"},
+    {k:"charger",n:"齿轮兵",ic:"⚙️",tp:"坦克",hp:70,sc:180,atk:"靠近蜷成齿轮球滚动，撞墙反弹"},
+    {k:"turret",n:"霓虹蝙蝠",ic:"🦇",tp:"远程",hp:35,sc:160,atk:"正弦波俯冲，发射波动弹"},
+    {k:"bomber",n:"自爆球",ic:"💣",tp:"自爆",hp:30,sc:200,atk:"蓄力后自爆，10 向弹幕"},
+    {k:"sniper",n:"飞镖兵",ic:"🎯",tp:"远程",hp:45,sc:220,atk:"发射 3 向追踪飞镖"},
+    {k:"tank",n:"重锤兵",ic:"🔨",tp:"坦克",hp:240,sc:300,atk:"抡锤砸地，环形震波"},
+    {k:"splitter",n:"霓虹史莱姆",ic:"🦠",tp:"近战",hp:70,sc:250,atk:"死亡分裂成两个小史莱姆"},
+    {k:"swarmer",n:"火苗怪",ic:"🔥",tp:"自爆",hp:20,sc:90,atk:"追踪玩家，贴近自爆 8 向火弹"},
+    {k:"shield",n:"护盾兵",ic:"🛡️",tp:"坦克",hp:110,sc:260,atk:"正面六边形护盾免疫，绕背破盾突进"},
+    {k:"teleporter",n:"触手机",ic:"🐙",tp:"远程",hp:70,sc:240,atk:"伸出触手鞭打"},
+    {k:"icefly",n:"冰晶蝶",ic:"🦋",tp:"刺客",hp:30,sc:150,atk:"冰晶蝶定期推冰面到地面"},
+    {k:"sandworm",n:"沙虫",ic:"🪱",tp:"刺客",hp:90,sc:280,atk:"钻地后从玩家脚下破土突袭"},
+    {k:"laser",n:"激光炮",ic:"🔦",tp:"远程",hp:120,sc:320,atk:"蓄力 1.5 秒贯穿激光"},
+    {k:"blink",n:"瞬移者",ic:"👻",tp:"刺客",hp:50,sc:200,atk:"随机闪现到玩家周围 4 方向现身戳刀"},
+    {k:"magnet",n:"磁铁怪",ic:"🧲",tp:"辅助",hp:60,sc:200,atk:"吸引/排斥循环扰乱走位"},
+    {k:"pylon",n:"充电桩",ic:"⚡",tp:"辅助",hp:150,sc:350,atk:"给周围小怪持续回血，优先拆"},
+    {k:"mirror",n:"镜面体",ic:"🪞",tp:"辅助",hp:40,sc:220,atk:"反弹玩家子弹"},
+    {k:"doll",n:"傀儡娃娃",ic:"🪆",tp:"刺客",hp:45,sc:180,atk:"蹦跳挥剪刀，死后掉诅咒钉"}
+  ];
+  var CX_BOSS=[
+    {k:0,n:"赛博水母",ic:"🪼",tags:["弹幕密集","链状闪电"],atk:"P1 链状闪电+病毒块 / P2 菌丝弹幕 / P3 红色病毒块满屏"},
+    {k:1,n:"蒸汽战争机器",ic:"⚙️",tags:["重炮","齿轮弹"],atk:"P1 齿轮弹 / P2 蒸汽爆 / P3 旋转齿轮弹"},
+    {k:2,n:"破碎沙漏",ic:"⏳",tags:["时间系","领域减速"],atk:"P1 沙粒弹 / P2 时间减速 / P3 时间倒流弹幕"},
+    {k:3,n:"恶魔卡带机",ic:"📼",tags:["音波","磁带头"],atk:"三层霓虹粉声波"},
+    {k:4,n:"缝合布偶熊",ic:"🧸",tags:["召唤","撕咬"],atk:"三阶段召唤玩偶+撕咬"},
+    {k:5,n:"暗影男孩",ic:"👤",tags:["瞬移","暗影"],atk:"三阶段暗影弹幕"},
+    {k:6,n:"菌丝卫衣少年",ic:"🧫",tags:["毒雾","菌丝"],atk:"碎裂镜片孢子弹+毒雾"},
+    {k:7,n:"暴食金猪·逼格",ic:"🐷",tags:["吞噬","回血"],atk:"招牌「吃」吞子弹回血 / 怨念包子 / 吸附漩涡"},
+    {k:8,n:"伪善学究·眼镜",ic:"👓",tags:["规则","翻旧账"],atk:"招牌「规则」翻旧账点名 / 计算式弹幕 / 审查光柱"},
+    {k:9,n:"深渊女仆鲸娘",ic:"🐋",tags:["潮汐","领域减速"],atk:"招牌「潮汐」涨潮减速 / 鲸歌音波 / 鲸吞"},
+    {k:10,n:"霓虹执行者K.Volt",ic:"⚡",tags:["闪电","高速突进"],atk:"招牌「闪电」零点雷暴 / 三段突进 / 电磁囚笼"}
+  ];
+
+  /* ===== 图鉴存档 ===== */
+  function cxLoad(){
+    try{ return JSON.parse(localStorage.getItem("njs_codex")||"{}"); }catch(e){ return {}; }
+  }
+  function cxSave(o){
+    try{ localStorage.setItem("njs_codex",JSON.stringify(o)); }catch(e){}
+  }
+  function cxState(){
+    var o=cxLoad();
+    if(!o.weapons)o.weapons=[1];
+    if(!o.equipped)o.equipped=1;
+    if(!o.mobs)o.mobs=[];
+    if(!o.boss)o.boss=[];
+    if(typeof o.gold!=="number")o.gold=0;
+    return o;
+  }
+  function cxEquipWeapon(lv){
+    var o=cxState();o.equipped=lv;cxSave(o);
+  }
+
+  /* ===== 图鉴 UI ===== */
+  var cxTab=0,cxDetailId=null;
+  window.openCodex=function(tab){
+    cxTab=(tab===undefined?0:tab);
+    cxDetailId=null;
+    var p=document.getElementById("codexPanel");
+    if(p)p.style.display="flex";
+    var g=document.getElementById("codexGold");
+    if(g){var _o=cxState();g.textContent="🪙 "+_o.gold;}
+    codexSwitch(cxTab);
+  };
+  window.closeCodex=function(){
+    var p=document.getElementById("codexPanel");
+    if(p)p.style.display="none";
+  };
+  window.codexSwitch=function(tab){
+    cxTab=tab;cxDetailId=null;
+    var t0=document.getElementById("codexTab0"),t1=document.getElementById("codexTab1"),t2=document.getElementById("codexTab2");
+    var ti=document.getElementById("codexTitle");
+    var active="linear-gradient(135deg,#ff2a6d,#ff8a5b);color:#fff;font-weight:700;border:none";
+    var idle="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#8fb8d8;font-weight:400";
+    if(tab===0){t0.style.cssText+=";"+active;t1.style.cssText=";"+idle;t2.style.cssText=";"+idle;ti.textContent="武器图鉴";codexRenderWeapons();}
+    else if(tab===1){t1.style.cssText+=";"+active;t0.style.cssText=";"+idle;t2.style.cssText=";"+idle;ti.textContent="小怪图鉴";codexRenderMobs();}
+    else{t2.style.cssText+=";"+active;t0.style.cssText=";"+idle;t1.style.cssText=";"+idle;ti.textContent="Boss图鉴";codexRenderBoss();}
+  };
+  function cxCard(ic,name,sub,locked,onclick){
+    var d=document.createElement("div");
+    d.onclick=onclick;
+    d.style.cssText="border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);opacity:"+(locked?"0.4":"1");
+    var icd=document.createElement("div");icd.style.cssText="font-size:26px;line-height:1.2";icd.textContent=locked?"🔒":ic;
+    var nmd=document.createElement("div");nmd.style.cssText="font-size:10px;color:#c8d8f0;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";nmd.textContent=name;
+    d.appendChild(icd);d.appendChild(nmd);
+    if(sub){var sd=document.createElement("div");sd.style.cssText="font-size:9px;color:#7c86c8";sd.textContent=sub;d.appendChild(sd);}
+    return d;
+  }
+  function codexRenderWeapons(){
+    var g=document.getElementById("codexGrid");if(!g)return;
+    var dt=document.getElementById("codexDetail");if(dt)dt.style.display="none";
+    g.style.display="grid";g.innerHTML="";
+    var o=cxState();
+    for(var i=0;i<CX_WEAPONS.length;i++){
+      (function(wd){
+        var unlocked=o.weapons.indexOf(wd.lv)>=0;
+        var equipped=o.equipped===wd.lv;
+        var sub=equipped?"装备中":(unlocked?"已解锁":"🪙"+wd.price);
+        var c=cxCard(wd.icon,wd.name,sub,!unlocked&&!equipped?false:false,function(){codexShowWeapon(wd.lv);});
+        if(equipped){c.style.border="2px solid #ffe600";c.style.boxShadow="0 0 12px rgba(255,230,0,.5)"}
+        g.appendChild(c);
+      })(CX_WEAPONS[i]);
+    }
+  }
+  function codexShowWeapon(lv){
+    var g=document.getElementById("codexGrid");if(g)g.style.display="none";
+    var dt=document.getElementById("codexDetail");if(!dt)return;dt.style.display="block";dt.innerHTML="";
+    var wd=CX_WEAPONS[lv-1];var o=cxState();
+    var unlocked=o.weapons.indexOf(lv)>=0,equipped=o.equipped===lv;
+    var h=document.createElement("div");
+    h.innerHTML="<div style='text-align:center;font-size:40px'>"+wd.icon+"</div>"+
+      "<div style='text-align:center;font-size:16px;font-weight:700;color:#fff;margin:6px 0'>"+wd.name+"</div>"+
+      "<div style='font-size:12px;color:#9fb8e8;line-height:1.8;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px'>"+
+      "类型："+wd.type+"<br>伤害："+wd.dmg+"<br>射速："+wd.spd+"<br>弹道："+wd.bal+"<br>特性："+wd.sp+"</div>";
+    var btn=document.createElement("button");
+    btn.style.cssText="width:100%;margin-top:10px;padding:10px 0;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;border:none";
+    if(!unlocked){
+      var _g=o.gold;
+      var canBuy=(_g>=wd.price);
+      btn.style.background=canBuy?"linear-gradient(135deg,#ff2a6d,#ff8a5b)":"rgba(255,255,255,.08)";
+      btn.style.color="#fff";btn.textContent="购买解锁（🪙"+wd.price+"）";
+      btn.onclick=function(){codexBuyWeapon(lv);};
+      if(!canBuy){btn.style.opacity="0.5";btn.textContent="金币不足（🪙"+wd.price+"）"}
+    }else if(!equipped){
+      btn.style.background="linear-gradient(135deg,#00f2ff,#b026ff)";btn.style.color="#06111a";btn.textContent="装备武器";
+      btn.onclick=function(){cxEquipWeapon(lv);codexShowWeapon(lv);codexRenderWeapons();};
+    }else{
+      btn.style.background="rgba(255,255,255,.06)";btn.style.color="#7c86c8";btn.textContent="已装备";btn.style.cursor="default";
+    }
+    var back=document.createElement("button");
+    back.style.cssText="width:100%;margin-top:8px;padding:8px 0;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(160,168,255,.4);color:#b8c0ff;font-size:13px;cursor:pointer";
+    back.textContent="← 返回列表";back.onclick=function(){codexRenderWeapons();};
+    dt.appendChild(h);dt.appendChild(btn);dt.appendChild(back);
+  }
+  function codexBuyWeapon(lv){
+    var wd=CX_WEAPONS[lv-1];
+    var o=cxState();
+    if(o.gold<wd.price){showToast("金币不足（当前 🪙"+o.gold+"）");return;}
+    o.gold-=wd.price;
+    if(o.weapons.indexOf(lv)<0)o.weapons.push(lv);cxSave(o);
+    if(typeof coinCount!=="undefined"){coinCount=Math.max(0,coinCount-wd.price);}
+    showToast("解锁 "+wd.name+"!");
+    var _gd=document.getElementById("codexGold");
+    if(_gd){var _oo=cxState();_gd.textContent="🪙 "+_oo.gold;}
+    codexShowWeapon(lv);codexRenderWeapons();
+  }
+  function codexRenderMobs(){
+    var g=document.getElementById("codexGrid");if(!g)return;
+    var dt=document.getElementById("codexDetail");if(dt)dt.style.display="none";
+    g.style.display="grid";g.innerHTML="";
+    var o=cxState();
+    for(var i=0;i<CX_MOBS.length;i++){
+      (function(m){
+        var seen=o.mobs.indexOf(m.k)>=0;
+        var c=cxCard(m.ic,m.n,null,!seen,function(){codexShowMob(m.k);});
+        g.appendChild(c);
+      })(CX_MOBS[i]);
+    }
+  }
+  function codexShowMob(k){
+    var g=document.getElementById("codexGrid");if(g)g.style.display="none";
+    var dt=document.getElementById("codexDetail");if(!dt)return;dt.style.display="block";dt.innerHTML="";
+    var m=null;for(var i=0;i<CX_MOBS.length;i++)if(CX_MOBS[i].k===k)m=CX_MOBS[i];
+    if(!m)return;var o=cxState();var seen=o.mobs.indexOf(k)>=0;
+    var h=document.createElement("div");
+    h.innerHTML="<div style='text-align:center;font-size:40px'>"+(seen?m.ic:"🔒")+"</div>"+
+      "<div style='text-align:center;font-size:16px;font-weight:700;color:#fff;margin:6px 0'>"+m.n+"</div>"+
+      "<div style='font-size:12px;color:#9fb8e8;line-height:1.8;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px'>"+
+      "类型："+m.tp+"<br>生命值："+m.hp+"<br>击杀得分："+m.sc+"<br>攻击："+(seen?m.atk:"??? 遇到后解锁")+"</div>";
+    var back=document.createElement("button");
+    back.style.cssText="width:100%;margin-top:10px;padding:8px 0;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(160,168,255,.4);color:#b8c0ff;font-size:13px;cursor:pointer";
+    back.textContent="← 返回列表";back.onclick=function(){codexRenderMobs();};
+    dt.appendChild(h);dt.appendChild(back);
+  }
+  function codexRenderBoss(){
+    var g=document.getElementById("codexGrid");if(!g)return;
+    var dt=document.getElementById("codexDetail");if(dt)dt.style.display="none";
+    g.style.display="grid";g.innerHTML="";
+    var o=cxState();
+    for(var i=0;i<CX_BOSS.length;i++){
+      (function(b){
+        var seen=o.boss.indexOf(b.k)>=0;
+        var c=cxCard(b.ic,b.n,null,!seen,function(){codexShowBoss(b.k);});
+        g.appendChild(c);
+      })(CX_BOSS[i]);
+    }
+  }
+  function codexShowBoss(k){
+    var g=document.getElementById("codexGrid");if(g)g.style.display="none";
+    var dt=document.getElementById("codexDetail");if(!dt)return;dt.style.display="block";dt.innerHTML="";
+    var b=null;for(var i=0;i<CX_BOSS.length;i++)if(CX_BOSS[i].k===k)b=CX_BOSS[i];
+    if(!b)return;var o=cxState();var seen=o.boss.indexOf(k)>=0;
+    var h=document.createElement("div");
+    var tags=(b.tags||[]).map(function(t){return "<span style='display:inline-block;margin:2px;padding:3px 8px;border-radius:10px;background:rgba(255,42,109,.15);border:1px solid rgba(255,42,109,.4);color:#ff7ba0;font-size:10px'>"+t+"</span>"}).join("");
+    h.innerHTML="<div style='text-align:center;font-size:40px'>"+(seen?b.ic:"🔒")+"</div>"+
+      "<div style='text-align:center;font-size:16px;font-weight:700;color:#fff;margin:6px 0'>"+b.n+"</div>"+
+      "<div style='text-align:center;margin-bottom:6px'>"+tags+"</div>"+
+      "<div style='font-size:12px;color:#9fb8e8;line-height:1.8;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px'>"+
+      "攻击方式："+(seen?b.atk:"??? 遇到后解锁")+"</div>";
+    var back=document.createElement("button");
+    back.style.cssText="width:100%;margin-top:10px;padding:8px 0;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(160,168,255,.4);color:#b8c0ff;font-size:13px;cursor:pointer";
+    back.textContent="← 返回列表";back.onclick=function(){codexRenderBoss();};
+    dt.appendChild(h);dt.appendChild(back);
   }
 })();
 </script>
