@@ -114,8 +114,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
   <button id="homeRankBtn" onclick="openHomeRank()" style="display:block;margin:10px auto 0;padding:8px 26px;border-radius:20px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:14px;cursor:pointer">🏆 排行榜</button>
   <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.0</div>
-  <div id="patchNote" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(5,8,20,.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px">
-    <div style="max-width:420px;width:100%;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15)">
+  <div id="patchNote" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(5,8,20,.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;overflow-y:auto">
+    <div style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15)">
       <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
       <div id="patchDate" style="text-align:center;font-size:11px;color:#6a7fb8;margin-bottom:12px">正式版 v1.0</div>
       <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
@@ -131,7 +131,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
         <div>· 删除 7 种作用微小的陷阱（镜像/黑幕/锁屏等）</div>
         <div>· 修复部分小怪隐形不显示的 bug</div>
       </div>
-      <button onclick="closePatchNote()" style="display:block;margin:14px auto 0;padding:9px 38px;border-radius:20px;font-size:14px;background:rgba(0,242,255,.15);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:600">开始游戏</button>
+      <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
     </div>
   </div>
   <div style="margin-top:10px;text-align:center">
@@ -2673,9 +2673,11 @@ function initHero(){
 try{ initHero(); }catch(e){}
 /* 更新公告：仅新版首次进入显示 */
 function closePatchNote(){
-  var d=document.getElementById("patchNote");
-  if(d)d.style.display="none";
-  try{ localStorage.setItem("njs_patch","v1.0"); }catch(e){}
+  try{
+    var d=document.getElementById("patchNote");
+    if(d){d.style.display="none";d.style.pointerEvents="none";}
+    localStorage.setItem("njs_patch","v1.0");
+  }catch(e){}
 }
 (function(){
   try{
@@ -4779,7 +4781,105 @@ function drawBg(){
   lg2.addColorStop(1,bgRgb(bgCur.glow,0));
   ctx.fillStyle=lg2;
   ctx.fillRect(0,ly+1.5,W,H*0.06);
+
+  /* ===== 二次元动漫元素 ===== */
+  drawAnimeSky();
 }
+
+/* ============ 二次元动漫天空：月亮 + 城市剪影 + 流星 + 云 ============ */
+function drawAnimeSky(){
+  var t=Date.now()*0.001;
+  var hor=H*0.62;
+
+  /* ---- 1. 大月亮（右上角，二次元标志性元素）---- */
+  var mx=W*0.78, my=H*0.2, mr=Math.min(W,H)*0.09;
+  ctx.save();
+  // 月晕（柔和光晕）
+  var halo=ctx.createRadialGradient(mx,my,mr*0.4,mx,my,mr*2.4);
+  halo.addColorStop(0,"rgba(255,245,210,0.35)");
+  halo.addColorStop(0.5,"rgba(255,240,200,0.12)");
+  halo.addColorStop(1,"rgba(255,240,200,0)");
+  ctx.fillStyle=halo;
+  ctx.beginPath();ctx.arc(mx,my,mr*2.4,0,6.2832);ctx.fill();
+  // 月亮本体（淡黄，带月海斑纹）
+  var moong=ctx.createRadialGradient(mx-mr*0.25,my-mr*0.25,mr*0.1,mx,my,mr);
+  moong.addColorStop(0,"#fffef5");
+  moong.addColorStop(0.7,"#fff3d0");
+  moong.addColorStop(1,"#f5e4b0");
+  ctx.fillStyle=moong;
+  ctx.beginPath();ctx.arc(mx,my,mr,0,6.2832);ctx.fill();
+  // 月海（暗斑）
+  ctx.fillStyle="rgba(220,200,150,0.5)";
+  ctx.beginPath();ctx.arc(mx-mr*0.35,my-mr*0.2,mr*0.22,0,6.2832);ctx.fill();
+  ctx.beginPath();ctx.arc(mx+mr*0.3,my+mr*0.15,mr*0.16,0,6.2832);ctx.fill();
+  ctx.beginPath();ctx.arc(mx+mr*0.05,my-mr*0.45,mr*0.12,0,6.2832);ctx.fill();
+  ctx.restore();
+
+  /* ---- 2. 城市天际线剪影（底部，二次元城市夜景）---- */
+  ctx.save();
+  ctx.fillStyle=bgRgb([bgCur.bot[0]*0.35,bgCur.bot[1]*0.35,bgCur.bot[2]*0.35]);
+  var bld=0;
+  // 用固定伪随机，让每座楼高度稳定不闪烁
+  for(var bx=-80;bx<W+80;bx+=42){
+    var seed=Math.floor(bx/42);
+    var bh=40+((seed*7919)%57);            // 40~96px 楼高
+    var bw=26+((seed*31)%16);              // 26~41px 楼宽
+    ctx.fillRect(bx,hor-bh,bw,bh);
+    // 楼顶天线（部分楼）
+    if(seed%3===0){ctx.fillRect(bx+bw/2-1,hor-bh-14,2,14)}
+    // 楼窗（亮窗点，二次元夜景感）
+    if(seed%2===0){
+      ctx.fillStyle="rgba(255,230,150,0.35)";
+      for(var wy=hor-bh+8;wy<hor-8;wy+=12){
+        for(var wx=bx+5;wx<bx+bw-4;wx+=9){
+          if((wx*13+wy*7+seed)%5<2){ctx.fillRect(wx,wy,3,5)}
+        }
+      }
+      ctx.fillStyle=bgRgb([bgCur.bot[0]*0.35,bgCur.bot[1]*0.35,bgCur.bot[2]*0.35]);
+    }
+  }
+  ctx.restore();
+
+  /* ---- 3. 流星（偶发，划过天际）---- */
+  ctx.save();
+  var meteor=Math.sin(t*0.13)*0.5+0.5;   // 周期性出现
+  if(meteor>0.82){
+    var mt=(meteor-0.82)/0.18;            // 0~1 流星进度
+    var msx=W*(0.3+mt*0.5), msy=H*(0.12+mt*0.22);
+    var mg=ctx.createLinearGradient(msx,msy,msx-60,msy-38);
+    mg.addColorStop(0,"rgba(255,255,255,0.95)");
+    mg.addColorStop(0.4,"rgba(255,220,180,0.6)");
+    mg.addColorStop(1,"rgba(255,220,180,0)");
+    ctx.strokeStyle=mg;
+    ctx.lineWidth=2;
+    ctx.lineCap="round";
+    ctx.beginPath();
+    ctx.moveTo(msx,msy);
+    ctx.lineTo(msx-60,msy-38);
+    ctx.stroke();
+    // 流星头亮点
+    ctx.fillStyle="rgba(255,255,255,0.95)";
+    ctx.beginPath();ctx.arc(msx,msy,2.2,0,6.2832);ctx.fill();
+  }
+  ctx.restore();
+
+  /* ---- 4. 飘动的云（半透明，二次元柔和感）---- */
+  ctx.save();
+  ctx.globalAlpha=0.14;
+  ctx.fillStyle="#ffffff";
+  for(var ci=0;ci<4;ci++){
+    var cx=((ci*520 - t*8*(0.5+ci*0.15))%(W+400))-200;
+    var cy=H*(0.16+ci*0.09);
+    var cw=70+ci*18;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy,cw,cw*0.32,0,0,6.2832);
+    ctx.ellipse(cx-cw*0.5,cy+cw*0.08,cw*0.5,cw*0.2,0,0,6.2832);
+    ctx.ellipse(cx+cw*0.5,cy+cw*0.05,cw*0.55,cw*0.22,0,0,6.2832);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 
 function draw(){
   ctx.save();
