@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.9</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -543,11 +543,11 @@ var plat=cand[Math.floor(Math.random()*cand.length)];
  else{e={type:"doll",x:plat.x+plat.w/2,y:plat.y-30,w:28,h:40,hp:45+wave*7,maxHp:45+wave*7,t:0,score:180}}
 world.enemies.push(e);
 }
-if(distance>150&&distance>bossSpawned*130+129&&!bossAlive){
+if(distance>260&&distance>bossSpawned*450+259&&!bossAlive){
 bossWave++;bossSpawned=bossWave;bossAlive=true;
 var cols=["#ffe600","#ff2a6d","#7fdcff","#b026ff","#ff8a5b"];
 var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=Math.floor(Math.random()*11);
-var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊","暗影男孩","菌丝卫衣少年","暴食金猪·猪八旺","伪善学究·凌算机","深渊女仆鲸娘","霓虹执行者K.Volt"];
+var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊","暗影男孩","菌丝卫衣少年","暴食金猪·逼格","伪善学究·眼镜","深渊女仆鲸娘","霓虹执行者K.Volt"];
 var by=Math.max(H*0.55, H-340);
 showToast("BOSS "+bnames[bk]+" 来袭!");sfx(60,"sawtooth",1.2,0.15,30);
 world.enemies.push({type:"boss",x:player.x+620,y:by,w:Math.min(150,H*0.28),h:Math.min(150,H*0.28),hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
@@ -2429,7 +2429,7 @@ if(gameState!=="playing")return;
 var dt=rdt*timeScale;
 try{ _animUpd(dt); }catch(e){}
 bgUpdate(rdt);
-if(slowTimer>0){slowTimer-=rdt;if(slowTimer<=0)timeScale=1}
+if(slowTimer>0){slowTimer-=rdt;if(slowTimer<=0){slowTimer=0}else{timeScale=0.35+0.65*Math.min(1,(3.5-slowTimer)/3.5)}}else if(timeScale<1){timeScale=Math.min(1,timeScale+rdt*2)}
 if(skillCd>0)skillCd-=rdt;
 if(comboT>0){comboT-=rdt;if(comboT<=0)combo=0}
 if(world.flash>0)world.flash-=rdt*2;
@@ -2583,10 +2583,15 @@ for(var i=0;i<world.enemies.length;i++){
   e.rage = hpr<0.33 ? 2 : (hpr<0.66 ? 1 : 0);
   var spdUp = 1 + e.rage*0.45;
   e.cd -= dt*spdUp;
-  if(e.cd<=0){
+  if(e.telegraph===undefined)e.telegraph=0;
+  if(e.telegraph>0){
+    e.telegraph-=dt;
+    if(e.telegraph<=0){e.telegraph=0;e.cd=0;e._fire=1;}   // 预告结束，标记开火
+  }else if(e._fire===1){
+    e._fire=0;
     var bk=e.bk||0;
     var bw=e.bw||1;
-    e.cd = Math.max(0.85, 2.1 - bw*0.09 - e.rage*0.35);
+    e.cd = Math.max(1.6, 2.6 - bw*0.09 - e.rage*0.3);
     e.atkMode = (e.atkMode||0)+1;
 
     if(bk===0){
@@ -2602,8 +2607,8 @@ for(var i=0;i<world.enemies.length;i++){
         }
       }else{
         // 红色病毒块：小方块慢速扩散
-        for(var k2=0;k2<6+e.rage*3;k2++){
-          var ba2=e.phase+k2*Math.PI*2/(6+e.rage*3);
+        for(var k2=0;k2<5+e.rage*3;k2++){
+          var ba2=e.phase+(k2+0.5)*Math.PI*2/(6+e.rage*3);
           var bsp2=180;
           world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ba2)*bsp2,vy:Math.sin(ba2)*bsp2,r:6,life:4.5,owner:"enemy",color:"#ff2255",block:true});
         }
@@ -2612,8 +2617,8 @@ for(var i=0;i<world.enemies.length;i++){
       /* 蒸汽战争机器：旋转齿轮 + 底部蒸汽柱 */
       if(e.atkMode%2===1){
         // 旋转齿轮弹（螺旋）
-        for(var k3=0;k3<8+e.rage*2;k3++){
-          var ba3=e.phase*1.4+k3*Math.PI*2/(8+e.rage*2);
+        for(var k3=0;k3<7+e.rage*2;k3++){
+          var ba3=e.phase*1.4+(k3+0.5)*Math.PI*2/(8+e.rage*2);
           var bsp3=250;
           world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ba3)*bsp3,vy:Math.sin(ba3)*bsp3,r:9,life:4,owner:"enemy",color:"#d4a017",gear:true,spin:0});
         }
@@ -2685,7 +2690,7 @@ for(var i=0;i<world.enemies.length;i++){
         }
       }
     }else if(bk===7){
-      /* 暴食金猪·猪八旺：三阶段 */
+      /* 暴食金猪·逼格：三阶段 */
       if(e.rage>=2){
         /* P3 暴食暴走：眼红獠牙 + 怨念包子分裂 + 金猪压顶 */
         if(e.atkMode%3===0){
@@ -2698,9 +2703,20 @@ for(var i=0;i<world.enemies.length;i++){
             world.bullets.push({x:e.x,y:e.y-40,vx:pa3*(200+qb*40),vy:(qb-1.5)*50,r:10,life:4,owner:"enemy",color:"#ff6b35",bun:true,home:true});
           }
         }else{
-          // 金猪压顶：全屏警告后砸下（大范围弹幕从上往下）
-          for(var qc=0;qc<8;qc++){
-            world.bullets.push({x:e.x+(qc-3.5)*70,y:-30,vx:0,vy:420,r:18,life:2.5,owner:"enemy",color:"#ffd700",pigTop:true});
+          // 招牌「吃」：张开大嘴吞噬玩家子弹回血 + 吸玩家靠近 + 喷出消化液
+          e.eatT=(e.eatT||0)+1;
+          world.texts.push({x:e.x,y:e.y-90,text:"开吃啦~",life:0.7,vy:-25});
+          for(var j=world.bullets.length-1;j>=0;j--){
+            var pb=world.bullets[j];
+            if(pb.owner==="player"&&Math.abs(pb.x-e.x)<260&&Math.abs(pb.y-e.y)<200){
+              world.bullets.splice(j,1);
+              e.hp=Math.min(e.maxHp,e.hp+3);
+            }
+          }
+          world.bullets.push({x:e.x,y:e.y,vx:0,vy:0,r:70,life:1.1,owner:"enemy",color:"#ff6b35",eat:true,vortex:true,home:true});
+          for(var qc=0;qc<5;qc++){
+            var qcA=e.phase+qc*Math.PI*2/5;
+            world.bullets.push({x:e.x,y:e.y+20,vx:Math.cos(qcA)*200,vy:Math.sin(qcA)*200,r:9,life:2.6,owner:"enemy",color:"#ffd700",digest:true});
           }
         }
       }else if(e.rage>=1){
@@ -2713,8 +2729,8 @@ for(var i=0;i<world.enemies.length;i++){
           }
         }else if(e.atkMode%3===1){
           // 招财包金色震波（环形扩散）
-          for(var zc=0;zc<10+e.rage*2;zc++){
-            var za2=zc*Math.PI*2/(10+e.rage*2);
+          for(var zc=0;zc<8+e.rage*2;zc++){
+            var za2=(zc+0.5)*Math.PI*2/(10+e.rage*2);
             world.bullets.push({x:e.x,y:e.y,vx:Math.cos(za2)*240,vy:Math.sin(za2)*240,r:8,life:3,owner:"enemy",color:"#ffc93c",goldWave:true});
           }
         }else{
@@ -2747,14 +2763,14 @@ for(var i=0;i<world.enemies.length;i++){
         }
       }
     }else if(bk===8){
-      /* 伪善学究·凌算机：三阶段 */
+      /* 伪善学究·眼镜：三阶段 */
       if(e.rage>=2){
         /* P3 眼镜全红假笑裂开 + 算总账计算式弹幕 + 扣光分数结算墙 */
         if(e.atkMode%3===0){
           // 计算式弹幕：+−×÷符号乱飞
           var ops=["+","-","×","÷"];
-          for(var sj=0;sj<8+e.rage*3;sj++){
-            var sjA=sj*Math.PI*2/(8+e.rage*3);
+          for(var sj=0;sj<6+e.rage*3;sj++){
+            var sjA=(sj+0.5)*Math.PI*2/(8+e.rage*3);
             world.bullets.push({x:e.x,y:e.y,vx:Math.cos(sjA)*280,vy:Math.sin(sjA)*280,r:9,life:3.4,owner:"enemy",color:"#ef4444",symbol:true,sym:ops[sj%4]});
           }
         }else if(e.atkMode%3===1){
@@ -2762,15 +2778,21 @@ for(var i=0;i<world.enemies.length;i++){
           var pa6=(p.x>e.x?1:-1);
           world.bullets.push({x:e.x,y:e.y,vx:pa6*300,vy:0,r:26,life:1.5,owner:"enemy",color:"#f87171",audit:true});
         }else{
-          // 结算墙推移（需打破缺口）
-          world.bullets.push({x:e.x-500,y:e.y-10,vx:180,vy:0,r:40,life:5,owner:"enemy",color:"#dc2626",wall:true});
+          // 招牌「规则」：翻旧账点名 + 违规记录追踪弹 + 判定红叉
+          world.texts.push({x:e.x,y:e.y-90,text:"你·违·规·了",life:0.8,vy:-25});
+          var paW=(p.x>e.x?1:-1);
+          for(var fj=0;fj<6;fj++){
+            var fjA=Math.atan2(p.y-e.y,p.x-e.x)+(fj-2.5)*0.28;
+            world.bullets.push({x:e.x,y:e.y,vx:Math.cos(fjA)*300,vy:Math.sin(fjA)*300,r:8,life:3.6,owner:"enemy",color:"#ef4444",rule:true,home:true});
+          }
+          world.bullets.push({x:e.x,y:e.y-10,vx:paW*200,vy:0,r:22,life:1.6,owner:"enemy",color:"#dc2626",judge:true});
         }
       }else if(e.rage>=1){
         /* P2 符文环转召唤陈年账目书页螺旋 + 审查光柱 + 抄写员小怪 */
         if(e.atkMode%3===0){
           // 陈年账目书页螺旋
-          for(var sp2=0;sp2<10+e.rage*2;sp2++){
-            var spA=e.phase*1.5+sp2*Math.PI*2/(10+e.rage*2);
+          for(var sp2=0;sp2<8+e.rage*2;sp2++){
+            var spA=e.phase*1.5+(sp2+0.5)*Math.PI*2/(10+e.rage*2);
             world.bullets.push({x:e.x,y:e.y,vx:Math.cos(spA)*220,vy:Math.sin(spA)*220,r:7,life:4,owner:"enemy",color:"#c4b5fd",page:true});
           }
         }else if(e.atkMode%3===1){
@@ -2821,10 +2843,16 @@ for(var i=0;i<world.enemies.length;i++){
             world.enemies.push({type:"turret",x:e.x+Math.cos(maoA)*150,y:e.y+Math.sin(maoA)*150,w:20,h:20,hp:40,maxHp:40,cd:99,score:0,anchor:true});
           }
         }else{
-          // 宝石弱点暴露：高伤害水弹
-          for(var bb=0;bb<6+e.rage*2;bb++){
+          // 招牌「潮汐」：水位上升减速 + 涨潮波横扫 + 落潮回流水弹
+          world.texts.push({x:e.x,y:e.y-90,text:"涨潮啦~",life:0.8,vy:-25});
+          world.bullets.push({x:e.x,y:H-60,vx:0,vy:0,r:50,life:1.4,owner:"enemy",color:"#38bdf8",tide:true});
+          var paT=(p.x>e.x?1:-1);
+          for(var tx=0;tx<8;tx++){
+            world.bullets.push({x:e.x-300,y:H-30-tx*14,vx:paT*260,vy:0,r:10,life:3,owner:"enemy",color:"#7dd3fc",tideWave:true});
+          }
+          for(var bb=0;bb<5+e.rage*2;bb++){
             var bbA=e.phase+bb*Math.PI*2/(6+e.rage*2);
-            world.bullets.push({x:e.x,y:e.y-10,vx:Math.cos(bbA)*300,vy:Math.sin(bbA)*300,r:9,life:3.2,owner:"enemy",color:"#22d3ee",water:true});
+            world.bullets.push({x:e.x,y:e.y-10,vx:Math.cos(bbA)*280,vy:Math.sin(bbA)*280,r:9,life:3,owner:"enemy",color:"#22d3ee",water:true});
           }
         }
       }else if(e.rage>=1){
@@ -2832,8 +2860,8 @@ for(var i=0;i<world.enemies.length;i++){
         if(e.atkMode%3===0){
           // 鲸歌音波三圈环形
           for(var yg=0;yg<3;yg++){
-            for(var yk=0;yk<6;yk++){
-              var ykA=yk*Math.PI*2/6;
+            for(var yk=0;yk<5;yk++){
+              var ykA=(yk+0.5)*Math.PI*2/6;
               var yr=120+yg*40;
               world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ykA)*220,vy:Math.sin(ykA)*220,r:7,life:2.8,owner:"enemy",color:"#7dd3fc",soundwave:true,wob:yg});
             }
@@ -2887,8 +2915,15 @@ for(var i=0;i<world.enemies.length;i++){
             world.bullets.push({x:e.x,y:e.y+(cy-2)*25,vx:pa13*(420+cy*40),vy:0,r:10,life:1.3,owner:"enemy",color:real?"#facc15":"#7c3aed",slash:true,real:real});
           }
         }else{
-          // 长刀劈地电流裂缝（持续5秒分割场地）
-          world.bullets.push({x:e.x,y:H-80,vx:0,vy:0,r:20,life:5,owner:"enemy",color:"#fbbf24",crack:true});
+          // 招牌「闪电」：零点雷暴 + 闪电链劈下 + 残影突进
+          world.texts.push({x:e.x,y:e.y-90,text:"零·点·雷·暴!",life:0.9,vy:-25});
+          for(var lt2=0;lt2<8;lt2++){
+            world.bullets.push({x:p.x+(Math.random()-0.5)*480,y:H-40,vx:0,vy:0,r:13,life:0.9,owner:"enemy",color:"#facc15",strike:true,mark:true});
+          }
+          var paV=(p.x>e.x?1:-1);
+          for(var ln=0;ln<3;ln++){
+            world.bullets.push({x:e.x,y:e.y+(ln-1)*30,vx:paV*460,vy:0,r:9,life:1.5,owner:"enemy",color:"#fde047",bolt:true,afterimage:true});
+          }
         }
       }else if(e.rage>=1){
         /* P2 磁力拉扯后全屏电爆(躲掩体) + 电磁囚笼紫圈 + 浮游盾三棱钻头 */
@@ -2934,6 +2969,9 @@ for(var i=0;i<world.enemies.length;i++){
         }
       }
     }
+  }else if(e.cd<=0){
+    e.telegraph = (e.rage>=2?0.9:0.7);   // 进预告
+    e.cd = Math.max(1.6, 2.6 - e.bw*0.09 - e.rage*0.3);
   }
 }
 }
@@ -2942,7 +2980,7 @@ for(var i=0;i<world.bullets.length;i++){
   var b=world.bullets[i];
   if(b.home&&b.owner==="player"){var tg2b=null,td3=99999;for(var j=0;j<world.enemies.length;j++){var en2=world.enemies[j];var dd3=(en2.x-b.x)*(en2.x-b.x)+(en2.y-b.y)*(en2.y-b.y);if(dd3<td3){td3=dd3;tg2b=en2}}if(tg2b&&td3<1440000){var ta2=Math.atan2(tg2b.y-b.y,tg2b.x-b.x);var ca2=Math.atan2(b.vy,b.vx);var diff2=ta2-ca2;while(diff2>Math.PI)diff2-=6.28;while(diff2<-Math.PI)diff2+=6.28;var turn2=Math.max(-22*dt,Math.min(22*dt,diff2));var sp3=Math.sqrt(b.vx*b.vx+b.vy*b.vy);b.vx=Math.cos(ca2+turn2)*sp3;b.vy=Math.sin(ca2+turn2)*sp3}}
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
-  if(b.owner==="player"){for(var j=0;j<world.enemies.length;j++){var e2=world.enemies[j];if(Math.abs(b.x-e2.x)<e2.w/2+b.r&&Math.abs(b.y-e2.y)<e2.h/2+b.r){e2.hp-=b.dmg||12;if(!b.pierce)b.life=0;
+  if(b.owner==="player"){for(var j=0;j<world.enemies.length;j++){var e2=world.enemies[j];if(Math.abs(b.x-e2.x)<e2.w/2+b.r&&Math.abs(b.y-e2.y)<e2.h/2+b.r){var _dmgMul=1;if(e2.type==="boss"){var _dxp=(player?player.x:120)-e2.x,_dyp=(player?player.y:H-220)-e2.y;var _dp=Math.sqrt(_dxp*_dxp+_dyp*_dyp);if(_dp<150)_dmgMul=2.0;else if(_dp<300)_dmgMul=1.5;else if(_dp<450)_dmgMul=1.2;}e2.hp-=(b.dmg||12)*_dmgMul;if(!b.pierce)b.life=0;
 var _dmg=b.dmg||12;
 var _heavy=_dmg>=60;
 // 命中停顿：轻击1帧感，重击3帧感
@@ -3058,13 +3096,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v3.2");
+    localStorage.setItem("njs_patch","v3.9");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v3.2"){
+    if(seen!=="v3.9"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -5948,6 +5986,14 @@ function draw(){
       var tt = e.phase||0;
       var rr = e.rage||0;
       var R  = e.w/2;
+      // 攻击预告：Boss 发光闪烁（红色警戒）
+      if(e.telegraph>0){
+        ctx.shadowBlur=40;ctx.shadowColor="#ff2a6d";
+        ctx.strokeStyle="rgba(255,42,109,"+(0.5+Math.sin(Date.now()/40)*0.5)+")";
+        ctx.lineWidth=4;
+        ctx.beginPath();ctx.arc(0,0,R*1.2,0,Math.PI*2);ctx.stroke();
+        ctx.shadowBlur=0;
+      }
 
       if(bk===0){
         /* ===== 1. 赛博水母：半透明胶质体 + 电路纹 + 4条数据触手 ===== */
@@ -6196,7 +6242,7 @@ function draw(){
         ctx.beginPath();ctx.arc(-R*0.02,R*0.35,R*0.03,0,6.2832);ctx.arc(R*0.02,R*0.35,R*0.03,0,6.2832);ctx.fill();
       }
       else if(bk===7){
-        /* ===== 8. 暴食金猪·猪八旺：粉金圆滚猪 + 红唐装马甲 + 大铜钱 + 招财包 ===== */
+        /* ===== 8. 暴食金猪·逼格：粉金圆滚猪 + 红唐装马甲 + 大铜钱 + 招财包 ===== */
         // 圆滚身体（粉金色油光）
         var pg=ctx.createRadialGradient(-R*0.2,-R*0.2,R*0.1,0,0,R*1.05);
         pg.addColorStop(0,"#ffd9a8");pg.addColorStop(0.7,"#f5a97f");pg.addColorStop(1,"#d98850");
@@ -6261,7 +6307,7 @@ function draw(){
         ctx.beginPath();ctx.moveTo(R*0.9,R*0.5);ctx.quadraticCurveTo(R*1.1,R*0.6,R*1.0,R*0.75);ctx.stroke();
       }
       else if(bk===8){
-        /* ===== 9. 伪善学究·凌算机：灰西服 + 方框眼镜 + 账目书本 ===== */
+        /* ===== 9. 伪善学究·眼镜：灰西服 + 方框眼镜 + 账目书本 ===== */
         // 身体（灰色旧西服）
         var lg=ctx.createLinearGradient(0,-R,0,R);
         lg.addColorStop(0,"#8b95a5");lg.addColorStop(1,"#5c6670");
@@ -6533,6 +6579,23 @@ function draw(){
     for(var ci=0;ci<gg.length;ci++) spikeBullet(gg[ci],0.4);
     ctx.fill();
     ctx.globalAlpha=1;
+  }
+
+  /* ===== 危险区域可视化：给范围型子弹画半透明红圈 ===== */
+  for(var _di=0;_di<world.bullets.length;_di++){
+    var _db=world.bullets[_di];
+    if(_db.owner!=="enemy")continue;
+    if(_db.strike||_db.mark||_db.crack||_db.cage||_db.magnet||_db.vortex||_db.whale){
+      var _dr=_db.r*2.2;
+      var _blink=0.35+Math.sin(Date.now()/45+_di)*0.2;
+      ctx.globalAlpha=_blink;
+      ctx.strokeStyle="rgba(255,42,69,0.9)";
+      ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.arc(_db.x,_db.y,_dr,0,6.2832);ctx.stroke();
+      ctx.fillStyle="rgba(255,42,69,0.18)";
+      ctx.beginPath();ctx.arc(_db.x,_db.y,_dr,0,6.2832);ctx.fill();
+      ctx.globalAlpha=1;
+    }
   }
 
   if(player&&!player.dead){
@@ -7356,7 +7419,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.2</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.9</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7387,6 +7450,29 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 07:09:57",items:[
+      "⚙️ Boss 出现间隔拉大：从约5秒改为约18秒一个，节奏舒缓"
+    ]},
+    {time:"2026-10-24 07:03:43",items:[
+      "🐛 修复人物突然加速：减速技能结束后时间平滑恢复，不再瞬间跳回正常速度"
+    ]},
+    {time:"2026-10-24 06:56:59",items:[
+      "✨ Boss 招牌攻击：逼格=吃(吞子弹回血) / 眼镜=规则(翻旧账点名) / 鲸娘=潮汐(涨潮) / K.Volt=闪电(零点雷暴)"
+    ]},
+    {time:"2026-10-24 06:49:15",items:[
+      "⚠️ 危险区域可视化：落雷/裂缝/囚笼/鲸吞等大招都有半透明红圈预警"
+    ]},
+    {time:"2026-10-24 03:01:16",items:[
+      "⚙️ 环形弹幕留缝：满屏弹幕现在都有安全缺口可穿"
+    ]},
+    {time:"2026-10-24 02:52:19",items:[
+      "⚙️ Boss 攻击预告系统：每次攻击前 Boss 发光闪烁 0.7~0.9 秒（狂暴期更长）",
+      "⚙️ 攻击间隔拉长，给玩家喘息时间"
+    ]},
+    {time:"2026-10-24 02:46:29",items:[
+      "⚙️ Boss 近距离伤害加成：贴脸打 Boss 伤害翻倍（150内2倍/300内1.5倍）",
+      "⚙️ Boss 改名：猪八旺→逼格、凌算机→眼镜"
+    ]},
     {time:"2026-10-24 02:36:39",items:[
       "✨ 小怪大换血完成（第4批）：瞬移者 / 磁铁怪 / 充电桩 / 镜面体 / 傀儡娃娃",
       "⚙️ 瞬移者：随机闪现4方向，现身戳刀",
@@ -7431,7 +7517,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       "⚙️ 火苗怪：追踪贴近爆炸8向火球"
     ]},
     {time:"2026-10-24 01:20:00",items:[
-      "✨ 新增 4 个三阶段 Boss：暴食金猪·猪八旺 / 伪善学究·凌算机 / 深渊女仆鲸娘 / 霓虹执行者K.Volt",
+      "✨ 新增 4 个三阶段 Boss：暴食金猪·逼格 / 伪善学究·眼镜 / 深渊女仆鲸娘 / 霓虹执行者K.Volt",
       "🐛 修复 Boss 被子弹击飞飞出屏幕的问题",
       "⚙️ 所有 Boss 统一降到屏幕下方，不再飞出视野"
     ]},
@@ -7459,7 +7545,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 02:36:39";
+    pd.textContent="更新于 2026 年 10 月 24 日 07:09:57";
   }
 })();
 </script>
