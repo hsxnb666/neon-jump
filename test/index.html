@@ -443,7 +443,7 @@ var hitStop=0,hitStopMax=0,zoomPunch=0,zoomPunchDir=1;
 var HITSTOP_ENABLED=false;   // 关闭命中停顿（用户要求：不要停顿，技能可保留）
 var cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
 var world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
-var score=0,distance=0,wave=1,bossSpawned=0,bossWave=0;
+var score=0,distance=0,wave=1,bossSpawned=0,bossWave=0,bossAlive=false;
 var revives=3,rageTimer=0,coinCount=0;
 var skillCd=0,SK_CD=12,combo=0,comboT=0,gunLevel=1;
 var smartMode=false;
@@ -454,7 +454,7 @@ setCL();gunLevel=1;combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=
 player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:100,maxHp:100,en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
 world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
-score=0;distance=0;wave=1;bossSpawned=0;bossWave=0;skillCd=0;timeScale=1;slowTimer=0;
+score=0;distance=0;wave=1;bossSpawned=0;bossWave=0;bossAlive=false;skillCd=0;timeScale=1;slowTimer=0;
 makeStars();
 world.platforms.push({x:-200,y:H-60,w:900,h:120,bounce:false,moving:false});
 world.enemies.push({type:"walker",x:520,y:H-60-32,w:34,h:42,vx:1.2,hp:35,maxHp:35,plat:world.platforms[0],dir:-1,score:80});
@@ -536,12 +536,13 @@ var plat=cand[Math.floor(Math.random()*cand.length)];
  else{e={type:"laser",x:plat.x+plat.w/2,y:plat.y-34,w:40,h:54,hp:120+wave*20,maxHp:120+wave*20,cd:3,charge:0,score:320}}
 world.enemies.push(e);
 }
-if(distance>150&&distance>bossSpawned*130+129){
-bossWave++;bossSpawned=bossWave;
+if(distance>150&&distance>bossSpawned*130+129&&!bossAlive){
+bossWave++;bossSpawned=bossWave;bossAlive=true;
 var cols=["#ffe600","#ff2a6d","#7fdcff","#b026ff","#ff8a5b"];
-var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=(bossWave-1)%4;
-showToast("BOSS Wave "+bossWave+"!");sfx(60,"sawtooth",1.2,0.15,30);
-world.enemies.push({type:"boss",x:player.x+760,y:H/2-90,w:150,h:150,hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
+var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=(bossWave-1)%5;
+var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊"];
+showToast("BOSS "+bnames[bk]+" 来袭!");sfx(60,"sawtooth",1.2,0.15,30);
+world.enemies.push({type:"boss",x:player.x+620,y:H-240,w:150,h:150,hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
 
 function showToast(m){if(!ui.toast)return;ui.toast.textContent=m;ui.toast.classList.add("show");if(showToast._t)clearTimeout(showToast._t);showToast._t=setTimeout(function(){ui.toast.classList.remove("show")},1900)}
 
@@ -588,7 +589,20 @@ if(Math.random()<0.35)world.coins.push({x:e.x,y:e.y-15,t:0,got:false});
 if(Math.random()<(smartMode?0.08:0.18))world.pickups.push({x:e.x,y:e.y-20,t:0,kind:"heal",got:false});
 if(Math.random()<(smartMode?0.15:0.3))player.hp=Math.min(player.maxHp,player.hp+(smartMode?3:5));
 player.en=Math.min(player.maxEn,player.en+15);
-if(e.type==="boss"){showToast("BOSS击破!");score+=2500;world.flash=0.6;cam.shake=20}
+if(e.type==="boss"){
+  showToast("BOSS击破!丰厚奖励!");score+=8000;world.flash=0.6;cam.shake=22;bossAlive=false;
+  // 丰厚奖励：金币+回血+武器升级+护盾
+  coinCount+=60;
+  player.hp=Math.min(player.maxHp,player.hp+50);
+  player.en=Math.min(player.maxEn,player.en+40);
+  player.shield=Math.max(player.shield||0,3);
+  gunLevel=Math.min(50,gunLevel+1);
+  world.texts.push({x:e.x,y:e.y-60,text:"+8000分 +60金币",life:1.6,vy:-40});
+  world.texts.push({x:e.x,y:e.y-30,text:"回血+50 武器+1 护盾3s",life:1.8,vy:-30});
+  // 掉落多个道具
+  for(var ri=0;ri<4;ri++)world.pickups.push({x:e.x+(ri-1.5)*40,y:e.y-30,t:0,kind:"heal",got:false});
+  spawnShockRing(e.x,e.y,"#3aff7a",200);spawnShockRing(e.x,e.y,"#ffe600",160);spawnShockRing(e.x,e.y,"#00f2ff",120);
+}
 if(e.type==="splitter"&&e.split>0){for(var si=0;si<2;si++){world.enemies.push({type:"walker",x:e.x+(si?20:-20),y:e.y,w:24,h:30,vx:1.5,hp:20+wave*4,maxHp:20+wave*4,plat:e.plat||world.platforms[0],dir:si?1:-1,score:50})}}
 world.enemies.splice(idx,1);
 if(world.challenge){world.challenge.kills++;world.challenge.score+=20;if(world.challenge.kills>=world.challenge.target){var cb2=Math.floor(world.challenge.score*2);score+=cb2;showToast("挑战完成!+"+cb2);world.flash=0.3;world.challenge=null}}
@@ -2611,6 +2625,21 @@ for(var i=0;i<world.enemies.length;i++){
           world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ta3)*620,vy:Math.sin(ta3)*620,r:7,life:1.6,owner:"enemy",color:"#fbbf24",clockHand:true});
         }
       }
+    }else if(bk===4){
+      /* 缝合布偶熊：孢子弹螺旋 + 碎布条弹幕 */
+      if(e.atkMode%2===1){
+        for(var sp=0;sp<8+e.rage*4;sp++){
+          var sa=e.phase*1.6+sp*Math.PI*2/8;
+          var sspeed=200+e.rage*40;
+          world.bullets.push({x:e.x,y:e.y,vx:Math.cos(sa)*sspeed,vy:Math.sin(sa)*sspeed,r:7,life:3.5,owner:"enemy",color:"#7dff6a",spore:true});
+        }
+      }else{
+        for(var rb=0;rb<6+e.rage*3;rb++){
+          var ra=(Math.random()-0.5)*1.4;
+          var rsp=240+Math.random()*160;
+          world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ra)*rsp,vy:Math.sin(ra)*rsp-80,r:8,life:4,owner:"enemy",color:"#8b5cf6",rag:true});
+        }
+      }
     }else{
       /* 恶魔卡带机：三层 neon 粉声波 */
       for(var tier=0;tier<3;tier++){
@@ -2743,7 +2772,7 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v2.2");
+    localStorage.setItem("njs_patch","v2.3");
   }catch(e){}
 }
 (function(){
@@ -2751,10 +2780,10 @@ function closePatchNote(){
     // 动态填充更新日期（真实当前日期，永不写死）
     var _pd=document.getElementById("patchDateText");
     if(_pd){
-      _pd.textContent="更新于 2026 年 10 月 23 日 16:48:22";
+      _pd.textContent="更新于 2026 年 10 月 23 日 16:58:00";
     }
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v2.2"){
+    if(seen!=="v2.3"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -5500,6 +5529,50 @@ function draw(){
           ctx.beginPath();ctx.arc((dp-1)*R*0.12, R*0.2+dpy, 3.5, 0, 6.2832);ctx.fill();
         }
       }
+      else if(bk===4){
+        /* ===== 5. 缝合布偶熊：紫黑灯芯绒 + 荧光绿菌丝 + 麻绳关节 ===== */
+        var bg2b=ctx.createLinearGradient(0,-R,0,R);
+        bg2b.addColorStop(0,"#3b2a4d");bg2b.addColorStop(0.5,"#2a1e3a");bg2b.addColorStop(1,"#1c1330");
+        ctx.fillStyle=bg2b;
+        ctx.beginPath();ctx.ellipse(0,R*0.1,R*0.82,R*0.95,0,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.arc(0,-R*0.55,R*0.6,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.arc(-R*0.45,-R*1.0,R*0.22,0,6.2832);ctx.arc(R*0.45,-R*1.0,R*0.22,0,6.2832);ctx.fill();
+        ctx.fillStyle="rgba(80,50,110,0.8)";
+        ctx.beginPath();ctx.arc(-R*0.45,-R*1.0,R*0.1,0,6.2832);ctx.arc(R*0.45,-R*1.0,R*0.1,0,6.2832);ctx.fill();
+        ctx.strokeStyle="rgba(180,150,210,0.35)";ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(-R*0.7,R*0.2);ctx.quadraticCurveTo(0,R*0.5,R*0.7,R*0.1);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(-R*0.5,-R*0.1);ctx.quadraticCurveTo(0,R*0.15,R*0.5,-R*0.05);ctx.stroke();
+        ctx.strokeStyle="rgba(125,255,106,"+(0.55+Math.sin(tt*3)*0.25)+")";ctx.lineWidth=3;ctx.lineCap="round";
+        for(var my=0;my<4;my++){
+          var myx=-R*0.4+my*R*0.28;
+          var myw=Math.sin(tt*2+my*1.6)*R*0.12;
+          ctx.beginPath();ctx.moveTo(myx,R*0.3);
+          ctx.quadraticCurveTo(myx+myw,R*0.55,myx+myw*1.5,R*0.75);
+          ctx.stroke();
+        }
+        ctx.strokeStyle="rgba(180,150,110,0.9)";ctx.lineWidth=4;
+        for(var lm=0;lm<4;lm++){
+          var lx=(lm<2?-1:1)*R*0.6;
+          var ly=(lm%2===0?-R*0.35:R*0.6);
+          ctx.beginPath();ctx.arc(lx,ly,R*0.14,0,6.2832);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(lx-R*0.14,ly);ctx.lineTo(lx+R*0.14,ly);ctx.stroke();
+        }
+        ctx.fillStyle="#8a6d3b";ctx.beginPath();ctx.arc(-R*0.28,-R*0.55,R*0.14,0,6.2832);ctx.fill();
+        ctx.strokeStyle="#6b522a";ctx.lineWidth=2;ctx.beginPath();ctx.arc(-R*0.28,-R*0.55,R*0.14,0,6.2832);ctx.stroke();
+        ctx.fillStyle="#4a3820";
+        ctx.beginPath();ctx.arc(-R*0.34,-R*0.6,R*0.03,0,6.2832);ctx.arc(-R*0.22,-R*0.6,R*0.03,0,6.2832);ctx.arc(-R*0.34,-R*0.5,R*0.03,0,6.2832);ctx.arc(-R*0.22,-R*0.5,R*0.03,0,6.2832);ctx.fill();
+        var eg=ctx.createRadialGradient(R*0.28,-R*0.55,2,R*0.28,-R*0.55,R*0.15);
+        eg.addColorStop(0,"#c8ffb0");eg.addColorStop(0.6,"#7dff6a");eg.addColorStop(1,"#2e8a3a");
+        ctx.fillStyle=eg;ctx.beginPath();ctx.arc(R*0.28,-R*0.55,R*0.15,0,6.2832);ctx.fill();
+        ctx.fillStyle="#0a1a08";ctx.beginPath();ctx.arc(R*0.28,-R*0.55,R*0.06,0,6.2832);ctx.fill();
+        ctx.fillStyle="#0a0510";
+        ctx.beginPath();ctx.ellipse(0,-R*0.18,R*0.3,R*0.22+Math.sin(tt*2.5)*R*0.05,0,0,6.2832);ctx.fill();
+        ctx.strokeStyle="rgba(125,255,106,0.6)";ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(0,-R*0.18,R*0.3,R*0.22,0,0,6.2832);ctx.stroke();
+        ctx.strokeStyle="rgba(200,180,160,0.8)";ctx.lineWidth=3;
+        ctx.beginPath();ctx.moveTo(0,-R*0.05);ctx.lineTo(0,R*0.55);ctx.stroke();
+        ctx.strokeStyle="rgba(255,255,255,0.3)";ctx.lineWidth=1.5;
+        for(var zl=0;zl<5;zl++){ctx.beginPath();ctx.moveTo(-R*0.04,-R*0.05+zl*R*0.12);ctx.lineTo(R*0.04,-R*0.02+zl*R*0.12);ctx.stroke();}
+      }
       else{
         /* ===== 4. 恶魔卡带机：锈铁 + 双扬声器 + 磁带触手 ===== */
         // 磁带触手（下方蠕动）
@@ -6448,9 +6521,15 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
     <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v1.2</div>
-    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 23 日 16:48:22</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 23 日 16:58:00</div>
   </div>
     <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
+      <div style="color:#ff2fd6;font-weight:600;margin-bottom:2px;font-size:13px">🔥 最新更新</div>
+      <div>· 全新第 5 个 Boss：缝合布偶熊（孢子弹螺旋 + 碎布条弹幕）</div>
+      <div>· Boss 不再叠加：上一个打死才出下一个</div>
+      <div>· Boss 位置下移，不再飞出屏幕</div>
+      <div>· 击杀 Boss 丰厚奖励：+8000分 +60金币 +回血50 +武器升级 +护盾</div>
+      <div style="color:#ffd54a;font-weight:600;margin:10px 0 2px">👾 Boss 系统（上一版）</div>
       <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 本次更新</div>
       <div>· 背景全新重构：月亮东升西落的日夜循环（夜→黎明→白天→黄昏）</div>
       <div>· 7 大地景随距离切换：城市 / 火山 / 森林 / 宫殿 / 晶体</div>
@@ -6499,7 +6578,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充：元素已存在，必然能填上（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 23 日 16:48:22";
+    pd.textContent="更新于 2026 年 10 月 23 日 16:58:00";
   }
 })();
 </script>
