@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.3</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.4</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -2583,10 +2583,15 @@ for(var i=0;i<world.enemies.length;i++){
   e.rage = hpr<0.33 ? 2 : (hpr<0.66 ? 1 : 0);
   var spdUp = 1 + e.rage*0.45;
   e.cd -= dt*spdUp;
-  if(e.cd<=0){
+  if(e.telegraph===undefined)e.telegraph=0;
+  if(e.telegraph>0){
+    e.telegraph-=dt;
+    if(e.telegraph<=0){e.telegraph=0;e.cd=0;e._fire=1;}   // 预告结束，标记开火
+  }else if(e._fire===1){
+    e._fire=0;
     var bk=e.bk||0;
     var bw=e.bw||1;
-    e.cd = Math.max(0.85, 2.1 - bw*0.09 - e.rage*0.35);
+    e.cd = Math.max(1.6, 2.6 - bw*0.09 - e.rage*0.3);
     e.atkMode = (e.atkMode||0)+1;
 
     if(bk===0){
@@ -2934,6 +2939,9 @@ for(var i=0;i<world.enemies.length;i++){
         }
       }
     }
+  }else if(e.cd<=0){
+    e.telegraph = (e.rage>=2?0.9:0.7);   // 进预告
+    e.cd = Math.max(1.6, 2.6 - e.bw*0.09 - e.rage*0.3);
   }
 }
 }
@@ -3058,13 +3066,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v3.3");
+    localStorage.setItem("njs_patch","v3.4");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v3.3"){
+    if(seen!=="v3.4"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -5948,6 +5956,14 @@ function draw(){
       var tt = e.phase||0;
       var rr = e.rage||0;
       var R  = e.w/2;
+      // 攻击预告：Boss 发光闪烁（红色警戒）
+      if(e.telegraph>0){
+        ctx.shadowBlur=40;ctx.shadowColor="#ff2a6d";
+        ctx.strokeStyle="rgba(255,42,109,"+(0.5+Math.sin(Date.now()/40)*0.5)+")";
+        ctx.lineWidth=4;
+        ctx.beginPath();ctx.arc(0,0,R*1.2,0,Math.PI*2);ctx.stroke();
+        ctx.shadowBlur=0;
+      }
 
       if(bk===0){
         /* ===== 1. 赛博水母：半透明胶质体 + 电路纹 + 4条数据触手 ===== */
@@ -7356,7 +7372,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.3</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.4</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7387,6 +7403,10 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 02:52:19",items:[
+      "⚙️ Boss 攻击预告系统：每次攻击前 Boss 发光闪烁 0.7~0.9 秒（狂暴期更长）",
+      "⚙️ 攻击间隔拉长，给玩家喘息时间"
+    ]},
     {time:"2026-10-24 02:46:29",items:[
       "⚙️ Boss 近距离伤害加成：贴脸打 Boss 伤害翻倍（150内2倍/300内1.5倍）",
       "⚙️ Boss 改名：猪八旺→逼格、凌算机→眼镜"
@@ -7463,7 +7483,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 02:46:29";
+    pd.textContent="更新于 2026 年 10 月 24 日 02:52:19";
   }
 })();
 </script>
