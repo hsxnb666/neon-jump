@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v2.5</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -539,9 +539,9 @@ world.enemies.push(e);
 if(distance>150&&distance>bossSpawned*130+129&&!bossAlive){
 bossWave++;bossSpawned=bossWave;bossAlive=true;
 var cols=["#ffe600","#ff2a6d","#7fdcff","#b026ff","#ff8a5b"];
-var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=Math.floor(Math.random()*7);
-var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊","暗影男孩","菌丝卫衣少年"];
-var by=bk===0?H-300:H-240;
+var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=Math.floor(Math.random()*11);
+var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊","暗影男孩","菌丝卫衣少年","暴食金猪·猪八旺","伪善学究·凌算机","深渊女仆鲸娘","霓虹执行者K.Volt"];
+var by=H-320;
 showToast("BOSS "+bnames[bk]+" 来袭!");sfx(60,"sawtooth",1.2,0.15,30);
 world.enemies.push({type:"boss",x:player.x+620,y:by,w:150,h:150,hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
 
@@ -2670,6 +2670,247 @@ for(var i=0;i<world.enemies.length;i++){
           world.bullets.push({x:e.x,y:e.y-20,vx:pa*(120+Math.random()*60),vy:(Math.random()-0.5)*40,r:12,life:5,owner:"enemy",color:"#7c3aed",poison:true,pslow:0.4});
         }
       }
+    }else if(bk===7){
+      /* 暴食金猪·猪八旺：三阶段 */
+      if(e.rage>=2){
+        /* P3 暴食暴走：眼红獠牙 + 怨念包子分裂 + 金猪压顶 */
+        if(e.atkMode%3===0){
+          // 吸附漩涡：吸玩家2秒后吐怨念包子（追踪分裂）
+          world.bullets.push({x:e.x,y:e.y,vx:0,vy:0,r:60,life:0.8,owner:"enemy",color:"#ff9d00",vortex:true,home:true});
+        }else if(e.atkMode%3===1){
+          // 怨念包子：追踪弹，命中分裂
+          var pa3=(p.x>e.x?1:-1);
+          for(var qb=0;qb<4;qb++){
+            world.bullets.push({x:e.x,y:e.y-40,vx:pa3*(200+qb*40),vy:(qb-1.5)*50,r:10,life:4,owner:"enemy",color:"#ff6b35",bun:true,home:true});
+          }
+        }else{
+          // 金猪压顶：全屏警告后砸下（大范围弹幕从上往下）
+          for(var qc=0;qc<8;qc++){
+            world.bullets.push({x:e.x+(qc-3.5)*70,y:-30,vx:0,vy:420,r:18,life:2.5,owner:"enemy",color:"#ffd700",pigTop:true});
+          }
+        }
+      }else if(e.rage>=1){
+        /* P2 算盘拨珠召唤账单纸片横竖扫屏 + 招财包金色震波 + 铜钱串回旋飞轮 */
+        if(e.atkMode%3===0){
+          // 账单纸片：横竖扫屏
+          for(var zb=0;zb<6;zb++){
+            var horiz=zb%2===0;
+            world.bullets.push({x:e.x-200,y:horiz?(H-80-zb*30):e.y+(zb-2.5)*40,vx:340,vy:horiz?0:0,r:9,life:3,owner:"enemy",color:"#fef3c7",bill:true,horiz:horiz});
+          }
+        }else if(e.atkMode%3===1){
+          // 招财包金色震波（环形扩散）
+          for(var zc=0;zc<10+e.rage*2;zc++){
+            var za2=zc*Math.PI*2/(10+e.rage*2);
+            world.bullets.push({x:e.x,y:e.y,vx:Math.cos(za2)*240,vy:Math.sin(za2)*240,r:8,life:3,owner:"enemy",color:"#ffc93c",goldWave:true});
+          }
+        }else{
+          // 铜钱串回旋飞轮（双程）
+          for(var zd=0;zd<3;zd++){
+            var zdx=(zd-1)*0.6;
+            world.bullets.push({x:e.x,y:e.y-20,vx:Math.cos(zdx)*260,vy:Math.sin(zdx)*260,r:10,life:3.5,owner:"enemy",color:"#b45309",coin:true,boomerang:true});
+          }
+        }
+      }else{
+        /* P1 扔鸡骨头(抛物线落地油渍) + 挺肚子滚冲(肚皮鼓气) + 打喷嚏金币雨(追踪) */
+        if(e.atkMode%3===0){
+          // 鸡骨头：抛物线
+          var pa4=(p.x>e.x?1:-1);
+          for(var jg=0;jg<3;jg++){
+            world.bullets.push({x:e.x,y:e.y-30,vx:pa4*(180+jg*50),vy:-220-jg*40,r:8,life:4,owner:"enemy",color:"#f5d76e",bone:true,grav:600});
+          }
+        }else if(e.atkMode%3===1){
+          // 挺肚子滚冲：预兆（肚皮鼓气）+ 冲刺
+          e.rolling=(e.rolling||0)+1;
+          world.texts.push({x:e.x,y:e.y-80,text:"咕噜~",life:0.6,vy:-20});
+          var pa5=(p.x>e.x?1:-1);
+          world.bullets.push({x:e.x,y:e.y+30,vx:pa5*420,vy:0,r:22,life:1.2,owner:"enemy",color:"#ff9d00",roll:true});
+        }else{
+          // 打喷嚏金币雨（追踪）
+          for(var jy=0;jy<5+e.rage*2;jy++){
+            var ja=Math.atan2(p.y-e.y,p.x-e.x)+(jy-2)*0.35;
+            world.bullets.push({x:e.x,y:e.y-40,vx:Math.cos(ja)*260,vy:Math.sin(ja)*260,r:7,life:3.2,owner:"enemy",color:"#ffd700",gold:true,home:true});
+          }
+        }
+      }
+    }else if(bk===8){
+      /* 伪善学究·凌算机：三阶段 */
+      if(e.rage>=2){
+        /* P3 眼镜全红假笑裂开 + 算总账计算式弹幕 + 扣光分数结算墙 */
+        if(e.atkMode%3===0){
+          // 计算式弹幕：+−×÷符号乱飞
+          var ops=["+","-","×","÷"];
+          for(var sj=0;sj<8+e.rage*3;sj++){
+            var sjA=sj*Math.PI*2/(8+e.rage*3);
+            world.bullets.push({x:e.x,y:e.y,vx:Math.cos(sjA)*280,vy:Math.sin(sjA)*280,r:9,life:3.4,owner:"enemy",color:"#ef4444",symbol:true,sym:ops[sj%4]});
+          }
+        }else if(e.atkMode%3===1){
+          // 审查光柱横扫（标记后延迟爆点）
+          var pa6=(p.x>e.x?1:-1);
+          world.bullets.push({x:e.x,y:e.y,vx:pa6*300,vy:0,r:26,life:1.5,owner:"enemy",color:"#f87171",audit:true});
+        }else{
+          // 结算墙推移（需打破缺口）
+          world.bullets.push({x:e.x-500,y:e.y-10,vx:180,vy:0,r:40,life:5,owner:"enemy",color:"#dc2626",wall:true});
+        }
+      }else if(e.rage>=1){
+        /* P2 符文环转召唤陈年账目书页螺旋 + 审查光柱 + 抄写员小怪 */
+        if(e.atkMode%3===0){
+          // 陈年账目书页螺旋
+          for(var sp2=0;sp2<10+e.rage*2;sp2++){
+            var spA=e.phase*1.5+sp2*Math.PI*2/(10+e.rage*2);
+            world.bullets.push({x:e.x,y:e.y,vx:Math.cos(spA)*220,vy:Math.sin(spA)*220,r:7,life:4,owner:"enemy",color:"#c4b5fd",page:true});
+          }
+        }else if(e.atkMode%3===1){
+          // 审查光柱
+          var pa7=(p.x>e.x?1:-1);
+          world.bullets.push({x:e.x,y:e.y,vx:pa7*340,vy:0,r:20,life:1.4,owner:"enemy",color:"#f87171",audit:true});
+        }else{
+          // 召唤2个抄写员小怪（死亡掉记过单）
+          for(var cw=0;cw<2;cw++){
+            world.enemies.push({type:"flyer",x:e.x+(cw-0.5)*80,y:e.y-40,w:26,h:26,hp:25+e.rage*10,maxHp:25+e.rage*10,t:0,score:80,scribe:true});
+          }
+        }
+      }else{
+        /* P1 推眼镜闪光放规矩光刃 + 字字弹幕(书法笔画追踪) + 画线持续掉血 */
+        if(e.atkMode%3===0){
+          // 规矩光刃
+          var pa8=(p.x>e.x?1:-1);
+          for(var gj=0;gj<3;gj++){
+            world.bullets.push({x:e.x,y:e.y-20+(gj-1)*30,vx:pa8*380,vy:0,r:6,life:2.4,owner:"enemy",color:"#a855f7",blade:true});
+          }
+        }else if(e.atkMode%3===1){
+          // 字字弹幕：书法笔画追踪
+          for(var zz=0;zz<5+e.rage*2;zz++){
+            var za3=Math.atan2(p.y-e.y,p.x-e.x)+(zz-2)*0.3;
+            world.bullets.push({x:e.x,y:e.y,vx:Math.cos(za3)*240,vy:Math.sin(za3)*240,r:8,life:3.5,owner:"enemy",color:"#1e293b",word:true,home:true});
+          }
+        }else{
+          // 画线：持续掉血区域
+          var pa9=(p.x>e.x?1:-1);
+          world.bullets.push({x:e.x,y:H-120,vx:pa9*200,vy:0,r:10,life:4,owner:"enemy",color:"#64748b",line:true,dot:true});
+        }
+      }
+    }else if(bk===9){
+      /* 深渊女仆鲸娘：三阶段（按HP百分比） */
+      if(e.rage>=2){
+        /* P3(35-0%) 黑化头发触手水鞭四段抽打 + 深渊鲸吞 + 宝石弱点 */
+        if(e.atkMode%3===0){
+          // 触手水鞭四段抽打
+          for(var sb=0;sb<4;sb++){
+            var sbA=(p.x>e.x?1:-1)*(0.3+sb*0.35);
+            world.bullets.push({x:e.x,y:e.y-20,vx:Math.cos(sbA)*360,vy:Math.sin(sbA)*360,r:8,life:3,owner:"enemy",color:"#0ea5e9",tentacle:true});
+          }
+        }else if(e.atkMode%3===1){
+          // 深渊鲸吞：全屏吸附3秒（需打破4个泡泡锚点）
+          world.bullets.push({x:e.x,y:e.y,vx:0,vy:0,r:70,life:1.2,owner:"enemy",color:"#1e40af",whale:true,vortex:true,home:true});
+          for(var mao=0;mao<4;mao++){
+            var maoA=mao*Math.PI/2;
+            world.enemies.push({type:"turret",x:e.x+Math.cos(maoA)*150,y:e.y+Math.sin(maoA)*150,w:20,h:20,hp:40,maxHp:40,cd:99,score:0,anchor:true});
+          }
+        }else{
+          // 宝石弱点暴露：高伤害水弹
+          for(var bb=0;bb<6+e.rage*2;bb++){
+            var bbA=e.phase+bb*Math.PI*2/(6+e.rage*2);
+            world.bullets.push({x:e.x,y:e.y-10,vx:Math.cos(bbA)*300,vy:Math.sin(bbA)*300,r:9,life:3.2,owner:"enemy",color:"#22d3ee",water:true});
+          }
+        }
+      }else if(e.rage>=1){
+        /* P2(70-35%) 水位上升减速 + 鲸歌音波三圈环形 + 召唤小鲸鱼侍女 */
+        if(e.atkMode%3===0){
+          // 鲸歌音波三圈环形
+          for(var yg=0;yg<3;yg++){
+            for(var yk=0;yk<6;yk++){
+              var ykA=yk*Math.PI*2/6;
+              var yr=120+yg*40;
+              world.bullets.push({x:e.x,y:e.y,vx:Math.cos(ykA)*220,vy:Math.sin(ykA)*220,r:7,life:2.8,owner:"enemy",color:"#7dd3fc",soundwave:true,wob:yg});
+            }
+          }
+        }else if(e.atkMode%3===1){
+          // 召唤2只小鲸鱼侍女（死亡留减速水洼）
+          for(var mw=0;mw<2;mw++){
+            world.enemies.push({type:"flyer",x:e.x+(mw-0.5)*70,y:e.y-30,w:24,h:24,hp:30+e.rage*12,maxHp:30+e.rage*12,t:0,score:70,maid:true});
+          }
+        }else{
+          // 水弹
+          var pa10=(p.x>e.x?1:-1);
+          for(var ws=0;ws<4;ws++){
+            world.bullets.push({x:e.x,y:e.y,vx:pa10*(160+ws*50),vy:(ws-1.5)*60,r:8,life:3.5,owner:"enemy",color:"#38bdf8",water:true});
+          }
+        }
+      }else{
+        /* P1(100-70%) 尾鳍横扫半屏扇形 + 泡泡弹幕破裂散6向水弹 + 喷水柱冲刺 */
+        if(e.atkMode%3===0){
+          // 尾鳍横扫：扇形
+          var pa11=(p.x>e.x?1:-1);
+          for(var wq=0;wq<7+e.rage*2;wq++){
+            var wqA=pa11>0?(-0.8+wq*0.25):(Math.PI+0.8-wq*0.25);
+            world.bullets.push({x:e.x,y:e.y,vx:Math.cos(wqA)*320,vy:Math.sin(wqA)*320,r:9,life:3,owner:"enemy",color:"#60a5fa",fin:true});
+          }
+        }else if(e.atkMode%3===1){
+          // 泡泡弹幕（破裂散6向）
+          for(var pp=0;pp<4+e.rage*2;pp++){
+            world.bullets.push({x:e.x,y:e.y-20,vx:(Math.random()-0.5)*200,vy:-180,r:11,life:2.5,owner:"enemy",color:"#bae6fd",bubble:true});
+          }
+        }else{
+          // 喷水柱冲刺
+          var pa12=(p.x>e.x?1:-1);
+          world.bullets.push({x:e.x,y:e.y+10,vx:pa12*460,vy:0,r:14,life:1.5,owner:"enemy",color:"#93c5fd",jet:true});
+        }
+      }
+    }else if(bk===10){
+      /* 霓虹执行者K.Volt：三阶段 */
+      if(e.rage>=2){
+        /* P3 全屏随机落雷(红警示圈) + 闪电残影冲砍(真身破防) + 长刀电流裂缝 */
+        if(e.atkMode%3===0){
+          // 全屏随机落雷：地面红色警示圈
+          for(var lt=0;lt<5;lt++){
+            world.bullets.push({x:p.x+(Math.random()-0.5)*400,y:H-40,vx:0,vy:0,r:14,life:0.8,owner:"enemy",color:"#ef4444",strike:true,mark:true});
+          }
+        }else if(e.atkMode%3===1){
+          // 闪电残影冲砍：5道，只有一道真身
+          var pa13=(p.x>e.x?1:-1);
+          for(var cy=0;cy<5;cy++){
+            var real=(cy===Math.floor(Math.random()*5));
+            world.bullets.push({x:e.x,y:e.y+(cy-2)*25,vx:pa13*(420+cy*40),vy:0,r:10,life:1.3,owner:"enemy",color:real?"#facc15":"#7c3aed",slash:true,real:real});
+          }
+        }else{
+          // 长刀劈地电流裂缝（持续5秒分割场地）
+          world.bullets.push({x:e.x,y:H-80,vx:0,vy:0,r:20,life:5,owner:"enemy",color:"#fbbf24",crack:true});
+        }
+      }else if(e.rage>=1){
+        /* P2 磁力拉扯后全屏电爆(躲掩体) + 电磁囚笼紫圈 + 浮游盾三棱钻头 */
+        if(e.atkMode%3===0){
+          // 磁力拉扯（吸附）
+          world.bullets.push({x:e.x,y:e.y,vx:0,vy:0,r:55,life:1,owner:"enemy",color:"#8b5cf6",magnet:true,vortex:true,home:true});
+        }else if(e.atkMode%3===1){
+          // 电磁囚笼紫圈（升电墙）
+          world.bullets.push({x:p.x,y:p.y,vx:0,vy:0,r:40,life:1.5,owner:"enemy",color:"#a78bfa",cage:true});
+        }else{
+          // 浮游盾三棱钻头冲撞
+          var pa14=(p.x>e.x?1:-1);
+          for(var zu=0;zu<3;zu++){
+            world.bullets.push({x:e.x,y:e.y+(zu-1)*30,vx:pa14*380,vy:0,r:9,life:2.2,owner:"enemy",color:"#c084fc",drill:true});
+          }
+        }
+      }else{
+        /* P1 三段突进斩(残影留电痕) + 浮游盾菱形飞出回旋切割 */
+        if(e.atkMode%3===0){
+          // 三段突进斩
+          var pa15=(p.x>e.x?1:-1);
+          for(var td=0;td<3;td++){
+            world.bullets.push({x:e.x,y:e.y,vx:pa15*(360+td*60),vy:0,r:8,life:1.6,owner:"enemy",color:"#facc15",dash:true,afterimage:true});
+          }
+        }else if(e.atkMode%3===1){
+          // 浮游盾菱形回旋切割
+          for(var lx=0;lx<4;lx++){
+            var lxA=e.phase*2+lx*Math.PI/2;
+            world.bullets.push({x:e.x,y:e.y,vx:Math.cos(lxA)*280,vy:Math.sin(lxA)*280,r:9,life:3.5,owner:"enemy",color:"#e879f9",diamond:true,boomerang:true});
+          }
+        }else{
+          // 电击弹
+          var pa16=(p.x>e.x?1:-1);
+          world.bullets.push({x:e.x,y:e.y,vx:pa16*320,vy:0,r:7,life:2.5,owner:"enemy",color:"#fde047",shock:true});
+        }
+      }
     }else{
       /* 恶魔卡带机：三层 neon 粉声波 */
       for(var tier=0;tier<3;tier++){
@@ -2802,7 +3043,7 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v2.4");
+    localStorage.setItem("njs_patch","v2.5");
   }catch(e){}
 }
 (function(){
@@ -2810,10 +3051,10 @@ function closePatchNote(){
     // 动态填充更新日期（真实当前日期，永不写死）
     var _pd=document.getElementById("patchDateText");
     if(_pd){
-      _pd.textContent="更新于 2026 年 10 月 23 日 17:10:00";
+      _pd.textContent="更新于 2026 年 10 月 24 日 01:20";
     }
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v2.4"){
+    if(seen!=="v2.5"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -5695,6 +5936,220 @@ function draw(){
         ctx.fillStyle="#ccc";
         ctx.beginPath();ctx.arc(-R*0.02,R*0.35,R*0.03,0,6.2832);ctx.arc(R*0.02,R*0.35,R*0.03,0,6.2832);ctx.fill();
       }
+      else if(bk===7){
+        /* ===== 8. 暴食金猪·猪八旺：粉金圆滚猪 + 红唐装马甲 + 大铜钱 + 招财包 ===== */
+        // 圆滚身体（粉金色油光）
+        var pg=ctx.createRadialGradient(-R*0.2,-R*0.2,R*0.1,0,0,R*1.05);
+        pg.addColorStop(0,"#ffd9a8");pg.addColorStop(0.7,"#f5a97f");pg.addColorStop(1,"#d98850");
+        ctx.fillStyle=pg;
+        ctx.beginPath();ctx.ellipse(0,R*0.15,R*0.95,R*0.85,0,0,6.2832);ctx.fill();
+        // 红唐装马甲（金元宝图案，盘扣崩开）
+        ctx.fillStyle="#c0392b";
+        ctx.beginPath();ctx.moveTo(-R*0.75,-R*0.1);ctx.quadraticCurveTo(0,R*0.45,R*0.75,-R*0.1);ctx.lineTo(R*0.55,R*0.5);ctx.quadraticCurveTo(0,R*0.75,-R*0.55,R*0.5);ctx.closePath();ctx.fill();
+        ctx.strokeStyle="#f7d774";ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.moveTo(0,-R*0.1);ctx.lineTo(0,R*0.45);ctx.stroke();
+        // 金元宝图案
+        ctx.fillStyle="#f7d774";
+        ctx.beginPath();ctx.ellipse(-R*0.35,R*0.15,R*0.16,R*0.12,0,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.ellipse(R*0.35,R*0.15,R*0.16,R*0.12,0,0,6.2832);ctx.fill();
+        // 脖子大铜钱
+        ctx.fillStyle="#b45309";ctx.lineWidth=3;ctx.strokeStyle="#92400e";
+        for(var tc=0;tc<5;tc++){
+          var tcx=(-R*0.4)+tc*R*0.2;
+          ctx.beginPath();ctx.arc(tcx,-R*0.15,R*0.09,0,6.2832);ctx.fill();ctx.stroke();
+          ctx.fillStyle="#f7d774";ctx.fillRect(tcx-R*0.035,-R*0.035,R*0.07,R*0.07);
+          ctx.fillStyle="#b45309";
+        }
+        // 头顶呆毛（小风车状）
+        ctx.strokeStyle="#8b5a2b";ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.moveTo(0,-R*0.85);ctx.quadraticCurveTo(R*0.2,-R*1.1,R*0.05,-R*1.2);ctx.stroke();
+        // 大耳朵（会扇动）
+        var ear=Math.sin(tt*3)*R*0.08;
+        ctx.fillStyle="#f5a97f";
+        ctx.beginPath();ctx.ellipse(-R*0.8,-R*0.35+ear,R*0.3,R*0.45,0.5,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.ellipse(R*0.8,-R*0.35-ear,R*0.3,R*0.45,-0.5,0,6.2832);ctx.fill();
+        // 豆豆眼（月牙笑）
+        ctx.strokeStyle="#5a2a0a";ctx.lineWidth=3;ctx.lineCap="round";
+        ctx.beginPath();ctx.arc(-R*0.28,-R*0.4,R*0.12,0.3,2.8);ctx.stroke();
+        ctx.beginPath();ctx.arc(R*0.28,-R*0.4,R*0.12,0.3,2.8);ctx.stroke();
+        // 獠牙（嘴角上翘）
+        ctx.fillStyle="#fff";
+        ctx.beginPath();ctx.moveTo(-R*0.35,-R*0.05);ctx.lineTo(-R*0.28,-R*0.2);ctx.lineTo(-R*0.2,-R*0.05);ctx.closePath();ctx.fill();
+        ctx.beginPath();ctx.moveTo(R*0.35,-R*0.05);ctx.lineTo(R*0.28,-R*0.2);ctx.lineTo(R*0.2,-R*0.05);ctx.closePath();ctx.fill();
+        // 大鸡腿（金色发光）
+        ctx.fillStyle="#ffd700";ctx.shadowColor="#ff9d00";ctx.shadowBlur=10;
+        ctx.beginPath();ctx.ellipse(R*0.55,R*0.4,R*0.22,R*0.16,0.6,0,6.2832);ctx.fill();
+        ctx.shadowBlur=0;
+        ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(R*0.62,R*0.34,R*0.06,0,6.2832);ctx.fill();
+        // 腰间大算盘
+        ctx.fillStyle="#7c4a03";
+        ctx.fillRect(-R*0.5,R*0.5,R*1.0,R*0.22);
+        ctx.strokeStyle="#92400e";ctx.lineWidth=2;
+        for(var sp0=0;sp0<5;sp0++){ctx.beginPath();ctx.moveTo(-R*0.5+sp0*R*0.25,R*0.5);ctx.lineTo(-R*0.5+sp0*R*0.25,R*0.72);ctx.stroke();}
+        ctx.fillStyle="#f7d774";
+        for(var sp1=0;sp1<4;sp1++){for(var sp2=0;sp2<5;sp2++){ctx.beginPath();ctx.arc(-R*0.38+sp2*R*0.25,R*0.56+sp1*R*0.05,R*0.045,0,6.2832);ctx.fill();}}
+        // 背后招财包（红布）
+        ctx.fillStyle="#dc2626";
+        ctx.beginPath();ctx.ellipse(-R*0.75,-R*0.5,R*0.3,R*0.38,-0.3,0,6.2832);ctx.fill();
+        ctx.fillStyle="#f7d774";ctx.font="bold "+Math.floor(R*0.18)+"px sans-serif";ctx.textAlign="center";
+        ctx.fillText("旺财",-R*0.75,-R*0.5);
+        // 小蹄子脚
+        ctx.fillStyle="#c97a4a";
+        ctx.beginPath();ctx.ellipse(-R*0.35,R*0.92,R*0.18,R*0.1,0,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.ellipse(R*0.35,R*0.92,R*0.18,R*0.1,0,0,6.2832);ctx.fill();
+        // 小尾巴（卷）
+        ctx.strokeStyle="#f5a97f";ctx.lineWidth=4;ctx.lineCap="round";
+        ctx.beginPath();ctx.moveTo(R*0.9,R*0.5);ctx.quadraticCurveTo(R*1.1,R*0.6,R*1.0,R*0.75);ctx.stroke();
+      }
+      else if(bk===8){
+        /* ===== 9. 伪善学究·凌算机：灰西服 + 方框眼镜 + 账目书本 ===== */
+        // 身体（灰色旧西服）
+        var lg=ctx.createLinearGradient(0,-R,0,R);
+        lg.addColorStop(0,"#8b95a5");lg.addColorStop(1,"#5c6670");
+        ctx.fillStyle=lg;
+        ctx.beginPath();ctx.roundRect?ctx.roundRect(-R*0.6,R*0.0,R*1.2,R*1.0,R*0.2):ctx.rect(-R*0.6,R*0.0,R*1.2,R*1.0);ctx.fill();
+        // 白色衬衫领
+        ctx.fillStyle="#f5f5f0";
+        ctx.beginPath();ctx.moveTo(-R*0.2,-R*0.05);ctx.lineTo(0,R*0.15);ctx.lineTo(R*0.2,-R*0.05);ctx.lineTo(R*0.12,R*0.25);ctx.lineTo(0,R*0.12);ctx.lineTo(-R*0.12,R*0.25);ctx.closePath();ctx.fill();
+        // 领带（暗红）
+        ctx.fillStyle="#8b1a1a";
+        ctx.beginPath();ctx.moveTo(-R*0.08,-R*0.05);ctx.lineTo(R*0.08,-R*0.05);ctx.lineTo(R*0.05,R*0.35);ctx.lineTo(0,R*0.45);ctx.lineTo(-R*0.05,R*0.35);ctx.closePath();ctx.fill();
+        // 头（苍白脸）
+        var lf=ctx.createRadialGradient(0,-R*0.5,R*0.1,0,-R*0.45,R*0.55);
+        lf.addColorStop(0,"#f0f0e8");lf.addColorStop(1,"#d0c8b8");
+        ctx.fillStyle=lf;ctx.beginPath();ctx.ellipse(0,-R*0.45,R*0.4,R*0.5,0,0,6.2832);ctx.fill();
+        // 油亮分头
+        ctx.fillStyle="#2b2b2b";
+        ctx.beginPath();ctx.ellipse(0,-R*0.75,R*0.45,R*0.38,0,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.moveTo(-R*0.4,-R*0.6);ctx.lineTo(0,-R*0.95);ctx.lineTo(R*0.4,-R*0.6);ctx.lineTo(R*0.3,-R*0.55);ctx.lineTo(0,-R*0.8);ctx.lineTo(-R*0.3,-R*0.55);ctx.closePath();ctx.fill();
+        // 方框眼镜（金丝）
+        var glc=rr>=2?"#ef4444":"#c9a227";
+        ctx.strokeStyle=glc;ctx.lineWidth=3;
+        ctx.strokeRect(-R*0.45,-R*0.6,R*0.4,R*0.32);
+        ctx.strokeRect(R*0.05,-R*0.6,R*0.4,R*0.32);
+        ctx.beginPath();ctx.moveTo(-R*0.05,-R*0.45);ctx.lineTo(R*0.05,-R*0.45);ctx.stroke();
+        // 镜片反光 + 眼（微眯睿智）
+        ctx.fillStyle="rgba(255,255,255,0.5)";ctx.fillRect(-R*0.35,-R*0.55,R*0.12,R*0.08);
+        ctx.fillStyle=rr>=2?"#7f1d1d":"#3a3a3a";
+        ctx.beginPath();ctx.ellipse(-R*0.25,-R*0.45,R*0.06,R*0.04,0,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.ellipse(R*0.25,-R*0.45,R*0.06,R*0.04,0,0,6.2832);ctx.fill();
+        // 假笑（裂开）
+        if(rr>=2){
+          ctx.strokeStyle="#7f1d1d";ctx.lineWidth=3;
+          ctx.beginPath();ctx.arc(0,-R*0.15,R*0.22,0.2,2.9);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(-R*0.18,-R*0.12);ctx.lineTo(R*0.18,-R*0.12);ctx.stroke();
+        }else{
+          ctx.strokeStyle="#5a5a5a";ctx.lineWidth=2;
+          ctx.beginPath();ctx.arc(0,-R*0.18,R*0.15,0.2,2.9);ctx.stroke();
+        }
+        // 推眼镜的手
+        ctx.strokeStyle="#d0c8b8";ctx.lineWidth=3;
+        ctx.beginPath();ctx.moveTo(R*0.4,-R*0.35);ctx.lineTo(R*0.55,-R*0.55);ctx.stroke();
+        // 拿书本（陈年账目）
+        ctx.fillStyle="#8b6914";ctx.fillRect(-R*0.6,R*0.35,R*0.45,R*0.35);
+        ctx.strokeStyle="#5a3a10";ctx.lineWidth=2;ctx.strokeRect(-R*0.6,R*0.35,R*0.45,R*0.35);
+        // 符文环（P2 召唤时）
+        if(rr>=1){
+          ctx.strokeStyle="rgba(196,181,253,"+(0.4+Math.sin(tt*4)*0.3)+")";ctx.lineWidth=2;
+          ctx.beginPath();ctx.arc(0,R*0.1,R*0.8,0,6.2832);ctx.stroke();
+        }
+      }
+      else if(bk===9){
+        /* ===== 10. 深渊女仆鲸娘：蓝发女仆裙 + 鲸尾巴 + 白丝过膝袜 ===== */
+        // 鲸鱼尾（后摆大尾巴）
+        var wt=ctx.createLinearGradient(0,R*0.3,0,R*1.3);
+        wt.addColorStop(0,"#3b82f6");wt.addColorStop(1,"#1e40af");
+        ctx.fillStyle=wt;
+        ctx.beginPath();ctx.moveTo(-R*0.2,R*0.7);ctx.quadraticCurveTo(-R*1.0,R*1.1,-R*1.3,R*1.3);ctx.quadraticCurveTo(-R*0.9,R*0.9,-R*0.5,R*1.0);ctx.quadraticCurveTo(-R*0.2,R*1.2,0,R*0.85);ctx.closePath();ctx.fill();
+        ctx.beginPath();ctx.moveTo(R*0.2,R*0.7);ctx.quadraticCurveTo(R*1.0,R*1.1,R*1.3,R*1.3);ctx.quadraticCurveTo(R*0.9,R*0.9,R*0.5,R*1.0);ctx.quadraticCurveTo(R*0.2,R*1.2,0,R*0.85);ctx.closePath();ctx.fill();
+        // 女仆裙（黑白）
+        var sk=ctx.createLinearGradient(0,-R*0.2,0,R*0.8);
+        sk.addColorStop(0,"#1e293b");sk.addColorStop(1,"#0f172a");
+        ctx.fillStyle=sk;
+        ctx.beginPath();ctx.moveTo(-R*0.5,-R*0.1);ctx.lineTo(R*0.5,-R*0.1);ctx.lineTo(R*0.85,R*0.75);ctx.quadraticCurveTo(0,R*0.9,-R*0.85,R*0.75);ctx.closePath();ctx.fill();
+        // 白色围裙
+        ctx.fillStyle="#f8fafc";
+        ctx.beginPath();ctx.moveTo(-R*0.3,R*0.0);ctx.lineTo(R*0.3,R*0.0);ctx.lineTo(R*0.45,R*0.65);ctx.quadraticCurveTo(0,R*0.75,-R*0.45,R*0.65);ctx.closePath();ctx.fill();
+        // 领结宝石（蓝）
+        ctx.fillStyle="#22d3ee";ctx.shadowColor="#0ea5e9";ctx.shadowBlur=8;
+        ctx.beginPath();ctx.moveTo(-R*0.15,-R*0.15);ctx.lineTo(0,-R*0.05);ctx.lineTo(R*0.15,-R*0.15);ctx.lineTo(0,-R*0.3);ctx.closePath();ctx.fill();
+        ctx.shadowBlur=0;
+        // 头（白皙）
+        var hf=ctx.createRadialGradient(0,-R*0.55,R*0.1,0,-R*0.5,R*0.5);
+        hf.addColorStop(0,"#fff5f0");hf.addColorStop(1,"#f0d8c8");
+        ctx.fillStyle=hf;ctx.beginPath();ctx.ellipse(0,-R*0.5,R*0.38,R*0.48,0,0,6.2832);ctx.fill();
+        // 蓝发（长，双马尾）
+        var hc=rr>=2?"#1e1e3a":"#3b82f6";
+        ctx.fillStyle=hc;
+        ctx.beginPath();ctx.ellipse(0,-R*0.8,R*0.5,R*0.42,0,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.moveTo(-R*0.4,-R*0.7);ctx.quadraticCurveTo(-R*0.85,-R*0.5,-R*0.7,-R*0.1);ctx.quadraticCurveTo(-R*0.55,-R*0.3,-R*0.35,-R*0.55);ctx.closePath();ctx.fill();
+        ctx.beginPath();ctx.moveTo(R*0.4,-R*0.7);ctx.quadraticCurveTo(R*0.85,-R*0.5,R*0.7,-R*0.1);ctx.quadraticCurveTo(R*0.55,-R*0.3,R*0.35,-R*0.55);ctx.closePath();ctx.fill();
+        // 女仆发箍
+        ctx.fillStyle="#f8fafc";
+        ctx.beginPath();ctx.arc(-R*0.35,-R*0.85,R*0.1,0,6.2832);ctx.arc(R*0.35,-R*0.85,R*0.1,0,6.2832);ctx.fill();
+        // 大眼睛（黑化变红）
+        var eyeC=rr>=2?"#ef4444":"#1e40af";
+        ctx.fillStyle=eyeC;
+        ctx.beginPath();ctx.arc(-R*0.15,-R*0.5,R*0.09,0,6.2832);ctx.arc(R*0.15,-R*0.5,R*0.09,0,6.2832);ctx.fill();
+        ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(-R*0.17,-R*0.52,R*0.03,0,6.2832);ctx.arc(R*0.13,-R*0.52,R*0.03,0,6.2832);ctx.fill();
+        // 白丝过膝袜
+        ctx.fillStyle="#f8fafc";
+        ctx.beginPath();ctx.roundRect?ctx.roundRect(-R*0.35,R*0.7,R*0.25,R*0.35,R*0.08):ctx.fillRect(-R*0.35,R*0.7,R*0.25,R*0.35);ctx.fill();
+        ctx.beginPath();ctx.roundRect?ctx.roundRect(R*0.1,R*0.7,R*0.25,R*0.35,R*0.08):ctx.fillRect(R*0.1,R*0.7,R*0.25,R*0.35);ctx.fill();
+        // P3 触手水鞭（黑化头发）
+        if(rr>=2){
+          ctx.strokeStyle="#1e1e3a";ctx.lineWidth=4;ctx.lineCap="round";
+          for(var tw=0;tw<4;tw++){
+            var twA=Math.sin(tt*3+tw*1.5)*R*0.4;
+            ctx.beginPath();ctx.moveTo(0,-R*0.7);ctx.quadraticCurveTo(twA,R*0.2,twA*1.5,R*0.8);ctx.stroke();
+          }
+        }
+      }
+      else if(bk===10){
+        /* ===== 11. 霓虹执行者K.Volt：武士甲 + 霓虹光刃 + 闪电纹 ===== */
+        // 武士身体（深色战甲 + 霓虹线条）
+        var kv=ctx.createLinearGradient(0,-R,0,R);
+        kv.addColorStop(0,"#1a1a2e");kv.addColorStop(1,"#0d0b1e");
+        ctx.fillStyle=kv;
+        ctx.beginPath();ctx.roundRect?ctx.roundRect(-R*0.55,R*0.0,R*1.1,R*1.0,R*0.15):ctx.rect(-R*0.55,R*0.0,R*1.1,R*1.0);ctx.fill();
+        // 霓虹发光线条（紫粉）
+        ctx.strokeStyle="rgba(232,121,249,"+(0.6+Math.sin(tt*3)*0.3)+")";ctx.lineWidth=3;ctx.shadowColor="#e879f9";ctx.shadowBlur=8;
+        ctx.beginPath();ctx.moveTo(-R*0.4,R*0.1);ctx.lineTo(0,R*0.3);ctx.lineTo(R*0.4,R*0.1);ctx.stroke();
+        ctx.shadowBlur=0;
+        // 武士头盔
+        ctx.fillStyle="#1e1a34";
+        ctx.beginPath();ctx.ellipse(0,-R*0.45,R*0.42,R*0.42,0,0,6.2832);ctx.fill();
+        ctx.fillStyle="rgba(232,121,249,0.5)";ctx.beginPath();ctx.ellipse(0,-R*0.55,R*0.3,R*0.12,0,0,6.2832);ctx.fill();
+        // 面甲（发光眼睛缝）
+        ctx.fillStyle="#0d0b1e";ctx.fillRect(-R*0.35,-R*0.55,R*0.7,R*0.18);
+        ctx.fillStyle=rr>=2?"#facc15":"#e879f9";ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=8;
+        ctx.fillRect(-R*0.2,-R*0.5,R*0.4,R*0.06);
+        ctx.shadowBlur=0;
+        // 霓虹长刀（右手）
+        ctx.strokeStyle="#fbbf24";ctx.lineWidth=4;ctx.shadowColor="#facc15";ctx.shadowBlur=10;
+        ctx.beginPath();ctx.moveTo(R*0.4,R*0.2);ctx.lineTo(R*1.05,-R*0.15);ctx.stroke();
+        ctx.shadowBlur=0;
+        // 刀身发光渐变
+        ctx.strokeStyle="rgba(255,255,255,0.7)";ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(R*0.4,R*0.18);ctx.lineTo(R*1.0,-R*0.13);ctx.stroke();
+        // 浮游盾（菱形，环绕）
+        for(var fs=0;fs<3;fs++){
+          var fsA=tt*2+fs*Math.PI*2/3;
+          var fsx=Math.cos(fsA)*R*1.0, fsy=Math.sin(fsA)*R*0.5-R*0.1;
+          ctx.save();ctx.translate(fsx,fsy);ctx.rotate(fsA);
+          ctx.fillStyle="#c084fc";ctx.strokeStyle="#e879f9";ctx.lineWidth=2;
+          ctx.beginPath();ctx.moveTo(0,-R*0.15);ctx.lineTo(R*0.1,0);ctx.lineTo(0,R*0.15);ctx.lineTo(-R*0.1,0);ctx.closePath();ctx.fill();ctx.stroke();
+          ctx.restore();
+        }
+        // P3 闪电残影
+        if(rr>=2){
+          ctx.strokeStyle="rgba(250,204,21,0.6)";ctx.lineWidth=2.5;
+          for(var li=0;li<3;li++){
+            var liy=-R*0.3+li*R*0.3;
+            ctx.beginPath();ctx.moveTo(-R*0.5,liy);ctx.lineTo(-R*0.2,liy+R*0.1);ctx.lineTo(-R*0.35,liy+R*0.2);ctx.lineTo(-R*0.05,liy+R*0.3);ctx.stroke();
+          }
+        }
+      }
       else{
         /* ===== 4. 恶魔卡带机：锈铁 + 双扬声器 + 磁带触手 ===== */
         // 磁带触手（下方蠕动）
@@ -6642,11 +7097,13 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v1.2</div>
-    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 23 日 17:10:00</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v2.5</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:20</div>
   </div>
     <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
-      <div style="color:#ff2fd6;font-weight:600;margin-bottom:2px;font-size:13px">🔥 最新更新 <span style="font-size:10px;color:#9fb8e8">· 2026 年 10 月 23 日 17:10:00</span></div>
+      <div style="color:#ff2fd6;font-weight:600;margin-bottom:2px;font-size:13px">🔥 最新更新 <span style="font-size:10px;color:#9fb8e8">· 2026 年 10 月 24 日 01:20</span></div>
+      <div>· 新增 4 个三阶段 Boss：暴食金猪·猪八旺 / 伪善学究·凌算机 / 深渊女仆鲸娘 / 霓虹执行者K.Volt</div>
+      <div>· 所有 Boss 统一降到屏幕下方，不再飞出视野</div>
       <div>· 新增 2 个 Boss：暗影男孩（紫色魔法弹幕+黑乌鸦）、菌丝卫衣少年（孢子弹+毒雾）</div>
       <div>· Boss 改为随机生成，不再按固定顺序</div>
       <div>· 赛博水母位置单独降低，不再飞出屏幕</div>
@@ -6700,7 +7157,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充：元素已存在，必然能填上（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 23 日 17:10:00";
+    pd.textContent="更新于 2026 年 10 月 24 日 01:20";
   }
 })();
 </script>
