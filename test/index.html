@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.7</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.8</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -2429,7 +2429,7 @@ if(gameState!=="playing")return;
 var dt=rdt*timeScale;
 try{ _animUpd(dt); }catch(e){}
 bgUpdate(rdt);
-if(slowTimer>0){slowTimer-=rdt;if(slowTimer<=0)timeScale=1}
+if(slowTimer>0){slowTimer-=rdt;if(slowTimer<=0){slowTimer=0}else{timeScale=0.35+0.65*Math.min(1,(3.5-slowTimer)/3.5)}}else if(timeScale<1){timeScale=Math.min(1,timeScale+rdt*2)}
 if(skillCd>0)skillCd-=rdt;
 if(comboT>0){comboT-=rdt;if(comboT<=0)combo=0}
 if(world.flash>0)world.flash-=rdt*2;
@@ -3096,13 +3096,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v3.7");
+    localStorage.setItem("njs_patch","v3.8");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v3.7"){
+    if(seen!=="v3.8"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7419,7 +7419,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.7</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.8</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7450,6 +7450,9 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 07:03:43",items:[
+      "🐛 修复人物突然加速：减速技能结束后时间平滑恢复，不再瞬间跳回正常速度"
+    ]},
     {time:"2026-10-24 06:56:59",items:[
       "✨ Boss 招牌攻击：逼格=吃(吞子弹回血) / 眼镜=规则(翻旧账点名) / 鲸娘=潮汐(涨潮) / K.Volt=闪电(零点雷暴)"
     ]},
@@ -7539,7 +7542,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 06:56:59";
+    pd.textContent="更新于 2026 年 10 月 24 日 07:03:43";
   }
 })();
 </script>
