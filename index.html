@@ -113,6 +113,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 <button class="btn btn-main" onclick="startGame(false)">开 始 游 戏</button>
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
   <button id="homeRankBtn" onclick="openHomeRank()" style="display:block;margin:10px auto 0;padding:8px 26px;border-radius:20px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:14px;cursor:pointer">🏆 排行榜</button>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">v28</div>
   <button class="btn btn-cont" id="contBtn" onclick="continueGame()" style="display:none">继续上局</button>
 
   <div class="feats">
@@ -175,7 +176,33 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 
 </div>
 <script>
-window.onerror=function(m,s,l){var d=document.getElementById("errbox");if(!d){d=document.createElement("div");d.id="errbox";d.style.cssText="position:fixed;left:0;bottom:0;right:0;background:#900;color:#fff;font-size:12px;padding:6px;z-index:99;word-break:break-all";document.body.appendChild(d)}d.textContent=m+" L:"+l;return false};
+window.onerror=function(m,s,l,c,e){
+  try{
+    var d=document.getElementById("errbox");
+    if(!d){
+      d=document.createElement("div");
+      d.id="errbox";
+      d.style.cssText="position:fixed;left:6px;bottom:6px;right:6px;background:rgba(150,0,0,.92);color:#fff;font-size:11px;padding:5px 8px;border-radius:8px;z-index:99;word-break:break-all;max-height:30vh;overflow:auto;transition:opacity .4s";
+      document.body.appendChild(d);
+    }
+    var stack="";
+    try{ if(e&&e.stack)stack=" || "+String(e.stack).split("\n").slice(0,3).join(" << "); }catch(_){}
+    d.textContent=(m||"error")+" @L"+(l||"?")+(s?(" "+String(s).split("/").pop()):"")+stack;
+    d.style.display="block";
+    d.style.opacity="1";
+    // 5 秒后自动淡出
+    try{ if(d._t)clearTimeout(d._t); }catch(_){}
+    d._t=setTimeout(function(){ try{ d.style.opacity="0"; setTimeout(function(){d.style.display="none"},450); }catch(_){} },5000);
+    // 记录到 localStorage（最多 10 条）
+    try{
+      var h=JSON.parse(localStorage.getItem("njs_errs")||"[]");
+      h.push({m:m,l:l,t:Date.now()});
+      if(h.length>10)h=h.slice(-10);
+      localStorage.setItem("njs_errs",JSON.stringify(h));
+    }catch(_){}
+  }catch(_){}
+  return false;
+};
 var canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
 function $(id){return document.getElementById(id)}
 var ui={start:$("startScreen"),over:$("overScreen"),pause:$("pauseScreen"),hud:$("hud"),hpFill:$("hpFill"),enFill:$("enFill"),dist:$("distVal"),score:$("scoreVal"),final:$("finalScore"),toast:$("toast"),hint:$("hint"),musicBtn:$("musicBtn")};
