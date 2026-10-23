@@ -553,7 +553,7 @@ var TRAP_KINDS=[
 "bounce_trap","sticky","mirror","invisible","electric","acid","swing","pendulum","falling_block","crusher",
 "ambush","feint","decoy","swap","lock","reverse_ctrl","blind","drain","ghost_hit","final_boss"
 ];
-var trapNames={fake_floor:"假地板",disappear:"消失平台",crush:"压路机",saw:"电锯",poison_spike:"毒刺",magnet:"反向磁力",reverse:"反向操作",dark:"视野封锁",ice_wind:"冰风减速",fake_gem:"假宝石",fake_coin:"假金币",fake_portal:"假传送门",fake_checkpoint:"假存档点",spike_wall:"尖刺墙",arrow:"暗箭",fire_jet:"喷火口",laser_grid:"激光网",mine:"地雷",gravity:"重力反转",slow_zone:"泥沼减速",bounce_trap:"恶意弹板",sticky:"黏胶地面",mirror:"镜像陷阱",invisible:"隐形怪",electric:"电弧",acid:"酸雨",swing:"旋锤",pendulum:"摆动刀",falling_block:"落石",crusher:"液压压板",ambush:"伏击怪",feint:"假退真攻",decoy:"诱饵分身",swap:"位置交换",lock:"屏幕锁定",reverse_ctrl:"键位颠倒",blind:"屏幕黑幕",drain:"吸血红光",ghost_hit:"穿墙怪",final_boss:"最终守门"};
+var trapNames={fake_floor:"假地板",disappear:"消失平台",crush:"压路机",saw:"电锯",poison_spike:"毒刺",magnet:"反向磁力",reverse:"反向操作",dark:"视野封锁",ice_wind:"冰风颠倒",fake_gem:"假宝石",fake_coin:"假金币",fake_portal:"假传送门",fake_checkpoint:"假存档点",spike_wall:"尖刺墙",arrow:"暗箭",fire_jet:"喷火口",laser_grid:"激光网",mine:"地雷",gravity:"重力反转",slow_zone:"腐蚀泥沼",bounce_trap:"恶意弹板",sticky:"酸液黏胶",mirror:"镜像陷阱",invisible:"隐形怪",electric:"电弧",acid:"酸雨",swing:"旋锤",pendulum:"摆动刀",falling_block:"落石",crusher:"液压压板",ambush:"伏击怪",feint:"假退真攻",decoy:"诱饵分身",swap:"位置交换",lock:"屏幕锁定",reverse_ctrl:"键位颠倒",blind:"屏幕黑幕",drain:"吸血红光",ghost_hit:"穿墙怪",final_boss:"最终守门"};
 
 /* ========== 陷阱分类：可通关性设计 ==========
    危险型：直接扣血，必须有预警 + 不能堵死通路
@@ -741,7 +741,8 @@ function updateSmartTraps(dt,rdt){
       t.timer-=rdt;if(t.timer>0&&near)world._dark=0.85;
     }
     else if(t.kind==="ice_wind"){
-      if(near){p.vx*=1-3*dt}
+      // 改为反向操作（不再减速）
+      if(near&&!world._revCtrl){world._revCtrl=1.5;world.texts.push({x:p.x,y:p.y-70,text:"冻! 操作颠倒",life:1.2,vy:-30})}
     }
     else if(t.kind==="fake_gem"){
       if(!t.got&&Math.abs(d2x)<30&&Math.abs(d2y)<40){t.got=true;t.life=0;p.hp-=14;cam.shake=10;sHit();spawnShockRing(t.x,t.y,"#ff00aa",120);world.texts.push({x:t.x,y:t.y-40,text:"假宝石!-20HP",life:1.2,vy:-40})}
@@ -774,13 +775,18 @@ function updateSmartTraps(dt,rdt){
       t.timer-=rdt;if(t.timer>0&&near)p.vy-=1500*dt;
     }
     else if(t.kind==="slow_zone"){
-      if(near){p.vx*=1-4*dt;p.jumps=Math.min(p.jumps,1)}
+      // 改为持续掉血（不再减速）
+      if(near){t._tick=(t._tick||0)+dt;if(t._tick>=0.5){t._tick=0;if(p.inv<=0&&!(p.shield>0)){p.hp-=3;p.inv=0.25;world.texts.push({x:p.x,y:p.y-50,text:"-3",life:0.6,vy:-40})}}}
     }
     else if(t.kind==="bounce_trap"){
       if(p.x>t.x-45&&p.x<t.x+45&&Math.abs(p.y+p.h/2-t.y)<26&&p.vy>=0){p.vy=-280;p.jumps=0;world.texts.push({x:t.x,y:t.y-40,text:"弱弹板",life:0.8,vy:-30})}
     }
     else if(t.kind==="sticky"){
-      if(Math.abs(d2x)<70&&Math.abs(p.y+p.h/2-t.y)<26){p.vx*=1-6*dt}
+      // 改为持续掉血（不再减速）
+      if(Math.abs(d2x)<70&&Math.abs(p.y+p.h/2-t.y)<26){
+        t._tick=(t._tick||0)+dt;
+        if(t._tick>=0.5){t._tick=0;if(p.inv<=0&&!(p.shield>0)){p.hp-=4;p.inv=0.25;world.texts.push({x:p.x,y:p.y-50,text:"-4",life:0.6,vy:-40})}}
+      }
     }
     else if(t.kind==="mirror"){
       if(near){p.facing*=-1}
@@ -2425,7 +2431,7 @@ zoomPunch*=Math.max(0,1-14*rdt);
 if(zoomPunch<0.3)zoomPunch=0;cam.shake*=Math.max(0,1-8*rdt);
 if(cam.shake>0.5){cam.shakeX=(Math.random()-0.5)*cam.shake;cam.shakeY=(Math.random()-0.5)*cam.shake}else{cam.shakeX=0;cam.shakeY=0}
 // 宝石
-for(var i=0;i<world.gems.length;i++){var g=world.gems[i];g.t+=dt;if(!g.got&&Math.abs(p.x-g.x)<40&&Math.abs(p.y-g.y)<44){g.got=true;sCoin();spawnShockRing(g.x,g.y,"#ffe600",130);spawnShockRing(g.x,g.y,"#fff",80);gunLevel++;if(gunLevel<=50){world.texts.push({x:g.x,y:g.y-30,text:"武器 Lv"+gunLevel+"!",life:1.2,vy:-40});timeScale=0.45;slowTimer=0.6;world.flash=0.25;cam.shake=8;sfx(400,"sawtooth",0.4,0.1,1600);for(var q=0;q<3;q++)spawnShockRing(p.x,p.y-30,q===1?"#ff00aa":"#ffe600",120+q*50)}else{score+=300;world.texts.push({x:g.x,y:g.y-30,text:"+300",life:1,vy:-40});gunLevel=50}}}
+for(var i=0;i<world.gems.length;i++){var g=world.gems[i];g.t+=dt;if(!g.got&&Math.abs(p.x-g.x)<40&&Math.abs(p.y-g.y)<44){g.got=true;sCoin();spawnShockRing(g.x,g.y,"#ffe600",130);spawnShockRing(g.x,g.y,"#fff",80);gunLevel++;if(gunLevel<=50){world.texts.push({x:g.x,y:g.y-30,text:"武器 Lv"+gunLevel+"!",life:1.2,vy:-40});world.flash=0.25;cam.shake=8;sfx(400,"sawtooth",0.4,0.1,1600);for(var q=0;q<3;q++)spawnShockRing(p.x,p.y-30,q===1?"#ff00aa":"#ffe600",120+q*50)}else{score+=300;world.texts.push({x:g.x,y:g.y-30,text:"+300",life:1,vy:-40});gunLevel=50}}}
 // 金币
 for(var i=0;i<world.coins.length;i++){var co=world.coins[i];co.t+=dt;if(!co.got&&Math.abs(p.x-co.x)<30&&Math.abs(p.y-co.y)<34){co.got=true;coinCount++;sCoin();spawnShockRing(co.x,co.y,"#ffe600",30)}}
 world.coins=world.coins.filter(function(c){return!c.got&&c.x>cam.x-300});
@@ -2455,7 +2461,7 @@ for(var i=world.chests.length-1;i>=0;i--){var ch=world.chests[i];ch.t+=dt;if(Mat
 // 能量井
 for(var i=0;i<world.wells.length;i++){var wl=world.wells[i];wl.t+=dt;if(Math.abs(p.x-wl.x)<40&&Math.abs(p.y-wl.y)<60){p.en=Math.min(p.maxEn,p.en+40*dt);p.hp=Math.min(p.maxHp,p.hp+8*dt)}}
 // 时间结晶
-for(var i=world.tcrystals.length-1;i>=0;i--){var tc=world.tcrystals[i];tc.t+=dt;if(Math.abs(p.x-tc.x)<35&&Math.abs(p.y-tc.y)<40){world.tcrystals.splice(i,1);timeScale=0.4;slowTimer=3;world.flash=0.25;sfx(500,"sine",0.4,0.1,2000);world.texts.push({x:p.x,y:p.y-70,text:"时间结晶!",life:1.2,vy:-40});spawnShockRing(p.x,p.y-30,"#7fdcff",100)}}
+for(var i=world.tcrystals.length-1;i>=0;i--){var tc=world.tcrystals[i];tc.t+=dt;if(Math.abs(p.x-tc.x)<35&&Math.abs(p.y-tc.y)<40){world.tcrystals.splice(i,1);skillCd=Math.max(0,skillCd-3);world.flash=0.25;sfx(500,"sine",0.4,0.1,2000);world.texts.push({x:p.x,y:p.y-70,text:"时间结晶! 技能CD-3s",life:1.2,vy:-40});spawnShockRing(p.x,p.y-30,"#7fdcff",100)}}
 // 幽灵平台
 for(var i=0;i<world.ghosts.length;i++){var gh=world.ghosts[i];gh.t+=dt;if(p.x>gh.x&&p.x<gh.x+gh.w&&Math.abs(p.y+p.h/2-gh.y)<30&&p.vy>=0){p.y=gh.y-p.h/2;p.vy=0;p.onGround=true;p.jumps=0;gh.touched=true}}
 // 磁力/双倍
@@ -3387,7 +3393,7 @@ function drawStatusIcons(){
   if(world.magnetT>0)icons.push({c:"#00f2ff",k:"磁",tm:world.magnetT,max:10,good:true});
   if(rageTimer>0)icons.push({c:"#ff2a6d",k:"怒",tm:rageTimer,max:5,good:true});
   if(player&&player.shield>0)icons.push({c:"#b026ff",k:"盾",tm:player.shield,max:3,good:true});
-  if(slowTimer>0)icons.push({c:"#7c3aed",k:"慢",tm:slowTimer,max:3.5,good:true});
+  if(slowTimer>0)icons.push({c:"#7c3aed",k:"技",tm:slowTimer,max:3.5,good:true});
   if(combo>2)icons.push({c:"#3aff7a",k:"连",tm:comboT,max:3,good:true});
   if(world.challenge)icons.push({c:"#ff8a5b",k:"挑",tm:world.challenge.timer||0,max:30,good:true});
   if(world.escort&&world.escort.got)icons.push({c:"#00ff88",k:"送",tm:0,max:1,good:true});
