@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v2.5</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v2.6</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3044,18 +3044,56 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v2.5");
+    localStorage.setItem("njs_patch","v2.6");
   }catch(e){}
 }
 (function(){
   try{
-    // 动态填充更新日期（真实当前日期，永不写死）
+    // ===== 公告列表（最新在前，unshift 插顶部）=====
+    var patchList=[
+      {time:"2026-10-24 01:50:37",items:[
+        "✨ 小怪大换血（第1批）：尖刺龟 / 集群蜂 / 自爆球 / 霓虹史莱姆 / 火苗怪",
+        "⚙️ 尖刺龟：靠近缩壳高速旋转冲撞",
+        "⚙️ 集群蜂：绕圈俯冲自爆，溅出减速电雾",
+        "⚙️ 自爆球：蓄红光2秒大爆炸",
+        "⚙️ 霓虹史莱姆：击杀分裂成两只小史莱姆",
+        "⚙️ 火苗怪：追踪贴近爆炸8向火球"
+      ]},
+      {time:"2026-10-24 01:20:00",items:[
+        "✨ 新增 4 个三阶段 Boss：暴食金猪·猪八旺 / 伪善学究·凌算机 / 深渊女仆鲸娘 / 霓虹执行者K.Volt",
+        "🐛 修复 Boss 被子弹击飞飞出屏幕的问题",
+        "⚙️ 所有 Boss 统一降到屏幕下方，不再飞出视野"
+      ]},
+      {time:"2026-10-23 22:40:00",items:[
+        "✨ 新增 2 个 Boss：暗影男孩（紫色魔法弹幕+黑乌鸦）、菌丝卫衣少年（孢子弹+毒雾）",
+        "⚙️ Boss 改为随机生成，不再按固定顺序"
+      ]}
+    ];
+    // 渲染公告列表
+    var _box=document.getElementById("patchListBox");
+    if(_box){
+      var _html="";
+      for(var pi=0;pi<patchList.length;pi++){
+        var _it=patchList[pi];
+        if(pi===0){
+          _html+='<div style="color:#ff2fd6;font-weight:600;margin-bottom:6px;font-size:13px">🔥 最新更新 <span style="font-size:10px;color:#9fb8e8">· '+_it.time+'</span></div>';
+        }else{
+          _html+='<div style="color:#ffd54a;font-weight:600;margin:12px 0 4px;font-size:12px">· '+_it.time+'</div>';
+        }
+        for(var ii=0;ii<_it.items.length;ii++){
+          _html+='<div>· '+_it.items[ii]+'</div>';
+        }
+      }
+      _box.innerHTML=_html;
+    }
+    // 日期填充（精确到秒）
     var _pd=document.getElementById("patchDateText");
     if(_pd){
-      _pd.textContent="更新于 2026 年 10 月 24 日 01:20";
+      _pd.textContent="更新于 2026 年 10 月 24 日 01:50:37";
     }
+    // 版本判断
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v2.5"){
+    if(seen!=="v2.6"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7147,38 +7185,10 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v2.5</div>
-    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:20</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v2.6</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
-    <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
-      <div style="color:#ff2fd6;font-weight:600;margin-bottom:2px;font-size:13px">🔥 最新更新 <span style="font-size:10px;color:#9fb8e8">· 2026 年 10 月 24 日 01:20</span></div>
-      <div>· 新增 4 个三阶段 Boss：暴食金猪·猪八旺 / 伪善学究·凌算机 / 深渊女仆鲸娘 / 霓虹执行者K.Volt</div>
-      <div>· 所有 Boss 统一降到屏幕下方，不再飞出视野</div>
-      <div>· 新增 2 个 Boss：暗影男孩（紫色魔法弹幕+黑乌鸦）、菌丝卫衣少年（孢子弹+毒雾）</div>
-      <div>· Boss 改为随机生成，不再按固定顺序</div>
-      <div>· 赛博水母位置单独降低，不再飞出屏幕</div>
-      <div>· 击杀 Boss 丰厚奖励：+8000分 +60金币 +回血50 +武器升级 +护盾</div>
-      <div style="color:#ffd54a;font-weight:600;margin:10px 0 2px">👾 Boss 系统（2026 年 10 月 23 日 16:58:00）</div>
-      <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 本次更新</div>
-      <div>· 背景全新重构：月亮东升西落的日夜循环（夜→黎明→白天→黄昏）</div>
-      <div>· 7 大地景随距离切换：城市 / 火山 / 森林 / 宫殿 / 晶体</div>
-      <div>· 天空元素：星星 140 颗、白云、流星、成群小鸟</div>
-      <div>· 建筑多样化：水塔 / 尖顶 / 天线 / 起重机塔</div>
-      <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">⚡ 体验优化</div>
-      <div>· 主页新增「📢 公告」按钮，公告内容可上下滑动</div>
-      <div>· 公告缩放/按钮合并，昵称不再被挤出屏幕</div>
-      <div>· 背景离屏缓存渲染，消除卡顿</div>
-      <div>· 修复背景闪退问题</div>
-      <div style="color:#ff2fd6;font-weight:600;margin:8px 0 2px">👾 Boss 大更新</div>
-      <div>· 全新 4 大 Boss：赛博水母 / 蒸汽战争机器 / 破碎沙漏 / 恶魔卡带机</div>
-      <div>· Boss 三阶段狂暴：血量越低攻速越快、弹幕越猛</div>
-      <div>· Boss 血量大幅提升，真正有 Boss 战节奏</div>
-      <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">🎮 玩法内容</div>
-      <div>· 5 大角色自由切换：机甲 / 二次元少女 / 格斗家 / 赛博武士 / 女仆鲸娘</div>
-      <div>· 12 种小怪：集群蜂 / 护盾兵 / 瞬移者 / 激光炮等</div>
-      <div>· 子弹全等级自动追踪敌人</div>
-      <div>· 跑步动画重做、持枪姿势修正</div>
-    </div>
+    <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
     <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
   </div>
 </div>
@@ -7207,7 +7217,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充：元素已存在，必然能填上（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 01:20";
+    pd.textContent="更新于 2026 年 10 月 24 日 01:50";
   }
 })();
 </script>
