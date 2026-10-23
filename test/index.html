@@ -114,26 +114,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
   <button id="homeRankBtn" onclick="openHomeRank()" style="display:block;margin:10px auto 0;padding:8px 26px;border-radius:20px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:14px;cursor:pointer">🏆 排行榜</button>
   <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.0</div>
-  <div id="patchNote" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(5,8,20,.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;overflow-y:auto">
-    <div style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15)">
-      <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
-      <div id="patchDate" style="text-align:center;font-size:11px;color:#6a7fb8;margin-bottom:12px">正式版 v1.0</div>
-      <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
-        <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 全新内容</div>
-        <div>· 5 大角色自由切换：机甲战士 / 二次元少女 / 写实格斗家 / 赛博武士 / 女仆鲸娘</div>
-        <div>· 女仆鲸娘全新登场：蓝发女仆裙 + 鲸尾巴 + 白丝过膝袜</div>
-        <div>· 4 种新小怪：集群蜂 / 护盾兵 / 瞬移者 / 激光炮</div>
-        <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">⚡ 体验优化</div>
-        <div>· 跑步动画重做：脚步咬合地面、起跳收腿、速度渐变</div>
-        <div>· 持枪姿势修正：枪真正握在手里，子弹从枪口射出</div>
-        <div>· 冰风颠倒时长 1.5s → 0.6s</div>
-        <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">🗑 清理</div>
-        <div>· 删除 7 种作用微小的陷阱（镜像/黑幕/锁屏等）</div>
-        <div>· 修复部分小怪隐形不显示的 bug</div>
-      </div>
-      <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
-    </div>
-  </div>
+  
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
     <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:0 8px">
@@ -4720,7 +4701,7 @@ function bgRgb(c,a){
 function bgUpdate(dt){
   var tgt=bgPick(distance);
   // 只做极轻的平滑（8% 每秒），避免距离瞬间跳变导致颜色闪动
-  var t=Math.min(1,dt*3.0);
+  var t=Math.min(1,dt*1.4);
   for(var j=0;j<3;j++){
     bgCur.top[j]=bgLerp(bgCur.top[j],tgt.top[j],t);
     bgCur.bot[j]=bgLerp(bgCur.bot[j],tgt.bot[j],t);
@@ -4790,80 +4771,114 @@ function drawBg(){
 function drawAnimeSky(){
   var t=Date.now()*0.001;
   var hor=H*0.62;
+  var d=distance||0;                        // 当前距离（驱动动态变化）
+  var stage=bgStageIdx<0?0:bgStageIdx;      // 当前阶段 0~6
 
-  /* ---- 1. 大月亮（右上角，二次元标志性元素）---- */
-  var mx=W*0.78, my=H*0.2, mr=Math.min(W,H)*0.09;
+  /* ---- 1. 大月亮：位置随阶段微移，月相随距离微变 ---- */
+  var mx=W*(0.78+Math.sin(stage*0.9)*0.04);
+  var my=H*(0.2-Math.sin(stage*0.6)*0.03);
+  var mr=Math.min(W,H)*(0.085+Math.sin(stage*0.5)*0.015);
   ctx.save();
-  // 月晕（柔和光晕）
   var halo=ctx.createRadialGradient(mx,my,mr*0.4,mx,my,mr*2.4);
   halo.addColorStop(0,"rgba(255,245,210,0.35)");
   halo.addColorStop(0.5,"rgba(255,240,200,0.12)");
   halo.addColorStop(1,"rgba(255,240,200,0)");
   ctx.fillStyle=halo;
   ctx.beginPath();ctx.arc(mx,my,mr*2.4,0,6.2832);ctx.fill();
-  // 月亮本体（淡黄，带月海斑纹）
   var moong=ctx.createRadialGradient(mx-mr*0.25,my-mr*0.25,mr*0.1,mx,my,mr);
   moong.addColorStop(0,"#fffef5");
   moong.addColorStop(0.7,"#fff3d0");
   moong.addColorStop(1,"#f5e4b0");
   ctx.fillStyle=moong;
   ctx.beginPath();ctx.arc(mx,my,mr,0,6.2832);ctx.fill();
-  // 月海（暗斑）
   ctx.fillStyle="rgba(220,200,150,0.5)";
   ctx.beginPath();ctx.arc(mx-mr*0.35,my-mr*0.2,mr*0.22,0,6.2832);ctx.fill();
   ctx.beginPath();ctx.arc(mx+mr*0.3,my+mr*0.15,mr*0.16,0,6.2832);ctx.fill();
   ctx.beginPath();ctx.arc(mx+mr*0.05,my-mr*0.45,mr*0.12,0,6.2832);ctx.fill();
   ctx.restore();
 
-  /* ---- 2. 城市天际线剪影（底部，二次元城市夜景）---- */
+  /* ---- 2. 城市天际线：随距离动态变化 + 视差滚动 ---- */
   ctx.save();
-  ctx.fillStyle=bgRgb([bgCur.bot[0]*0.35,bgCur.bot[1]*0.35,bgCur.bot[2]*0.35]);
-  var bld=0;
-  // 用固定伪随机，让每座楼高度稳定不闪烁
-  for(var bx=-80;bx<W+80;bx+=42){
-    var seed=Math.floor(bx/42);
-    var bh=40+((seed*7919)%57);            // 40~96px 楼高
-    var bw=26+((seed*31)%16);              // 26~41px 楼宽
+  var par=0.06;                              // 视差系数
+  var scroll=(cam?cam.x:0)*par;
+  var skyC=bgRgb([bgCur.bot[0]*0.35,bgCur.bot[1]*0.35,bgCur.bot[2]*0.35]);
+  ctx.fillStyle=skyC;
+  // 楼层高度随距离增长：越远楼越高（城市"生长"感）
+  var grow=Math.min(1,d/1800);
+  // 楼间距随阶段变化
+  var step=44-Math.min(14,stage*2);
+  for(var bx=-120;bx<W+120;bx+=step){
+    var worldX=bx+scroll;
+    var seed=Math.floor(worldX/step);
+    // 高度：基础随机 + 距离增长 + 阶段加成（后期更高更密）
+    var bh=(34+((seed*7919)%47))*(0.7+grow*0.55)+(stage*3);
+    var bw=22+((seed*31)%18);
+    // 楼顶风格随阶段变化：0-1 普通/2-3 尖塔/4-5 圆顶/6 发光塔
     ctx.fillRect(bx,hor-bh,bw,bh);
-    // 楼顶天线（部分楼）
-    if(seed%3===0){ctx.fillRect(bx+bw/2-1,hor-bh-14,2,14)}
-    // 楼窗（亮窗点，二次元夜景感）
+    // 天线/尖顶
+    if(seed%3===0){
+      if(stage>=2){ctx.fillRect(bx+bw/2-1,hor-bh-18,2,18);ctx.beginPath();ctx.moveTo(bx+bw/2-3,hor-bh-18);ctx.lineTo(bx+bw/2+3,hor-bh-18);ctx.lineTo(bx+bw/2,hor-bh-26);ctx.closePath();ctx.fill()}
+      else{ctx.fillRect(bx+bw/2-1,hor-bh-14,2,14)}
+    }
+    // 亮窗：后期更密集（城市更繁华）
     if(seed%2===0){
+      var winDens=stage>=4?3:2;
       ctx.fillStyle="rgba(255,230,150,0.35)";
       for(var wy=hor-bh+8;wy<hor-8;wy+=12){
         for(var wx=bx+5;wx<bx+bw-4;wx+=9){
-          if((wx*13+wy*7+seed)%5<2){ctx.fillRect(wx,wy,3,5)}
+          if((wx*13+wy*7+seed)%5<winDens){ctx.fillRect(wx,wy,3,5)}
         }
       }
-      ctx.fillStyle=bgRgb([bgCur.bot[0]*0.35,bgCur.bot[1]*0.35,bgCur.bot[2]*0.35]);
+      ctx.fillStyle=skyC;
+    }
+    // 霓虹招牌（霓虹街区阶段特有）
+    if(stage>=1&&stage<=2&&seed%4===1){
+      ctx.fillStyle=seed%2?"rgba(255,0,170,0.7)":"rgba(0,242,255,0.7)";
+      ctx.fillRect(bx+3,hor-bh+4,bw-6,4);
+      ctx.fillStyle=skyC;
     }
   }
   ctx.restore();
 
-  /* ---- 3. 流星（偶发，划过天际）---- */
+  /* ---- 3. 阶段特色剪影（多风格）---- */
   ctx.save();
-  var meteor=Math.sin(t*0.13)*0.5+0.5;   // 周期性出现
+  var silhouette=bgRgb([bgCur.hill[0]*0.45,bgCur.hill[1]*0.45,bgCur.hill[2]*0.45]);
+  ctx.fillStyle=silhouette;
+  if(stage>=3&&stage<=4){
+    // 熔火/翡翠：远山轮廓（三角山）+ 火山口
+    for(var mx2=-60;mx2<W+60;mx2+=90){
+      var mseed=Math.floor(mx2/90);
+      var mh=30+((mseed*5323)%48);
+      ctx.beginPath();ctx.moveTo(mx2,hor);ctx.lineTo(mx2+45,hor-mh);ctx.lineTo(mx2+90,hor);ctx.closePath();ctx.fill();
+    }
+  }else if(stage===6){
+    // 终焉裂隙：破碎的尖刺晶体剪影
+    for(var cx3=-40;cx3<W+40;cx3+=55){
+      var cseed=Math.floor(cx3/55);
+      var ch=40+((cseed*3571)%60);
+      ctx.beginPath();ctx.moveTo(cx3,hor);ctx.lineTo(cx3+14,hor-ch);ctx.lineTo(cx3+28,hor);ctx.closePath();ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  /* ---- 4. 流星（偶发）---- */
+  ctx.save();
+  var meteor=Math.sin(t*0.13)*0.5+0.5;
   if(meteor>0.82){
-    var mt=(meteor-0.82)/0.18;            // 0~1 流星进度
+    var mt=(meteor-0.82)/0.18;
     var msx=W*(0.3+mt*0.5), msy=H*(0.12+mt*0.22);
     var mg=ctx.createLinearGradient(msx,msy,msx-60,msy-38);
     mg.addColorStop(0,"rgba(255,255,255,0.95)");
     mg.addColorStop(0.4,"rgba(255,220,180,0.6)");
     mg.addColorStop(1,"rgba(255,220,180,0)");
-    ctx.strokeStyle=mg;
-    ctx.lineWidth=2;
-    ctx.lineCap="round";
-    ctx.beginPath();
-    ctx.moveTo(msx,msy);
-    ctx.lineTo(msx-60,msy-38);
-    ctx.stroke();
-    // 流星头亮点
+    ctx.strokeStyle=mg;ctx.lineWidth=2;ctx.lineCap="round";
+    ctx.beginPath();ctx.moveTo(msx,msy);ctx.lineTo(msx-60,msy-38);ctx.stroke();
     ctx.fillStyle="rgba(255,255,255,0.95)";
     ctx.beginPath();ctx.arc(msx,msy,2.2,0,6.2832);ctx.fill();
   }
   ctx.restore();
 
-  /* ---- 4. 飘动的云（半透明，二次元柔和感）---- */
+  /* ---- 5. 飘云（柔和，多阶段都有）---- */
   ctx.save();
   ctx.globalAlpha=0.14;
   ctx.fillStyle="#ffffff";
@@ -5951,6 +5966,27 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     <div id="hrBoard" style="flex:1;min-height:120px;max-height:56vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:2px;touch-action:pan-y"></div>
     <div id="hrStatus" style="text-align:center;font-size:12px;color:#7c86c8;margin-top:8px">加载中...</div>
     <button onclick="closeHomeRank()" style="margin-top:10px;padding:10px 0;width:100%;border-radius:22px;background:rgba(255,255,255,.07);border:1.5px solid rgba(160,168,255,.45);color:#b8c0ff;font-size:14px;cursor:pointer">← 返 回</button>
+  </div>
+</div>
+
+<div id="patchNote" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;z-index:9000;background:rgba(5,8,20,.85);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;overflow-y:auto;pointer-events:auto">
+  <div style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
+    <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
+    <div id="patchDate" style="text-align:center;font-size:11px;color:#6a7fb8;margin-bottom:12px">正式版 v1.0</div>
+    <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
+      <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 全新内容</div>
+      <div>· 5 大角色自由切换：机甲战士 / 二次元少女 / 写实格斗家 / 赛博武士 / 女仆鲸娘</div>
+      <div>· 女仆鲸娘全新登场：蓝发女仆裙 + 鲸尾巴 + 白丝过膝袜</div>
+      <div>· 4 种新小怪：集群蜂 / 护盾兵 / 瞬移者 / 激光炮</div>
+      <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">⚡ 体验优化</div>
+      <div>· 跑步动画重做：脚步咬合地面、起跳收腿、速度渐变</div>
+      <div>· 持枪姿势修正：枪真正握在手里，子弹从枪口射出</div>
+      <div>· 冰风颠倒时长 1.5s → 0.6s</div>
+      <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">🗑 清理</div>
+      <div>· 删除 7 种作用微小的陷阱（镜像/黑幕/锁屏等）</div>
+      <div>· 修复部分小怪隐形不显示的 bug</div>
+    </div>
+    <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
   </div>
 </div>
 </body>
