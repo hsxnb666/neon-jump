@@ -121,6 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
       <button data-hero-btn="2" onclick="setHero(2)" style="padding:6px 12px;border-radius:14px;font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,120,220,.3);color:#e08fd8;cursor:pointer">🌸 二次元少女</button>
       <button data-hero-btn="3" onclick="setHero(3)" style="padding:6px 12px;border-radius:14px;font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,160,80,.3);color:#e0b080;cursor:pointer">🥊 写实格斗家</button>
       <button data-hero-btn="4" onclick="setHero(4)" style="padding:6px 12px;border-radius:14px;font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,64,192,.3);color:#e08fc8;cursor:pointer">⚔️ 赛博武士</button>
+      <button data-hero-btn="5" onclick="setHero(5)" style="padding:6px 12px;border-radius:14px;font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(90,160,255,.4);color:#8ab8f0;cursor:pointer">🐋 女仆鲸娘</button>
     </div>
     <div id="heroTag" style="font-size:11px;color:#ffd54a;margin-top:6px">当前角色：机甲战士</div>
   </div>
@@ -2614,16 +2615,17 @@ function drawHero(x,y,scale,facing,frame,onGround,vx){
   if(h===2) return drawHeroAnime(x,y,scale,facing,frame,onGround,vx);
   if(h===3) return drawHeroFighter(x,y,scale,facing,frame,onGround,vx);
   if(h===4) return drawHeroSamurai(x,y,scale,facing,frame,onGround,vx);
+  if(h===5) return drawHeroMaid(x,y,scale,facing,frame,onGround,vx);
   return drawHeroMech(x,y,scale,facing,frame,onGround,vx);
 }
 
 /* ============ 角色系统全局 ============ */
 var HERO=1;   // 当前角色 1~4
-var HERO_NAMES=["机甲战士","二次元少女","写实格斗家","赛博武士"];
+var HERO_NAMES=["机甲战士","二次元少女","写实格斗家","赛博武士","女仆鲸娘"];
 
 function setHero(n){
   n=parseInt(n,10);
-  if(n<1||n>4) n=1;
+  if(n<1||n>5) n=1;
   HERO=n;
   try{ localStorage.setItem("njs_hero", String(n)); }catch(e){}
   try{
@@ -2643,7 +2645,7 @@ function setHero(n){
 function initHero(){
   try{
     var v=parseInt(localStorage.getItem("njs_hero")||"1",10);
-    if(v>=1&&v<=4) HERO=v;
+    if(v>=1&&v<=5) HERO=v;
   }catch(e){}
   try{ setHero(HERO); }catch(e){}
 }
@@ -3804,6 +3806,574 @@ function samuraiShootArm(shY,upperA,foreA){
   ctx.restore();
   ctx.restore();
 }
+
+/* ============================================================
+   角色5：女仆鲸娘（蓝渐变长发 + 女仆头饰 + 鲸尾 + 哥特女仆裙）
+============================================================ */
+function drawHeroMaid(x,y,scale,facing,frame,onGround,vx){
+  var spd=_anim.spd;
+  var runT=_anim.run;
+  var airT=_anim.air;
+  var running=runT>0.25;
+  var ph=_anim.ph;
+  var amp=(0.75+spd*0.65)*runT;
+  var swing=Math.sin(ph)*0.85*amp+Math.sin(ph*2+0.9)*0.15*amp;
+  var bob=running?(Math.abs(Math.sin(ph))*-1.6-1.2)*runT:Math.sin(frame*2.4)*1.2*(1-airT);
+  var lean=_anim.lean+(running?0.05*runT:0);
+  var vyn=Math.max(-1,Math.min(1,_anim.vy/900));
+  var tuck=airT*(0.3+0.3*Math.min(1,Math.abs(vx)/1200));
+
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(facing*scale,scale);
+
+  // 地面投影
+  ctx.save();
+  ctx.globalAlpha=onGround?0.3:0.14;
+  ctx.fillStyle="#5080d0";
+  ctx.beginPath();
+  ctx.ellipse(0,0,16,5,0,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.rotate(lean);
+
+  var hipY=-30+bob;
+  var chestTop=-66+bob;
+  var headR=13;
+  var headY=-82+bob;
+
+  // ===== 鲸尾（画在最底层，随跑动摇摆）=====
+  maidTail(hipY, ph, runT);
+  // ===== 长发底层（飘动）=====
+  maidHairBack(headY, headR, ph, runT);
+
+  // 后腿
+  maidLeg(hipY,-4.5,-(swing+tuck*0.6),false);
+  // 后臂
+  maidArm(chestTop+6,-0.9-swing*0.35,false);
+
+  // ===== 躯干：哥特女仆裙 =====
+  ctx.save();
+  // 身体（肤色）
+  var body=ctx.createLinearGradient(-16,0,16,0);
+  body.addColorStop(0,"#fff0ea");
+  body.addColorStop(0.5,"#ffe4d8");
+  body.addColorStop(1,"#f0c8b8");
+  ctx.fillStyle=body;
+  ctx.beginPath();
+  ctx.moveTo(-9,chestTop);
+  ctx.lineTo(9,chestTop);
+  ctx.quadraticCurveTo(11,chestTop+12,7.5,hipY);
+  ctx.lineTo(-7.5,hipY);
+  ctx.quadraticCurveTo(-11,chestTop+12,-9,chestTop);
+  ctx.closePath();
+  ctx.fill();
+
+  // 女仆连衣裙主体（深蓝黑）
+  ctx.save();
+  var dk=ctx.createLinearGradient(-10,chestTop,10,chestTop);
+  dk.addColorStop(0,"#2a3050");
+  dk.addColorStop(0.5,"#1a2038");
+  dk.addColorStop(1,"#12182c");
+  ctx.fillStyle=dk;
+  ctx.beginPath();
+  ctx.moveTo(-10,chestTop+1);
+  ctx.lineTo(10,chestTop+1);
+  ctx.lineTo(9,chestTop+16);
+  ctx.lineTo(10,hipY-2);
+  ctx.lineTo(-10,hipY-2);
+  ctx.lineTo(-9,chestTop+16);
+  ctx.closePath();
+  ctx.fill();
+
+  // 白色衬衫胸前部分
+  ctx.fillStyle="#f8f4f0";
+  ctx.beginPath();
+  ctx.moveTo(-5.5,chestTop+2);
+  ctx.lineTo(5.5,chestTop+2);
+  ctx.lineTo(4.5,chestTop+15);
+  ctx.lineTo(-4.5,chestTop+15);
+  ctx.closePath();
+  ctx.fill();
+  // 胸前纽扣
+  ctx.fillStyle="#8a90a8";
+  for(var bn=0;bn<3;bn++){
+    ctx.beginPath();
+    ctx.arc(0,chestTop+5+bn*3.4,0.9,0,6.2832);
+    ctx.fill();
+  }
+
+  // 蓝宝石领结
+  ctx.save();
+  ctx.fillStyle="#1a3a6a";
+  ctx.beginPath();
+  ctx.moveTo(0,chestTop+3);
+  ctx.quadraticCurveTo(-4.5,chestTop+5.5,-3,chestTop+8);
+  ctx.quadraticCurveTo(0,chestTop+7,0,chestTop+3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0,chestTop+3);
+  ctx.quadraticCurveTo(4.5,chestTop+5.5,3,chestTop+8);
+  ctx.quadraticCurveTo(0,chestTop+7,0,chestTop+3);
+  ctx.closePath();
+  ctx.fill();
+  // 蓝宝石
+  ctx.fillStyle="#3a7ade";
+  ctx.shadowBlur=(FQ>=2?6:0);
+  ctx.shadowColor="#3a7ade";
+  ctx.beginPath();
+  ctx.arc(0,chestTop+5.2,1.4,0,6.2832);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  // 白色围裙（带鲸鱼图案）
+  ctx.fillStyle="#fbf8f4";
+  ctx.beginPath();
+  ctx.moveTo(-6,chestTop+13);
+  ctx.lineTo(6,chestTop+13);
+  ctx.lineTo(7,hipY-6);
+  ctx.quadraticCurveTo(0,hipY-4,-7,hipY-6);
+  ctx.closePath();
+  ctx.fill();
+  // 围裙上的小鲸鱼
+  ctx.fillStyle="#5a8ad0";
+  ctx.beginPath();
+  ctx.ellipse(0,chestTop+19,2.4,1.4,0,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(1.6,chestTop+19);
+  ctx.lineTo(3,chestTop+18);
+  ctx.lineTo(3,chestTop+20);
+  ctx.closePath();
+  ctx.fill();
+
+  // 裙摆（深蓝 + 白蕾丝边两层）
+  var sk=ctx.createLinearGradient(-10,0,10,0);
+  sk.addColorStop(0,"#2a3050");
+  sk.addColorStop(0.5,"#1e2440");
+  sk.addColorStop(1,"#141a30");
+  ctx.fillStyle=sk;
+  ctx.beginPath();
+  ctx.moveTo(-9,chestTop+18);
+  ctx.lineTo(9,chestTop+18);
+  ctx.lineTo(11,hipY+2);
+  ctx.lineTo(-11,hipY+2);
+  ctx.closePath();
+  ctx.fill();
+  // 蕾丝边（白色扇贝边）
+  ctx.fillStyle="#f8f4f0";
+  ctx.beginPath();
+  ctx.moveTo(-11,hipY+2);
+  for(var lc=0;lc<6;lc++){
+    var lx=-11+lc*(22/5);
+    ctx.quadraticCurveTo(lx+11/6,hipY+5,lx+22/5,hipY+2);
+  }
+  ctx.lineTo(11,hipY+0.5);
+  ctx.lineTo(-11,hipY+0.5);
+  ctx.closePath();
+  ctx.fill();
+  // 金色星星点缀（裙摆）
+  ctx.fillStyle="rgba(200,170,110,0.8)";
+  for(var st=0;st<3;st++){
+    var sx=-6+st*6, sy=chestTop+24+(st%2)*4;
+    ctx.fillRect(sx-0.8,sy-2.2,1.6,4.4);
+    ctx.fillRect(sx-2.2,sy-0.8,4.4,1.6);
+  }
+  ctx.restore();
+  ctx.restore();
+
+  // 前腿
+  maidLeg(hipY,4.5,swing+tuck*0.6,true);
+  // 前臂 + 枪
+  var aimA=-0.22;
+  var armSwing=running?Math.sin(ph+3.1)*0.15:Math.sin(frame*1.8)*0.05;
+  maidShootArm(chestTop+7,aimA+armSwing,aimA-0.06+armSwing*0.5);
+
+  ctx.shadowBlur=0;
+
+  // ===== 头 =====
+  ctx.save();
+  // 脖子
+  ctx.fillStyle="#ffe4d8";
+  ctx.beginPath();
+  ctx.moveTo(-3.5,headY+headR-1);
+  ctx.lineTo(3.5,headY+headR-1);
+  ctx.lineTo(4,chestTop+2);
+  ctx.lineTo(-4,chestTop+2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 脸
+  var fg=ctx.createRadialGradient(-4,headY-4,1,0,headY,headR);
+  fg.addColorStop(0,"#fff8f4");
+  fg.addColorStop(0.72,"#ffeee6");
+  fg.addColorStop(1,"#f5d0c0");
+  ctx.fillStyle=fg;
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,0,6.2832);
+  ctx.fill();
+
+  // 角状发鳍（两侧的深蓝色鳍耳）
+  ctx.fillStyle="#2a3a68";
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.75,headY-headR*0.25);
+  ctx.quadraticCurveTo(-headR*1.45,headY-headR*0.15,-headR*1.35,headY+headR*0.28);
+  ctx.quadraticCurveTo(-headR*0.95,headY+headR*0.12,-headR*0.68,headY+headR*0.15);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(headR*0.75,headY-headR*0.25);
+  ctx.quadraticCurveTo(headR*1.45,headY-headR*0.15,headR*1.35,headY+headR*0.28);
+  ctx.quadraticCurveTo(headR*0.95,headY+headR*0.12,headR*0.68,headY+headR*0.15);
+  ctx.closePath();
+  ctx.fill();
+  // 鳍内侧（浅蓝）
+  ctx.fillStyle="#5a7ab8";
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.85,headY-headR*0.12);
+  ctx.quadraticCurveTo(-headR*1.25,headY-headR*0.05,-headR*1.18,headY+headR*0.2);
+  ctx.quadraticCurveTo(-headR*0.95,headY+headR*0.08,-headR*0.78,headY+headR*0.1);
+  ctx.closePath();
+  ctx.fill();
+
+  // 头发主体（深蓝，刘海）
+  ctx.fillStyle="#3a4a80";
+  ctx.beginPath();
+  ctx.arc(0,headY-headR*0.42,headR*0.96,Math.PI*0.88,Math.PI*2.12);
+  ctx.fill();
+  // 锯齿刘海
+  ctx.fillStyle="#3a4a80";
+  ctx.beginPath();
+  ctx.moveTo(-headR,headY-headR*0.28);
+  ctx.lineTo(-headR*0.72,headY-headR*0.1);
+  ctx.lineTo(-headR*0.45,headY-headR*0.34);
+  ctx.lineTo(-headR*0.12,headY-headR*0.12);
+  ctx.lineTo(headR*0.2,headY-headR*0.36);
+  ctx.lineTo(headR*0.5,headY-headR*0.14);
+  ctx.lineTo(headR*0.78,headY-headR*0.34);
+  ctx.lineTo(headR,headY-headR*0.24);
+  ctx.quadraticCurveTo(headR*0.4,headY-headR*0.55,-headR*0.4,headY-headR*0.55);
+  ctx.closePath();
+  ctx.fill();
+  // 发丝高光
+  ctx.strokeStyle="rgba(120,170,240,0.55)";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.5,headY-headR*0.5);
+  ctx.quadraticCurveTo(-headR*0.3,headY-headR*0.32,-headR*0.35,headY-headR*0.14);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(headR*0.25,headY-headR*0.5);
+  ctx.quadraticCurveTo(headR*0.42,headY-headR*0.3,headR*0.36,headY-headR*0.14);
+  ctx.stroke();
+
+  // 女仆头饰（白色褶边带）
+  ctx.fillStyle="#fdfbf8";
+  ctx.beginPath();
+  ctx.ellipse(0,headY-headR*0.62,headR*0.95,headR*0.3,0,Math.PI,Math.PI*2);
+  ctx.fill();
+  // 头饰褶皱
+  ctx.strokeStyle="rgba(180,180,195,0.6)";
+  ctx.lineWidth=0.7;
+  for(var rf=-3;rf<=3;rf++){
+    var rx=rf*headR*0.26;
+    ctx.beginPath();
+    ctx.moveTo(rx,headY-headR*0.72);
+    ctx.lineTo(rx*0.9,headY-headR*0.52);
+    ctx.stroke();
+  }
+  // 头饰蓝色蝴蝶结（左侧）
+  ctx.fillStyle="#4a8ade";
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.8,headY-headR*0.5);
+  ctx.lineTo(-headR*1.15,headY-headR*0.62);
+  ctx.lineTo(-headR*1.05,headY-headR*0.38);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-headR*0.8,headY-headR*0.5);
+  ctx.lineTo(-headR*0.5,headY-headR*0.66);
+  ctx.lineTo(-headR*0.52,headY-headR*0.4);
+  ctx.closePath();
+  ctx.fill();
+
+  // 大眼（水蓝色）
+  maidEyes(headY, headR);
+  // 腮红
+  ctx.fillStyle="rgba(255,150,160,0.35)";
+  ctx.beginPath();
+  ctx.ellipse(-headR*0.58,headY+headR*0.28,headR*0.16,headR*0.1,0,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(headR*0.58,headY+headR*0.28,headR*0.16,headR*0.1,0,0,6.2832);
+  ctx.fill();
+
+  // 霓虹描边（水蓝）
+  ctx.lineWidth=2;
+  ctx.strokeStyle="rgba(90,160,255,0.95)";
+  ctx.shadowBlur=(FQ>=2?12:0);
+  ctx.shadowColor="#5aa0ff";
+  ctx.beginPath();
+  ctx.arc(0,headY,headR,-0.75,2.05);
+  ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/* --- 鲸尾（分叉尾鳍，随跑动摇摆）--- */
+function maidTail(hy, ph, runT){
+  ctx.save();
+  var wag=Math.sin(ph*0.5)*0.5*runT+Math.sin(ph*0.23)*0.25;
+  var tg=ctx.createLinearGradient(0,hy,20,hy+26);
+  tg.addColorStop(0,"#3a4a80");
+  tg.addColorStop(0.6,"#5a7ab8");
+  tg.addColorStop(1,"#8ab0e0");
+  ctx.fillStyle=tg;
+  ctx.translate(6,hy-6);
+  ctx.rotate(0.5+wag*0.3);
+  // 尾根
+  ctx.beginPath();
+  ctx.moveTo(-3,0);
+  ctx.quadraticCurveTo(6,10,10,20);
+  ctx.lineTo(4,22);
+  ctx.quadraticCurveTo(0,10,-6,2);
+  ctx.closePath();
+  ctx.fill();
+  // 分叉尾鳍
+  ctx.beginPath();
+  ctx.moveTo(10,20);
+  ctx.quadraticCurveTo(16,18,20,24);
+  ctx.quadraticCurveTo(14,24,12,28);
+  ctx.quadraticCurveTo(10,24,7,27);
+  ctx.quadraticCurveTo(6,22,10,20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/* --- 长发底层（蓝色渐变，飘动）--- */
+function maidHairBack(hy, hr, ph, runT){
+  ctx.save();
+  var wave=Math.sin(ph*0.5)*2.5*(0.4+runT*0.6);
+  var hg=ctx.createLinearGradient(-hr,hy,-hr*2.3,hy+hr*1.8);
+  hg.addColorStop(0,"#3a4a80");
+  hg.addColorStop(0.45,"#5a7ab8");
+  hg.addColorStop(0.8,"#8ab0e0");
+  hg.addColorStop(1,"#a8c8e8");
+  ctx.fillStyle=hg;
+  // 后侧长发（大波浪轮廓）
+  ctx.beginPath();
+  ctx.moveTo(-hr*0.7,hy-hr*0.3);
+  ctx.quadraticCurveTo(-hr*2.0,hy+hr*0.4+wave,-hr*2.15,hy+hr*1.7+wave);
+  ctx.quadraticCurveTo(-hr*1.7,hy+hr*1.55+wave*0.7,-hr*1.5,hy+hr*1.75+wave*0.7);
+  ctx.quadraticCurveTo(-hr*1.2,hy+hr*1.5+wave*0.5,-hr*1.0,hy+hr*1.8+wave*0.5);
+  ctx.quadraticCurveTo(-hr*0.75,hy+hr*1.5+wave*0.3,-hr*0.55,hy+hr*1.6);
+  ctx.quadraticCurveTo(-hr*0.45,hy+hr*0.5,-hr*0.7,hy-hr*0.3);
+  ctx.closePath();
+  ctx.fill();
+  // 卷发高光丝
+  ctx.strokeStyle="rgba(150,195,245,0.5)";
+  ctx.lineWidth=1.2;
+  ctx.beginPath();
+  ctx.moveTo(-hr*1.1,hy+hr*0.3+wave);
+  ctx.quadraticCurveTo(-hr*1.5,hy+hr*0.9+wave,-hr*1.6,hy+hr*1.5+wave);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-hr*0.8,hy+hr*0.5+wave*0.7);
+  ctx.quadraticCurveTo(-hr*1.05,hy+hr*1.0+wave*0.7,-hr*1.1,hy+hr*1.5+wave*0.6);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* --- 大眼（水蓝色，双高光）--- */
+function maidEyes(hy,hr){
+  var ex=hr*0.4, ey=hy+hr*0.1;
+  ctx.fillStyle="rgba(255,255,255,0.98)";
+  ctx.beginPath(); ctx.ellipse(-ex,ey,hr*0.32,hr*0.4,-0.08,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(ex,ey,hr*0.32,hr*0.4,0.08,0,6.2832); ctx.fill();
+  var p1=ctx.createRadialGradient(-ex,ey-hr*0.05,0.5,-ex,ey,hr*0.3);
+  p1.addColorStop(0,"#9ad0ff"); p1.addColorStop(0.6,"#3a7ade"); p1.addColorStop(1,"#1a3a7a");
+  ctx.fillStyle=p1;
+  ctx.beginPath(); ctx.arc(-ex,ey,hr*0.28,0,6.2832); ctx.fill();
+  var p2=ctx.createRadialGradient(ex,ey-hr*0.05,0.5,ex,ey,hr*0.3);
+  p2.addColorStop(0,"#9ad0ff"); p2.addColorStop(0.6,"#3a7ade"); p2.addColorStop(1,"#1a3a7a");
+  ctx.fillStyle=p2;
+  ctx.beginPath(); ctx.arc(ex,ey,hr*0.28,0,6.2832); ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,0.98)";
+  ctx.beginPath(); ctx.arc(-ex-hr*0.09,ey-hr*0.13,hr*0.12,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(ex-hr*0.09,ey-hr*0.13,hr*0.12,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(-ex+hr*0.09,ey+hr*0.11,hr*0.06,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(ex+hr*0.09,ey+hr*0.11,hr*0.06,0,6.2832); ctx.fill();
+  ctx.strokeStyle="rgba(30,30,60,0.9)";
+  ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.arc(-ex,ey,hr*0.36,Math.PI*1.1,Math.PI*1.95); ctx.stroke();
+  ctx.beginPath(); ctx.arc(ex,ey,hr*0.36,Math.PI*1.05,Math.PI*1.9); ctx.stroke();
+}
+
+/* --- 腿（白丝过膝袜 + 黑色高跟鞋 + 蝴蝶结）--- */
+function maidLeg(hy2,offX,angle,front){
+  var skin1=front?"#ffe4d8":"#f0c8b8";
+  var skin2=front?"#f5d5c5":"#e0b0a0";
+  ctx.save();
+  ctx.translate(offX,hy2);
+  ctx.rotate(angle*0.75);
+  // 大腿（肤色）
+  var tg=ctx.createLinearGradient(-6,0,6,0);
+  tg.addColorStop(0,skin1); tg.addColorStop(0.5,front?"#ffddd0":"#e8b8a8"); tg.addColorStop(1,skin2);
+  ctx.fillStyle=tg;
+  ctx.beginPath();
+  ctx.moveTo(-6,0);
+  ctx.quadraticCurveTo(-6.5,10,-4.2,14);
+  ctx.lineTo(4.2,14);
+  ctx.quadraticCurveTo(6.5,10,6,0);
+  ctx.closePath();
+  ctx.fill();
+  // 过膝袜口（白蕾丝）
+  ctx.fillStyle="#fdfbf8";
+  ctx.fillRect(-5.2,13,10.4,2.6);
+  ctx.fillStyle="rgba(200,200,215,0.7)";
+  for(var lc=0;lc<5;lc++){
+    ctx.beginPath();
+    ctx.arc(-5.2+lc*2.6+1.3,15.6,0.9,0,Math.PI);
+    ctx.fill();
+  }
+  // 小腿（白色丝袜）
+  ctx.translate(0,15);
+  ctx.rotate(-angle*0.75*1.7+(angle>0.05?0.42:-0.06));
+  var sg=ctx.createLinearGradient(-4.5,0,4.5,0);
+  sg.addColorStop(0,"#ffffff");
+  sg.addColorStop(0.5,"#f8f5f5");
+  sg.addColorStop(1,"#e8e0e5");
+  ctx.fillStyle=sg;
+  ctx.beginPath();
+  ctx.moveTo(-4,1);
+  ctx.quadraticCurveTo(-4.4,9,-3.1,16);
+  ctx.lineTo(3.1,16);
+  ctx.quadraticCurveTo(4.4,9,4,1);
+  ctx.closePath();
+  ctx.fill();
+  // 袜口蝴蝶结（黑色小蝴蝶结）
+  ctx.fillStyle="#1a2038";
+  ctx.beginPath();
+  ctx.ellipse(-1.6,1,1.3,0.8,0.3,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(1.6,1,1.3,0.8,-0.3,0,6.2832);
+  ctx.fill();
+  ctx.translate(0,16);
+  // 脚踝
+  ctx.fillStyle="#f0ece8";
+  ctx.beginPath();
+  ctx.ellipse(0,0,2.6,1.8,0,0,6.2832);
+  ctx.fill();
+  // 黑色高跟鞋（带跟 + 金色小蝴蝶结）
+  ctx.fillStyle="#12182c";
+  ctx.beginPath();
+  ctx.moveTo(-4.2,-1);
+  ctx.quadraticCurveTo(-4.8,2.4,-2.8,3.6);
+  ctx.lineTo(6.2,3.6);
+  ctx.quadraticCurveTo(7.8,2.6,6.8,0.2);
+  ctx.quadraticCurveTo(4.5,-1.6,1.5,-1.8);
+  ctx.closePath();
+  ctx.fill();
+  // 鞋跟
+  ctx.fillStyle="#0a0e1e";
+  ctx.fillRect(5.4,3.4,1.8,2.2);
+  // 金色小蝴蝶结
+  ctx.fillStyle="#c8a860";
+  ctx.beginPath();
+  ctx.ellipse(-0.8,0.2,1,0.6,0.3,0,6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(1,0.2,1,0.6,-0.3,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+
+/* --- 手臂（深蓝袖 + 白蕾丝袖口）--- */
+function maidArm(shY,angle,front){
+  ctx.save();
+  ctx.translate(-7,shY);
+  ctx.rotate(angle);
+  // 袖子（深蓝泡泡袖）
+  var g=ctx.createLinearGradient(-4,0,4,0);
+  g.addColorStop(0,front?"#2e3454":"#1e2440");
+  g.addColorStop(0.5,front?"#242a48":"#161c34");
+  g.addColorStop(1,front?"#1a2038":"#101628");
+  ctx.strokeStyle=g;
+  ctx.lineWidth=6.5;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,10); ctx.stroke();
+  // 蕾丝袖口
+  ctx.strokeStyle="#f8f4f0";
+  ctx.lineWidth=5;
+  ctx.beginPath();
+  ctx.moveTo(0,10); ctx.lineTo(0,12.5); ctx.stroke();
+  // 前臂（肤色）
+  ctx.strokeStyle=front?"#ffe4d8":"#e8b8a8";
+  ctx.lineWidth=5;
+  ctx.beginPath();
+  ctx.moveTo(0,12.5); ctx.lineTo(0,22); ctx.stroke();
+  // 手
+  ctx.fillStyle=front?"#ffe4d8":"#e8b8a8";
+  ctx.beginPath();
+  ctx.arc(0,23,2.6,0,6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+
+/* --- 持枪臂 --- */
+function maidShootArm(shY,upperA,foreA){
+  ctx.save();
+  ctx.translate(-6,shY);
+  ctx.rotate(upperA);
+  var ua=ctx.createLinearGradient(-4.5,0,4.5,0);
+  ua.addColorStop(0,"#323858");
+  ua.addColorStop(0.4,"#262c4a");
+  ua.addColorStop(1,"#181e36");
+  ctx.strokeStyle=ua;
+  ctx.lineWidth=7;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,10); ctx.stroke();
+  // 泡泡袖隆起
+  ctx.fillStyle="#2a3050";
+  ctx.beginPath();
+  ctx.ellipse(0,1,5.2,4.8,0,0,6.2832);
+  ctx.fill();
+  // 蕾丝袖口
+  ctx.strokeStyle="#f8f4f0";
+  ctx.lineWidth=5.5;
+  ctx.beginPath();
+  ctx.moveTo(0,10); ctx.lineTo(0,12.5); ctx.stroke();
+  // 肤色前臂
+  ctx.strokeStyle="#ffe4d8";
+  ctx.lineWidth=5;
+  ctx.beginPath();
+  ctx.moveTo(0,12.5); ctx.lineTo(0,24); ctx.stroke();
+  // 手 + 握拳
+  ctx.fillStyle="#ffe4d8";
+  ctx.beginPath();
+  ctx.arc(0,25.5,2.8,0,6.2832);
+  ctx.fill();
+  ctx.fillStyle="#fff0ea";
+  ctx.beginPath();
+  ctx.arc(0.5,27,3.2,0,6.2832);
+  ctx.fill();
+  ctx.save();
+  ctx.rotate(-foreA*0.5);
+  ctx.translate(1.5,-1.5);
+  drawGun();
+  ctx.restore();
+  ctx.restore();
+}
+
 
 
 
