@@ -116,7 +116,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v3.3</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -547,7 +547,7 @@ if(distance>150&&distance>bossSpawned*130+129&&!bossAlive){
 bossWave++;bossSpawned=bossWave;bossAlive=true;
 var cols=["#ffe600","#ff2a6d","#7fdcff","#b026ff","#ff8a5b"];
 var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=Math.floor(Math.random()*11);
-var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊","暗影男孩","菌丝卫衣少年","暴食金猪·猪八旺","伪善学究·凌算机","深渊女仆鲸娘","霓虹执行者K.Volt"];
+var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊","暗影男孩","菌丝卫衣少年","暴食金猪·逼格","伪善学究·眼镜","深渊女仆鲸娘","霓虹执行者K.Volt"];
 var by=Math.max(H*0.55, H-340);
 showToast("BOSS "+bnames[bk]+" 来袭!");sfx(60,"sawtooth",1.2,0.15,30);
 world.enemies.push({type:"boss",x:player.x+620,y:by,w:Math.min(150,H*0.28),h:Math.min(150,H*0.28),hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
@@ -2685,7 +2685,7 @@ for(var i=0;i<world.enemies.length;i++){
         }
       }
     }else if(bk===7){
-      /* 暴食金猪·猪八旺：三阶段 */
+      /* 暴食金猪·逼格：三阶段 */
       if(e.rage>=2){
         /* P3 暴食暴走：眼红獠牙 + 怨念包子分裂 + 金猪压顶 */
         if(e.atkMode%3===0){
@@ -2747,7 +2747,7 @@ for(var i=0;i<world.enemies.length;i++){
         }
       }
     }else if(bk===8){
-      /* 伪善学究·凌算机：三阶段 */
+      /* 伪善学究·眼镜：三阶段 */
       if(e.rage>=2){
         /* P3 眼镜全红假笑裂开 + 算总账计算式弹幕 + 扣光分数结算墙 */
         if(e.atkMode%3===0){
@@ -2942,7 +2942,7 @@ for(var i=0;i<world.bullets.length;i++){
   var b=world.bullets[i];
   if(b.home&&b.owner==="player"){var tg2b=null,td3=99999;for(var j=0;j<world.enemies.length;j++){var en2=world.enemies[j];var dd3=(en2.x-b.x)*(en2.x-b.x)+(en2.y-b.y)*(en2.y-b.y);if(dd3<td3){td3=dd3;tg2b=en2}}if(tg2b&&td3<1440000){var ta2=Math.atan2(tg2b.y-b.y,tg2b.x-b.x);var ca2=Math.atan2(b.vy,b.vx);var diff2=ta2-ca2;while(diff2>Math.PI)diff2-=6.28;while(diff2<-Math.PI)diff2+=6.28;var turn2=Math.max(-22*dt,Math.min(22*dt,diff2));var sp3=Math.sqrt(b.vx*b.vx+b.vy*b.vy);b.vx=Math.cos(ca2+turn2)*sp3;b.vy=Math.sin(ca2+turn2)*sp3}}
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
-  if(b.owner==="player"){for(var j=0;j<world.enemies.length;j++){var e2=world.enemies[j];if(Math.abs(b.x-e2.x)<e2.w/2+b.r&&Math.abs(b.y-e2.y)<e2.h/2+b.r){e2.hp-=b.dmg||12;if(!b.pierce)b.life=0;
+  if(b.owner==="player"){for(var j=0;j<world.enemies.length;j++){var e2=world.enemies[j];if(Math.abs(b.x-e2.x)<e2.w/2+b.r&&Math.abs(b.y-e2.y)<e2.h/2+b.r){var _dmgMul=1;if(e2.type==="boss"){var _dxp=(player?player.x:120)-e2.x,_dyp=(player?player.y:H-220)-e2.y;var _dp=Math.sqrt(_dxp*_dxp+_dyp*_dyp);if(_dp<150)_dmgMul=2.0;else if(_dp<300)_dmgMul=1.5;else if(_dp<450)_dmgMul=1.2;}e2.hp-=(b.dmg||12)*_dmgMul;if(!b.pierce)b.life=0;
 var _dmg=b.dmg||12;
 var _heavy=_dmg>=60;
 // 命中停顿：轻击1帧感，重击3帧感
@@ -3058,13 +3058,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v3.2");
+    localStorage.setItem("njs_patch","v3.3");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v3.2"){
+    if(seen!=="v3.3"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -6196,7 +6196,7 @@ function draw(){
         ctx.beginPath();ctx.arc(-R*0.02,R*0.35,R*0.03,0,6.2832);ctx.arc(R*0.02,R*0.35,R*0.03,0,6.2832);ctx.fill();
       }
       else if(bk===7){
-        /* ===== 8. 暴食金猪·猪八旺：粉金圆滚猪 + 红唐装马甲 + 大铜钱 + 招财包 ===== */
+        /* ===== 8. 暴食金猪·逼格：粉金圆滚猪 + 红唐装马甲 + 大铜钱 + 招财包 ===== */
         // 圆滚身体（粉金色油光）
         var pg=ctx.createRadialGradient(-R*0.2,-R*0.2,R*0.1,0,0,R*1.05);
         pg.addColorStop(0,"#ffd9a8");pg.addColorStop(0.7,"#f5a97f");pg.addColorStop(1,"#d98850");
@@ -6261,7 +6261,7 @@ function draw(){
         ctx.beginPath();ctx.moveTo(R*0.9,R*0.5);ctx.quadraticCurveTo(R*1.1,R*0.6,R*1.0,R*0.75);ctx.stroke();
       }
       else if(bk===8){
-        /* ===== 9. 伪善学究·凌算机：灰西服 + 方框眼镜 + 账目书本 ===== */
+        /* ===== 9. 伪善学究·眼镜：灰西服 + 方框眼镜 + 账目书本 ===== */
         // 身体（灰色旧西服）
         var lg=ctx.createLinearGradient(0,-R,0,R);
         lg.addColorStop(0,"#8b95a5");lg.addColorStop(1,"#5c6670");
@@ -7356,7 +7356,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
     <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.2</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v3.3</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7387,6 +7387,10 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 02:46:29",items:[
+      "⚙️ Boss 近距离伤害加成：贴脸打 Boss 伤害翻倍（150内2倍/300内1.5倍）",
+      "⚙️ Boss 改名：猪八旺→逼格、凌算机→眼镜"
+    ]},
     {time:"2026-10-24 02:36:39",items:[
       "✨ 小怪大换血完成（第4批）：瞬移者 / 磁铁怪 / 充电桩 / 镜面体 / 傀儡娃娃",
       "⚙️ 瞬移者：随机闪现4方向，现身戳刀",
@@ -7431,7 +7435,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       "⚙️ 火苗怪：追踪贴近爆炸8向火球"
     ]},
     {time:"2026-10-24 01:20:00",items:[
-      "✨ 新增 4 个三阶段 Boss：暴食金猪·猪八旺 / 伪善学究·凌算机 / 深渊女仆鲸娘 / 霓虹执行者K.Volt",
+      "✨ 新增 4 个三阶段 Boss：暴食金猪·逼格 / 伪善学究·眼镜 / 深渊女仆鲸娘 / 霓虹执行者K.Volt",
       "🐛 修复 Boss 被子弹击飞飞出屏幕的问题",
       "⚙️ 所有 Boss 统一降到屏幕下方，不再飞出视野"
     ]},
@@ -7459,7 +7463,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 02:36:39";
+    pd.textContent="更新于 2026 年 10 月 24 日 02:46:29";
   }
 })();
 </script>
