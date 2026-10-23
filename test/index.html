@@ -541,9 +541,9 @@ bossWave++;bossSpawned=bossWave;bossAlive=true;
 var cols=["#ffe600","#ff2a6d","#7fdcff","#b026ff","#ff8a5b"];
 var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=Math.floor(Math.random()*11);
 var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊","暗影男孩","菌丝卫衣少年","暴食金猪·猪八旺","伪善学究·凌算机","深渊女仆鲸娘","霓虹执行者K.Volt"];
-var by=H-320;
+var by=Math.max(H*0.55, H-340);
 showToast("BOSS "+bnames[bk]+" 来袭!");sfx(60,"sawtooth",1.2,0.15,30);
-world.enemies.push({type:"boss",x:player.x+620,y:by,w:150,h:150,hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
+world.enemies.push({type:"boss",x:player.x+620,y:by,w:Math.min(150,H*0.28),h:Math.min(150,H*0.28),hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
 
 function showToast(m){if(!ui.toast)return;ui.toast.textContent=m;ui.toast.classList.add("show");if(showToast._t)clearTimeout(showToast._t);showToast._t=setTimeout(function(){ui.toast.classList.remove("show")},1900)}
 
