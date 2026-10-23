@@ -112,28 +112,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   </div>
 <button class="btn btn-main" onclick="startGame(false)">开 始 游 戏</button>
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
-  <button id="homeRankBtn" onclick="openHomeRank()" style="display:block;margin:10px auto 0;padding:8px 26px;border-radius:20px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:14px;cursor:pointer">🏆 排行榜</button>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.0</div>
-  <div id="patchNote" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(5,8,20,.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px">
-    <div style="max-width:420px;width:100%;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15)">
-      <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
-      <div style="text-align:center;font-size:11px;color:#6a7fb8;margin-bottom:12px">正式版 v1.0 · 更新于 2025-06-23</div>
-      <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
-        <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 全新内容</div>
-        <div>· 5 大角色自由切换：机甲战士 / 二次元少女 / 写实格斗家 / 赛博武士 / 女仆鲸娘</div>
-        <div>· 女仆鲸娘全新登场：蓝发女仆裙 + 鲸尾巴 + 白丝过膝袜</div>
-        <div>· 4 种新小怪：集群蜂 / 护盾兵 / 瞬移者 / 激光炮</div>
-        <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">⚡ 体验优化</div>
-        <div>· 跑步动画重做：脚步咬合地面、起跳收腿、速度渐变</div>
-        <div>· 持枪姿势修正：枪真正握在手里，子弹从枪口射出</div>
-        <div>· 冰风颠倒时长 1.5s → 0.6s</div>
-        <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">🗑 清理</div>
-        <div>· 删除 7 种作用微小的陷阱（镜像/黑幕/锁屏等）</div>
-        <div>· 修复部分小怪隐形不显示的 bug</div>
-      </div>
-      <button onclick="closePatchNote()" style="display:block;margin:14px auto 0;padding:9px 38px;border-radius:20px;font-size:14px;background:rgba(0,242,255,.15);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:600">开始游戏</button>
-    </div>
+  <div style="display:flex;gap:8px;justify-content:center;margin:8px auto 0">
+    <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
+    <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
   </div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v1.1</div>
+  
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
     <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:0 8px">
@@ -2672,17 +2656,37 @@ function initHero(){
 }
 try{ initHero(); }catch(e){}
 /* 更新公告：仅新版首次进入显示 */
+function openPatchNote(){
+  try{
+    var d=document.getElementById("patchNote");
+    if(d){d.style.display="flex";d.style.pointerEvents="auto";}
+    var sc=document.getElementById("patchScroll");
+    if(sc){ try{ _bindDrag(sc); }catch(e){} }
+  }catch(e){}
+}
 function closePatchNote(){
-  var d=document.getElementById("patchNote");
-  if(d)d.style.display="none";
-  try{ localStorage.setItem("njs_patch","v1.0"); }catch(e){}
+  try{
+    var d=document.getElementById("patchNote");
+    if(d){d.style.display="none";d.style.pointerEvents="none";}
+    localStorage.setItem("njs_patch","v2.1");
+  }catch(e){}
 }
 (function(){
   try{
+    // 动态填充更新日期（真实当前日期，永不写死）
+    var _pd=document.getElementById("patchDateText");
+    if(_pd){
+      var _now=new Date();
+      var _yy=_now.getFullYear(),_mm=String(_now.getMonth()+1).padStart(2,"0"),_dd=String(_now.getDate()).padStart(2,"0");
+      var _hh=String(_now.getHours()).padStart(2,"0"),_mi=String(_now.getMinutes()).padStart(2,"0"),_ss=String(_now.getSeconds()).padStart(2,"0");
+      _pd.textContent="更新于 "+_yy+" 年 "+_mm+" 月 "+_dd+" 日 "+_hh+":"+_mi+":"+_ss;
+    }
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v1.0"){
+    if(seen!=="v2.1"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
+      var sc=document.getElementById("patchScroll");
+      if(sc){ try{ _bindDrag(sc); }catch(e){} }
     }
   }catch(e){}
 })();
@@ -4711,7 +4715,7 @@ function bgRgb(c,a){
 function bgUpdate(dt){
   var tgt=bgPick(distance);
   // 只做极轻的平滑（8% 每秒），避免距离瞬间跳变导致颜色闪动
-  var t=Math.min(1,dt*3.0);
+  var t=Math.min(1,dt*1.4);
   for(var j=0;j<3;j++){
     bgCur.top[j]=bgLerp(bgCur.top[j],tgt.top[j],t);
     bgCur.bot[j]=bgLerp(bgCur.bot[j],tgt.bot[j],t);
@@ -4772,7 +4776,364 @@ function drawBg(){
   lg2.addColorStop(1,bgRgb(bgCur.glow,0));
   ctx.fillStyle=lg2;
   ctx.fillRect(0,ly+1.5,W,H*0.06);
+
+  /* ===== 二次元动漫元素 ===== */
+  drawAnimeSky();
 }
+
+/* ============ 二次元动漫天空：月亮 + 城市剪影 + 流星 + 云 ============ */
+/* ===== 背景元素离屏缓存（性能优化：渐变/剪影不每帧重建） ===== */
+/* ===== 时间循环背景系统（月亮东升西落 日夜循环） ===== */
+var _skyCache = { moon: null, city: null, phase: -1, w: 0, h: 0 };
+var DAY_LEN = 90;            // 一整天 90 秒
+var _stars2 = [];            // 星星（夜）
+
+function _skyInit(){
+  _stars2 = [];
+  for(var i=0;i<140;i++){
+    _stars2.push({x:Math.random(), y:Math.random()*0.55, s:Math.random()*1.6+0.4, p:Math.random()*6.28});
+  }
+}
+_skyInit();
+
+/* 时间相位: 0=深夜 0.25=黎明 0.5=正午 0.75=黄昏 → 循环
+   返回 {name, top, bot, glow, day} day: 0夜~1昼 */
+function _dayPhase(t){
+  var c=t%1;
+  // 关键帧调色板 [top, bot, day强度]
+  var KF=[
+    {t:0.00, top:[16,10,42],  bot:[30,18,66],  day:0.00},  // 深夜
+    {t:0.20, top:[16,10,42],  bot:[30,18,66],  day:0.00},  // 深夜
+    {t:0.28, top:[70,40,80],  bot:[220,120,90],day:0.35},  // 黎明
+    {t:0.40, top:[90,160,235],bot:[160,215,250],day:0.90},  // 上午
+    {t:0.55, top:[70,150,240],bot:[150,210,255],day:1.00},  // 正午
+    {t:0.70, top:[110,90,140],bot:[240,150,80],day:0.55},   // 黄昏
+    {t:0.80, top:[40,20,70],  bot:[120,50,80], day:0.12},  // 入夜
+    {t:1.00, top:[16,10,42],  bot:[30,18,66],  day:0.00}   // 回到深夜
+  ];
+  var a=KF[0], b=KF[KF.length-1];
+  for(var k=0;k<KF.length-1;k++){
+    if(c>=KF[k].t && c<=KF[k+1].t){ a=KF[k]; b=KF[k+1]; break; }
+  }
+  var span=Math.max(0.0001, b.t-a.t);
+  var u=(c-a.t)/span;
+  u=u*u*(3-2*u);          // 平滑插值
+  var o={top:[],bot:[],day:0};
+  for(var j=0;j<3;j++){
+    o.top[j]=a.top[j]+(b.top[j]-a.top[j])*u;
+    o.bot[j]=a.bot[j]+(b.bot[j]-a.bot[j])*u;
+  }
+  o.day=a.day+(b.day-a.day)*u;
+  o.name = c<0.24?"夜":(c<0.36?"黎明":(c<0.68?"白天":"黄昏"));
+  return o;
+}
+
+function drawAnimeSky(){
+  var t=Date.now()*0.001;
+  var hor=H*0.62;
+  var d=distance||0;
+  var stage=bgStageIdx<0?0:bgStageIdx;
+
+  /* --- 时间循环（游戏内时间，一天90秒） --- */
+  var dayT=(t/DAY_LEN)%1;
+  var sky=_dayPhase(dayT);
+  var dayN=sky.day;                          // 0夜 ~ 1昼
+
+  /* --- 天体轨迹：月亮(夜)东升西落 / 太阳(昼)同样走弧线 --- */
+  // 弧线：x 从左到右，y 抛物线（天顶最高）
+  var arcX=(dayT<0.5 ? dayT*2 : (dayT-0.5)*2);   // 0→1
+  var cx=W*(0.08+arcX*0.84);
+  var cy=H*(0.42-Math.sin(arcX*Math.PI)*0.30);   // 天顶 0.12H，起落 0.42H
+
+  /* --- 1. 星星（夜里亮，白天淡出） --- */
+  if(dayN<0.5){
+    var sa=(1-dayN*2)*0.9;
+    ctx.save();
+    for(var i=0;i<_stars2.length;i++){
+      var st=_stars2[i];
+      var tw=0.5+Math.sin(t*2+st.p)*0.5;
+      ctx.globalAlpha=sa*(0.35+tw*0.65);
+      ctx.fillStyle="#fff";
+      ctx.fillRect(st.x*W, st.y*H, st.s, st.s);
+    }
+    ctx.restore();
+  }
+
+  /* --- 2. 月亮（夜晚） / 太阳（白天） --- */
+  try{
+    if(dayN<0.85){
+      // 月亮：夜间可见，随 dayN 淡出
+      var ma=Math.min(1,(1-dayN)*2.2);
+      ctx.save();
+      ctx.globalAlpha=ma;
+      var mr=Math.min(W,H)*0.085;
+      var halo=ctx.createRadialGradient(cx,cy,mr*0.4,cx,cy,mr*2.2);
+      halo.addColorStop(0,"rgba(255,245,210,0.30)");
+      halo.addColorStop(1,"rgba(255,240,200,0)");
+      ctx.fillStyle=halo;
+      ctx.beginPath();ctx.arc(cx,cy,mr*2.2,0,6.2832);ctx.fill();
+      var mg=ctx.createRadialGradient(cx-mr*0.25,cy-mr*0.25,mr*0.1,cx,cy,mr);
+      mg.addColorStop(0,"#fffef5");
+      mg.addColorStop(0.7,"#fff3d0");
+      mg.addColorStop(1,"#efe0ac");
+      ctx.fillStyle=mg;
+      ctx.beginPath();ctx.arc(cx,cy,mr,0,6.2832);ctx.fill();
+      // 月海
+      ctx.fillStyle="rgba(215,195,150,0.45)";
+      ctx.beginPath();ctx.arc(cx-mr*0.3,cy-mr*0.15,mr*0.2,0,6.2832);ctx.fill();
+      ctx.beginPath();ctx.arc(cx+mr*0.25,cy+mr*0.2,mr*0.14,0,6.2832);ctx.fill();
+      ctx.beginPath();ctx.arc(cx+mr*0.05,cy-mr*0.4,mr*0.1,0,6.2832);ctx.fill();
+      ctx.restore();
+    }
+    if(dayN>0.15){
+      // 太阳：白天可见，带光晕
+      ctx.save();
+      ctx.globalAlpha=Math.min(1,(dayN-0.15)*1.6);
+      var sr=Math.min(W,H)*0.062;
+      var sg=ctx.createRadialGradient(cx,cy,sr*0.3,cx,cy,sr*3);
+      sg.addColorStop(0,"rgba(255,250,220,0.85)");
+      sg.addColorStop(0.35,"rgba(255,230,150,0.35)");
+      sg.addColorStop(1,"rgba(255,230,150,0)");
+      ctx.fillStyle=sg;
+      ctx.beginPath();ctx.arc(cx,cy,sr*3,0,6.2832);ctx.fill();
+      ctx.fillStyle="#fff8dc";
+      ctx.beginPath();ctx.arc(cx,cy,sr,0,6.2832);ctx.fill();
+      ctx.restore();
+    }
+  }catch(e){}
+
+  /* --- 3. 时间×阶段混合天空色（在 drawBg 渐变之上叠一层日光大色调） --- */
+  try{
+    // 白天提亮 / 夜晚压暗，让时间循环真实可感
+    var lift=ctx.createLinearGradient(0,0,0,H);
+    if(dayN>0.5){
+      lift.addColorStop(0,"rgba(255,250,235,"+(0.09*dayN)+")");
+      lift.addColorStop(1,"rgba(255,250,235,"+(0.09*dayN)+")");
+    }else{
+      lift.addColorStop(0,"rgba(8,8,30,"+(0.14*(1-dayN))+")");
+      lift.addColorStop(1,"rgba(8,8,30,"+(0.14*(1-dayN))+")");
+    }
+    ctx.fillStyle=lift;
+    ctx.fillRect(0,0,W,H);
+    // 黎明/黄昏的暖色横霞
+    var warm=(dayT>0.24&&dayT<0.40)||(dayT>0.66&&dayT<0.82);
+    if(warm){
+      var wg=ctx.createLinearGradient(0,H*0.3,0,hor);
+      wg.addColorStop(0,"rgba(255,120,60,0)");
+      wg.addColorStop(1,"rgba(255,120,60,0.14)");
+      ctx.fillStyle=wg;
+      ctx.fillRect(0,H*0.3,W,hor-H*0.3);
+    }
+  }catch(e){}
+
+  /* --- 4. 城市/地景剪影（离屏缓存：按昼夜相位段重建） --- */
+  var phaseBucket=Math.floor(dayT*8);        // 一天分 8 段缓存
+  try{
+    if(_skyCache.w!==W||_skyCache.h!==H||_skyCache.phase!==phaseBucket||_skyCache.stage!==stage){
+      _skyCache.w=W;_skyCache.h=H;_skyCache.phase=phaseBucket;_skyCache.stage=stage;
+      _skyCache.city=null;
+    }
+  }catch(e){}
+
+  if(!_skyCache.city){
+    try{
+      var cc=document.createElement("canvas");cc.width=W+240;cc.height=H;
+      var c2=cc.getContext("2d");
+      // 剪影颜色随昼夜：夜=深黑蓝，昼=灰蓝，黎明黄昏=暖棕
+      var nightC=[18,14,40], dayC=[52,58,88], duskC=[62,36,44];
+      var sc;
+      if(dayN>0.6) sc=dayC;
+      else if(dayN<0.2) sc=nightC;
+      else {
+        // 过渡混合
+        var mix=dayN<0.4?(dayN-0.2)/0.2:(1-(dayN-0.6)/0.4);
+        mix=Math.max(0,Math.min(1,mix));
+        var base=dayN<0.4?nightC:duskC;
+        sc=[base[0]+(dayC[0]-base[0])*mix, base[1]+(dayC[1]-base[1])*mix, base[2]+(dayC[2]-base[2])*mix];
+      }
+      var silC="rgb("+Math.round(sc[0])+","+Math.round(sc[1])+","+Math.round(sc[2])+")";
+      c2.fillStyle=silC;
+      var grow=Math.min(1,d/1800);
+      var hor2=H*0.62;
+      if(stage<=2){
+        /* 霓虹街区/离子风暴/虚空边缘：城市天际线 */
+        var step=44-Math.min(14,stage*2);
+        for(var bx=-120;bx<W+360;bx+=step){
+          var seed=Math.floor(bx/step);
+          var bh=(30+((seed*7919)%60))*(0.65+grow*0.6)+(stage*3);
+          var bw=16+((seed*31)%36);
+          c2.fillRect(bx,hor2-bh,bw,bh);
+          var rt=(seed*7)%5;
+          if(rt===0){c2.fillRect(bx+bw*0.25,hor2-bh-8,6,8);c2.fillRect(bx+bw*0.25-2,hor2-bh-11,10,3)}
+          else if(rt===1){c2.beginPath();c2.moveTo(bx+bw*0.2,hor2-bh);c2.lineTo(bx+bw*0.5,hor2-bh-14);c2.lineTo(bx+bw*0.8,hor2-bh);c2.closePath();c2.fill()}
+          else if(rt===2){c2.fillRect(bx+bw/2-1,hor2-bh-16,2,16);c2.fillRect(bx+bw/2-4,hor2-bh-14,8,2)}
+          else if(rt===3){c2.fillRect(bx+bw/2-1,hor2-bh-12,2,12);c2.beginPath();c2.moveTo(bx+bw/2-1,hor2-bh-12);c2.lineTo(bx+bw/2+6,hor2-bh-9);c2.lineTo(bx+bw/2-1,hor2-bh-9);c2.closePath();c2.fill()}
+          var winA=dayN<0.35?0.55:(dayN<0.5?0.55*(1-(dayN-0.35)/0.15):0.06);
+          if(seed%2===0&&winA>0.02){
+            c2.fillStyle="rgba(255,220,140,"+winA+")";
+            for(var wy=hor2-bh+8;wy<hor2-8;wy+=12){
+              for(var wx=bx+5;wx<bx+bw-4;wx+=9){
+                if((wx*13+wy*7+seed)%5<2){c2.fillRect(wx,wy,3,5)}
+              }
+            }
+            c2.fillStyle=silC;
+          }
+          if(stage>=1&&seed%4===1&&dayN<0.6){
+            c2.fillStyle=seed%2?"rgba(255,0,170,0.7)":"rgba(0,242,255,0.7)";
+            c2.fillRect(bx+3,hor2-bh+4,bw-6,4);
+            c2.fillStyle=silC;
+          }
+        }
+      }else if(stage===3){
+        /* 熔火深渊：火山群 */
+        for(var vx2=-80;vx2<W+360;vx2+=170){
+          var vs=Math.floor(vx2/170);
+          var vh=60+((vs*5323)%70);
+          c2.beginPath();c2.moveTo(vx2-90,hor2);c2.lineTo(vx2,hor2-vh);c2.lineTo(vx2+90,hor2);c2.closePath();c2.fill();
+          c2.fillStyle="rgba(255,120,20,0.75)";
+          c2.beginPath();c2.moveTo(vx2-14,hor2-vh+10);c2.lineTo(vx2,hor2-vh+2);c2.lineTo(vx2+14,hor2-vh+10);c2.closePath();c2.fill();
+          c2.fillStyle=silC;
+        }
+      }else if(stage===4){
+        /* 翡翠遗迹：森林树海 */
+        for(var tx=-60;tx<W+360;tx+=52){
+          var ts=Math.floor(tx/52);
+          var th=44+((ts*3571)%58);
+          c2.beginPath();c2.moveTo(tx,hor2);c2.lineTo(tx+26,hor2-th);c2.lineTo(tx+52,hor2);c2.closePath();c2.fill();
+          c2.fillRect(tx+22,hor2-14,8,14);
+          if(ts%3===0){c2.beginPath();c2.arc(tx+26,hor2-th-6,7,0,6.2832);c2.fill()}
+        }
+      }else if(stage===5){
+        /* 黄金王座：宫殿尖塔群 */
+        for(var px2=-70;px2<W+360;px2+=110){
+          var ps=Math.floor(px2/110);
+          var ph=70+((ps*7919)%80);
+          c2.fillRect(px2+10,hor2-ph,60,ph);
+          c2.beginPath();c2.moveTo(px2+10,hor2-ph);c2.lineTo(px2+40,hor2-ph-36);c2.lineTo(px2+70,hor2-ph);c2.closePath();c2.fill();
+          c2.beginPath();c2.arc(px2+40,hor2-ph-40,6,0,6.2832);c2.fill();
+          if(ps%2===0){c2.fillStyle="rgba(255,215,40,0.4)";c2.fillRect(px2+24,hor2-ph+18,32,5);c2.fillStyle=silC}
+        }
+      }else{
+        /* 终焉裂隙：破碎晶体尖刺 */
+        for(var cx4=-40;cx4<W+360;cx4+=55){
+          var cs2=Math.floor(cx4/55);
+          var ch=40+((cs2*3571)%60);
+          c2.beginPath();c2.moveTo(cx4,hor2);c2.lineTo(cx4+14,hor2-ch);c2.lineTo(cx4+28,hor2);c2.closePath();c2.fill();
+          if(cs2%2===0){c2.beginPath();c2.moveTo(cx4+28,hor2);c2.lineTo(cx4+40,hor2-ch*0.6);c2.lineTo(cx4+52,hor2);c2.closePath();c2.fill()}
+        }
+      }
+      c2.fillStyle="rgb("+Math.round(sc[0]*0.55)+","+Math.round(sc[1]*0.55)+","+Math.round(sc[2]*0.6)+")";
+      c2.fillRect(0,hor2,W+360,H-hor2);
+      _skyCache.city=cc;
+    }catch(e){ _skyCache.city=document.createElement("canvas"); }
+  }
+  try{
+    var scroll=(cam?cam.x:0)*0.06;
+    ctx.drawImage(_skyCache.city, -((scroll)%240)-120, 0);
+  }catch(e){}
+
+  /* --- 5. 阶段粒子（赛博光点/雪/灰烬/绿叶/樱花） --- */
+  try{
+    ctx.save();
+    if(stage===1){
+      ctx.globalAlpha=0.5;
+      for(var pi=0;pi<12;pi++){
+        var px=(pi*137+t*30*(0.6+pi%3*0.2))%W;
+        var py=H-((t*40+pi*53)%H);
+        ctx.fillStyle=pi%2?"#ff2fd6":"#00f2ff";
+        ctx.fillRect(px,py,2,2);
+      }
+    }else if(stage===2){
+      ctx.globalAlpha=0.55;
+      ctx.fillStyle="#cfe8ff";
+      for(var si=0;si<20;si++){
+        var sx=(si*173+t*22*(0.5+si%4*0.15))%W;
+        var sy=(t*30+si*41)%H;
+        ctx.beginPath();ctx.arc(sx,sy,1.5+(si%3),0,6.2832);ctx.fill();
+      }
+    }else if(stage===3){
+      ctx.globalAlpha=0.5;
+      ctx.fillStyle="#ffb060";
+      for(var ai=0;ai<14;ai++){
+        var ax=(ai*211+Math.sin(t*0.7+ai)*20)%W;
+        var ay=H-((t*50+ai*61)%H);
+        ctx.beginPath();ctx.arc(ax,ay,2+(ai%3),0,6.2832);ctx.fill();
+      }
+    }else if(stage===4){
+      ctx.globalAlpha=0.5;
+      ctx.fillStyle="#7dffb0";
+      for(var li=0;li<10;li++){
+        var lx=(li*157+t*25*(0.5+li%3*0.2))%W;
+        var ly=(t*28+li*47)%H;
+        ctx.fillRect(lx,ly,3,5);
+      }
+    }else if(stage===5){
+      ctx.globalAlpha=0.6;
+      for(var ci2=0;ci2<8;ci2++){
+        var cx2=(ci2*197+t*35)%W;
+        var cy2=(t*45+ci2*67)%H;
+        ctx.fillStyle="#ffb7c5";
+        ctx.beginPath();ctx.arc(cx2,cy2,2.5,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.arc(cx2-2,cy2,1.6,0,6.2832);ctx.fill();
+        ctx.beginPath();ctx.arc(cx2+2,cy2,1.6,0,6.2832);ctx.fill();
+      }
+    }
+    ctx.restore();
+  }catch(e){}
+
+  /* --- 6. 流星（夜里才有） --- */
+  try{
+    if(dayN<0.3){
+      var meteor=Math.sin(t*0.13)*0.5+0.5;
+      if(meteor>0.82){
+        var mt=(meteor-0.82)/0.18;
+        var msx=W*(0.3+mt*0.5), msy=H*(0.12+mt*0.22);
+        var mgd=ctx.createLinearGradient(msx,msy,msx-60,msy-38);
+        mgd.addColorStop(0,"rgba(255,255,255,0.95)");
+        mgd.addColorStop(1,"rgba(255,220,180,0)");
+        ctx.strokeStyle=mgd;ctx.lineWidth=2;ctx.lineCap="round";
+        ctx.beginPath();ctx.moveTo(msx,msy);ctx.lineTo(msx-60,msy-38);ctx.stroke();
+      }
+    }
+  }catch(e){}
+
+  /* --- 6.5 小鸟（白天成群飞） --- */
+  try{
+    if(dayN>0.4){
+      ctx.save();
+      ctx.strokeStyle="rgba(25,25,40,"+(0.55*dayN)+")";
+      ctx.lineWidth=1.5;ctx.lineCap="round";
+      for(var bi=0;bi<4;bi++){
+        var bxx=((bi*340+t*22*(0.7+bi*0.12))%(W+200))-100;
+        var byy=H*(0.16+bi*0.07)+Math.sin(t*1.5+bi*2)*8;
+        var fw=Math.sin(t*7+bi*1.7)*3;
+        ctx.beginPath();
+        ctx.moveTo(bxx-5,byy+fw);ctx.lineTo(bxx,byy);ctx.lineTo(bxx+5,byy+fw);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }catch(e){}
+
+  /* --- 7. 飘云（白天明显，夜里淡） --- */
+  try{
+    ctx.save();
+    ctx.globalAlpha=0.06+dayN*0.14;
+    ctx.fillStyle="#ffffff";
+    for(var ci=0;ci<6;ci++){
+      var ccx=((ci*520 - t*8*(0.5+ci*0.15))%(W+400))-200;
+      var ccy=H*(0.14+ci*0.08);
+      var cw=70+ci*18;
+      ctx.beginPath();
+      ctx.ellipse(ccx,ccy,cw,cw*0.30,0,0,6.2832);
+      ctx.ellipse(ccx-cw*0.5,ccy+cw*0.08,cw*0.5,cw*0.18,0,0,6.2832);
+      ctx.ellipse(ccx+cw*0.5,ccy+cw*0.05,cw*0.55,cw*0.20,0,0,6.2832);
+      ctx.fill();
+    }
+    ctx.restore();
+  }catch(e){}
+}
+
 
 function draw(){
   ctx.save();
@@ -5846,5 +6207,65 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     <button onclick="closeHomeRank()" style="margin-top:10px;padding:10px 0;width:100%;border-radius:22px;background:rgba(255,255,255,.07);border:1.5px solid rgba(160,168,255,.45);color:#b8c0ff;font-size:14px;cursor:pointer">← 返 回</button>
   </div>
 </div>
+
+<div id="patchNote" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;z-index:9000;background:rgba(5,8,20,.85);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;overflow:hidden;pointer-events:auto">
+  <div id="patchScroll" style="max-width:420px;width:100%;max-height:86vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 18px;box-shadow:0 0 40px rgba(0,242,255,.15);pointer-events:auto">
+    <div style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">🚀 更新公告</div>
+    <div id="patchDate" style="text-align:center;margin-bottom:12px">
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v1.0</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026-10-23</div>
+  </div>
+    <div style="font-size:12.5px;line-height:1.9;color:#c8d8f0">
+      <div style="color:#ffd54a;font-weight:600;margin-bottom:2px">⭐ 本次更新</div>
+      <div>· 背景全新重构：月亮东升西落的日夜循环（夜→黎明→白天→黄昏）</div>
+      <div>· 7 大地景随距离切换：城市 / 火山 / 森林 / 宫殿 / 晶体</div>
+      <div>· 天空元素：星星 140 颗、白云、流星、成群小鸟</div>
+      <div>· 建筑多样化：水塔 / 尖顶 / 天线 / 起重机塔</div>
+      <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">⚡ 体验优化</div>
+      <div>· 主页新增「📢 公告」按钮，公告内容可上下滑动</div>
+      <div>· 公告缩放/按钮合并，昵称不再被挤出屏幕</div>
+      <div>· 背景离屏缓存渲染，消除卡顿</div>
+      <div>· 修复背景闪退问题</div>
+      <div style="color:#ffd54a;font-weight:600;margin:8px 0 2px">🎮 玩法内容</div>
+      <div>· 5 大角色自由切换：机甲 / 二次元少女 / 格斗家 / 赛博武士 / 女仆鲸娘</div>
+      <div>· 12 种小怪：集群蜂 / 护盾兵 / 瞬移者 / 激光炮等</div>
+      <div>· 子弹全等级自动追踪敌人</div>
+      <div>· 跑步动画重做、持枪姿势修正</div>
+    </div>
+    <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
+  </div>
+</div>
+<script>
+(function(){
+  var el=document.getElementById("patchScroll");
+  if(!el)return;
+  if(el._scBound)return; el._scBound=true;
+  var sy=0,ss=0,on=false,id=null;
+  el.addEventListener("touchstart",function(ev){
+    on=true;id=ev.touches[0].identifier;sy=ev.touches[0].clientY;ss=el.scrollTop;
+  },{passive:true,capture:true});
+  el.addEventListener("touchmove",function(ev){
+    if(!on)return;
+    for(var i=0;i<ev.changedTouches.length;i++){
+      if(ev.changedTouches[i].identifier===id){
+        el.scrollTop=ss-(ev.changedTouches[i].clientY-sy);
+        if(ev.cancelable)ev.preventDefault();
+        ev.stopPropagation();
+        break;
+      }
+    }
+  },{passive:false,capture:true});
+  el.addEventListener("touchend",function(){on=false;id=null},{passive:true,capture:true});
+  el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
+  /* 日期填充：元素已存在，必然能填上（精确到秒） */
+  var pd=document.getElementById("patchDateText");
+  if(pd){
+    var n=new Date();
+    var Y=n.getFullYear(),M=String(n.getMonth()+1).padStart(2,"0"),D=String(n.getDate()).padStart(2,"0");
+    var h=String(n.getHours()).padStart(2,"0"),mi=String(n.getMinutes()).padStart(2,"0"),ss=String(n.getSeconds()).padStart(2,"0");
+    pd.textContent="更新于 "+Y+" 年 "+M+" 月 "+D+" 日 "+h+":"+mi+":"+ss;
+  }
+})();
+</script>
 </body>
 </html>
