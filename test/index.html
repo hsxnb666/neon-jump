@@ -4788,7 +4788,7 @@ var _stars2 = [];            // 星星（夜）
 
 function _skyInit(){
   _stars2 = [];
-  for(var i=0;i<90;i++){
+  for(var i=0;i<140;i++){
     _stars2.push({x:Math.random(), y:Math.random()*0.55, s:Math.random()*1.6+0.4, p:Math.random()*6.28});
   }
 }
@@ -4905,11 +4905,11 @@ function drawAnimeSky(){
     // 白天提亮 / 夜晚压暗，让时间循环真实可感
     var lift=ctx.createLinearGradient(0,0,0,H);
     if(dayN>0.5){
-      lift.addColorStop(0,"rgba(255,250,230,"+(0.10*dayN)+")");
-      lift.addColorStop(1,"rgba(255,240,200,"+(0.06*dayN)+")");
+      lift.addColorStop(0,"rgba(255,250,235,"+(0.09*dayN)+")");
+      lift.addColorStop(1,"rgba(255,250,235,"+(0.09*dayN)+")");
     }else{
-      lift.addColorStop(0,"rgba(5,5,25,"+(0.18*(1-dayN))+")");
-      lift.addColorStop(1,"rgba(5,5,25,"+(0.10*(1-dayN))+")");
+      lift.addColorStop(0,"rgba(8,8,30,"+(0.14*(1-dayN))+")");
+      lift.addColorStop(1,"rgba(8,8,30,"+(0.14*(1-dayN))+")");
     }
     ctx.fillStyle=lift;
     ctx.fillRect(0,0,W,H);
@@ -4956,9 +4956,14 @@ function drawAnimeSky(){
       var hor2=H*0.62;
       for(var bx=-120;bx<W+360;bx+=step){
         var seed=Math.floor(bx/step);
-        var bh=(34+((seed*7919)%47))*(0.7+grow*0.55)+(stage*3);
-        var bw=22+((seed*31)%18);
+        var bh=(30+((seed*7919)%60))*(0.65+grow*0.6)+(stage*3);
+        var bw=16+((seed*31)%36);
         c2.fillRect(bx,hor2-bh,bw,bh);
+        var rt=(seed*7)%5;
+        if(rt===0){c2.fillRect(bx+bw*0.25,hor2-bh-8,6,8);c2.fillRect(bx+bw*0.25-2,hor2-bh-11,10,3)}
+        else if(rt===1){c2.beginPath();c2.moveTo(bx+bw*0.2,hor2-bh);c2.lineTo(bx+bw*0.5,hor2-bh-14);c2.lineTo(bx+bw*0.8,hor2-bh);c2.closePath();c2.fill()}
+        else if(rt===2){c2.fillRect(bx+bw/2-1,hor2-bh-16,2,16);c2.fillRect(bx+bw/2-4,hor2-bh-14,8,2)}
+        else if(rt===3){c2.fillRect(bx+bw/2-1,hor2-bh-12,2,12);c2.beginPath();c2.moveTo(bx+bw/2-1,hor2-bh-12);c2.lineTo(bx+bw/2+6,hor2-bh-9);c2.lineTo(bx+bw/2-1,hor2-bh-9);c2.closePath();c2.fill()}
         if(seed%3===0){
           if(stage>=2){c2.fillRect(bx+bw/2-1,hor2-bh-16,2,16);c2.beginPath();c2.moveTo(bx+bw/2-3,hor2-bh-16);c2.lineTo(bx+bw/2+3,hor2-bh-16);c2.lineTo(bx+bw/2,hor2-bh-24);c2.closePath();c2.fill()}
           else{c2.fillRect(bx+bw/2-1,hor2-bh-12,2,12)}
@@ -4979,6 +4984,8 @@ function drawAnimeSky(){
           c2.fillRect(bx+3,hor2-bh+4,bw-6,4);
         }
       }
+      c2.fillStyle="rgb("+Math.round(sc[0]*0.55)+","+Math.round(sc[1]*0.55)+","+Math.round(sc[2]*0.6)+")";
+      c2.fillRect(0,hor2,W+360,H-hor2);
       // 远山（熔火/翡翠）
       if(stage>=3&&stage<=4){
         for(var mx2=-60;mx2<W+360;mx2+=90){
@@ -5068,12 +5075,30 @@ function drawAnimeSky(){
     }
   }catch(e){}
 
+  /* --- 6.5 小鸟（白天成群飞） --- */
+  try{
+    if(dayN>0.4){
+      ctx.save();
+      ctx.strokeStyle="rgba(25,25,40,"+(0.55*dayN)+")";
+      ctx.lineWidth=1.5;ctx.lineCap="round";
+      for(var bi=0;bi<4;bi++){
+        var bxx=((bi*340+t*22*(0.7+bi*0.12))%(W+200))-100;
+        var byy=H*(0.16+bi*0.07)+Math.sin(t*1.5+bi*2)*8;
+        var fw=Math.sin(t*7+bi*1.7)*3;
+        ctx.beginPath();
+        ctx.moveTo(bxx-5,byy+fw);ctx.lineTo(bxx,byy);ctx.lineTo(bxx+5,byy+fw);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }catch(e){}
+
   /* --- 7. 飘云（白天明显，夜里淡） --- */
   try{
     ctx.save();
     ctx.globalAlpha=0.06+dayN*0.14;
     ctx.fillStyle="#ffffff";
-    for(var ci=0;ci<4;ci++){
+    for(var ci=0;ci<6;ci++){
       var ccx=((ci*520 - t*8*(0.5+ci*0.15))%(W+400))-200;
       var ccy=H*(0.14+ci*0.08);
       var cw=70+ci*18;
@@ -6188,5 +6213,14 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
   </div>
 </div>
+<script>
+(function(){
+  function _pb(){
+    var sc=document.getElementById("patchScroll");
+    if(sc){try{_bindDrag(sc);}catch(e){}}
+  }
+  _pb(); setTimeout(_pb,300); setTimeout(_pb,1500);
+})();
+</script>
 </body>
 </html>
