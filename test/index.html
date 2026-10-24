@@ -121,7 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.3</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.4</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -609,11 +609,15 @@ if(e.type==="boss"){
   showToast("BOSS击破!丰厚奖励!");score+=15000;world.flash=0.6;cam.shake=22;bossAlive=false;
   // 丰厚奖励：金币+回血+武器升级+护盾
   coinCount+=120;
+  var _cvb=document.getElementById("coinVal");
+  if(_cvb)_cvb.textContent="🪙 "+coinCount;
+  // Boss 死亡喷射金币实体（视觉爽 + 可吸附拾取）
+  for(var _bc=0;_bc<20;_bc++){world.coins.push({x:e.x+(Math.random()-0.5)*120,y:e.y-(Math.random()*60),t:0,got:false});}
   player.hp=Math.min(player.maxHp,player.hp+80);
   player.en=Math.min(player.maxEn,player.en+40);
   player.shield=Math.max(player.shield||0,3);
   gunLevel=Math.min(50,gunLevel+1);
-  world.texts.push({x:e.x,y:e.y-60,text:"+8000分 +60金币",life:1.6,vy:-40});
+  world.texts.push({x:e.x,y:e.y-60,text:"+120金币",life:1.6,vy:-40});
   world.texts.push({x:e.x,y:e.y-30,text:"回血+50 武器+1 护盾3s",life:1.8,vy:-30});
   // 掉落多个道具
   for(var ri=0;ri<4;ri++)world.pickups.push({x:e.x+(ri-1.5)*40,y:e.y-30,t:0,kind:"heal",got:false});
@@ -912,7 +916,7 @@ function updateSmartTraps(dt,rdt){
       t.timer-=rdt;if(t.timer>0&&near)world._lock=true;else world._lock=false;
     }
     else if(t.kind==="reverse_ctrl"){
-      t.timer-=rdt;if(t.timer>0&&near)world._revCtrl=true;else world._revCtrl=false;
+      t.timer-=rdt;if(t.timer>0&&near)world._revCtrl=0.6;else if(world._revCtrl<0.6)world._revCtrl=0;
     }
     else if(t.kind==="blind"){
       t.timer-=rdt;if(t.timer>0&&near)world._blind=0.9;
@@ -2442,6 +2446,7 @@ if(skillCd>0)skillCd-=rdt;
 if(comboT>0){comboT-=rdt;if(comboT<=0)combo=0}
 if(world.flash>0)world.flash-=rdt*2;
 for(var i=world.lightnings.length-1;i>=0;i--){world.lightnings[i].t+=rdt;if(world.lightnings[i].t>0.5)world.lightnings.splice(i,1)}
+if(typeof world._revCtrl==="number"){world._revCtrl-=rdt;if(world._revCtrl<=0)world._revCtrl=0;}
 var p=player;
 var move=input.move;
 if(keys.KeyA||keys.ArrowLeft)move=-1;
@@ -3133,13 +3138,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v4.3");
+    localStorage.setItem("njs_patch","v4.4");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v4.3"){
+    if(seen!=="v4.4"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7476,7 +7481,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.3</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.4</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7507,6 +7512,9 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 08:48:35",items:[
+      "🐛 修复踩到冰风陷阱后操作永久颠倒（漂移）+ Boss 击杀掉落金币实体并刷新 HUD"
+    ]},
     {time:"2026-10-24 08:37:42",items:[
       "🐛 修复金币丢失：死亡/放弃/回主页三条路径都会正确结算金币入账，不再清零丢失"
     ]},
@@ -7616,7 +7624,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 08:37:42";
+    pd.textContent="更新于 2026 年 10 月 24 日 08:48:35";
   }
 })();
 </script>
