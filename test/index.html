@@ -85,6 +85,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   white-space:nowrap;
 }
 #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+ #taunt{
+   position:absolute;top:8%;left:50%;transform:translateX(-50%);
+   color:rgba(255,255,255,.82);font-size:16px;font-weight:600;letter-spacing:.5px;
+   text-shadow:0 1px 6px rgba(0,0,0,.7);
+   background:rgba(20,10,40,.5);border:1px solid rgba(255,255,255,.12);
+   border-radius:10px;padding:6px 16px;
+   opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;
+   max-width:86vw;overflow:hidden;text-overflow:ellipsis;
+ }
+ #taunt.show{opacity:1}
 #hint{
   position:absolute;bottom:200px;left:0;right:0;text-align:center;
   color:rgba(255,255,255,.45);font-size:12px;pointer-events:none;
@@ -121,7 +131,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.1</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.2</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -194,6 +204,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 </div>
 
 <div id="toast"></div>
+<div id="taunt"></div>
 <div id="hint" class="hidden">左半屏拖动移动 · 右下四键操作</div>
 
 </div>
@@ -569,6 +580,42 @@ showToast("BOSS "+bnames[bk]+" 来袭!");sfx(60,"sawtooth",1.2,0.15,30);
 world.enemies.push({type:"boss",x:player.x+620,y:by,w:Math.min(150,H*0.28),h:Math.min(150,H*0.28),hp:hp,maxHp:hp,cd:1.6,phase:0,score:6000+bossWave*1500,bc:bc,bw:bossWave,bk:bk,rage:0,atkMode:0})}}
 
 function showToast(m){if(!ui.toast)return;ui.toast.textContent=m;ui.toast.classList.add("show");if(showToast._t)clearTimeout(showToast._t);showToast._t=setTimeout(function(){ui.toast.classList.remove("show")},1900)}
+
+/* ========== 嘲讽文案库（失败/复活各30句，不重复抽取） ========== */
+var TAUNT_DEAD=[
+"就这？","死得还挺快。","手残就别玩高难度。","你的操作，配不上这把枪。","菜是原罪。",
+"再来十次，结果也一样。","这分数，狗看了都摇头。","你以为换把武器就能赢？","下一局，我会手下留情的……骗你的。","复活了也是接着送。",
+"就这点水平，还敢选这个模式？","子弹都躲不过去，怎么混的。","你的反应速度，是龟速吗？","这波操作，我都没眼看。","死了也好，省的丢人。",
+"键盘上撒把米，鸡都比你强。","别人是打不过，你是压根不会打。","这分数，创下新低了吧。","你是在玩，还是在表演送死？","枪是好枪，人是真菜。",
+"我见过菜的，没见过这么菜的。","这局你认真玩了吗？","手是租来的吗？这么急着还。","再打下去，怪物都要同情你了。","你的走位，还不如原地不动。",
+"这一死，教科书级别的反面教材。","天赋不够，努力也白搭。","建议换个简单点的游戏。","这成绩，我都不好意思给你存档。","别难过，菜不是一天练成的。"
+];
+var TAUNT_REVIVE=[
+"还真敢回来啊。","复活了，然后呢？接着送？","续命是吧？有用吗？","这次能撑过 30 秒吗？","多死一次而已。",
+"给你机会，你也不中用。","这波复活，浪费了。","再来一次，死得一样难看。","欢迎回来送人头。","命是续上了，脸呢？",
+"复活药都救不了你。","又回来了？急着再死一次？","这次记得看子弹，别光看枪。","复活是给你第二次送死的机会。","我赌你撑不过这一波。",
+"起来吧，地板还没凉。","续命续了个寂寞。","复活次数快用完了吧。","这条命，算是白给了。","你是不是对「复活」有什么误解。",
+"又满血了，又可以躺了。","这次能躲过一个弹幕吗？","复活的钱，花得真冤。","起来继续挨打。","我都不忍心看下去了。",
+"这次死得慢点，算我输。","复活不是万能的，尤其对你。","又站起来了，又能倒下了。","命可以续，操作续不了。","恭喜复活，继续送分。"
+];
+var _tauntUsedDead=[], _tauntUsedRevive=[];
+function tauntPick(arr, used){
+  // 抽过的不重复；全部用完才重置
+  var pool=[];
+  for(var i=0;i<arr.length;i++){ if(used.indexOf(i)<0)pool.push(i); }
+  if(!pool.length){ used.length=0; for(var j=0;j<arr.length;j++)pool.push(j); }
+  var idx=pool[Math.floor(Math.random()*pool.length)];
+  used.push(idx);
+  return arr[idx];
+}
+function showTaunt(text){
+  var el=document.getElementById("taunt");
+  if(!el)return;
+  el.textContent=text;
+  el.classList.add("show");
+  if(showTaunt._t)clearTimeout(showTaunt._t);
+  showTaunt._t=setTimeout(function(){ el.classList.remove("show"); },5000);
+}
 
 /* 技能 */
 function castSkill(){if(gameState!=="playing"||skillCd>0)return;var p=player;skillCd=SK_CD;timeScale=0.35;slowTimer=3.5;world.flash=0.5;cam.shake=16;sSkill();
@@ -3153,13 +3200,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v5.1");
+    localStorage.setItem("njs_patch","v5.2");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v5.1"){
+    if(seen!=="v5.2"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7047,10 +7094,12 @@ function doRevive(){
   spawnShockRing(player.x,player.y-30,"#fff",120);
   world.texts.push({x:player.x,y:player.y-70,text:"复活!",life:1.2,vy:-40});
   sfx(700,"sine",0.4,0.1,1600);
+  try{ showTaunt(tauntPick(TAUNT_REVIVE,_tauntUsedRevive)); }catch(e){}
 }
 function doGiveUp(){
   gameState="over";stopBgm();
   settleCoins();
+  try{ showTaunt(tauntPick(TAUNT_DEAD,_tauntUsedDead)); }catch(e){}
   try{localStorage.removeItem("njs_save")}catch(e){}
   sfx(110,"sawtooth",1,0.12,40);
   var rs=document.getElementById("reviveScreen");if(rs)rs.classList.add("hidden");
@@ -7667,7 +7716,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.1</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.2</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7698,6 +7747,10 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 10:09:01",items:[
+      "😂 新增嘲讽文案库：失败/复活各30句，随机抽取不重复",
+      "💰 确认富豪榜按终身累计金币排序（持有+已花，只增不减）"
+    ]},
     {time:"2026-10-24 09:59:49",items:[
       "🐛 修复主页富豪榜加载失败：homeRankRender 补 rich 分支",
       "⏱ 排行榜加时间列（月-日 时:分，历史无数据显示—）",
@@ -7838,7 +7891,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 09:59:49";
+    pd.textContent="更新于 2026 年 10 月 24 日 10:09:01";
   }
 })();
 </script>
