@@ -134,7 +134,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.6</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.7</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3203,13 +3203,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v5.6");
+    localStorage.setItem("njs_patch","v5.7");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v5.6"){
+    if(seen!=="v5.7"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7586,7 +7586,7 @@ function lbSubmit(sc,ds){
       };
       x.onerror=function(){ pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("更新离线·已存待同步("+pendCount()+")"); };
       x.ontimeout=function(){ pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("更新超时·已存待同步("+pendCount()+")"); };
-      try{ x.send(JSON.stringify({score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime})); }catch(e){}
+      try{ x.send(JSON.stringify({score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime,created_at:new Date().toISOString()})); }catch(e){}
     };
     // 已存在：新终身金币更高才更新（去重），否则不新增不更新
     if(existId!==null){
@@ -7810,7 +7810,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.6</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.7</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7841,6 +7841,9 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 11:44:33",items:[
+      "⏱ 修复榜单时间不对：更新成绩时同步刷新为本次打出的真实时间"
+    ]},
     {time:"2026-10-24 11:42:05",items:[
       "🐛 修复高分不记录：分数更高时也更新榜单（不再只看金币是否增长）"
     ]},
@@ -7999,7 +8002,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 11:42:05";
+    pd.textContent="更新于 2026 年 10 月 24 日 11:44:33";
   }
 })();
 </script>
