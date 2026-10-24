@@ -121,7 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.9</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.0</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3068,7 +3068,7 @@ for(var i=world.rings.length-1;i>=0;i--){var rg=world.rings[i];rg.t+=rdt*3;rg.r=
 // 狂暴：改为连击累积触发（不消耗金币，金币只用于买武器）
 try{
   if(typeof world._rage===undefined)world._rage=0;
-  world._rage+=combo*1; // 连击越高积累越快
+  world._rage+=combo*rdt; // 按时间累积：连击5约8秒充满，不再狂暴连发
   if(world._rage>=40&&rageTimer<=0){rageTimer=5;world._rage=0;world.flash=0.3;cam.shake=10;sfx(100,"sawtooth",0.5,0.12,1000);showToast("狂暴模式!");spawnShockRing(p.x,p.y-30,"#ff2a6d",150);}
 }catch(_){}
 var _oldDist=distance;
@@ -3153,13 +3153,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v4.9");
+    localStorage.setItem("njs_patch","v5.0");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v4.9"){
+    if(seen!=="v5.0"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7230,10 +7230,9 @@ function lbRenderRichTo(box){
   var arr=lbCacheRich||[];
   if(!arr.length){
     var emp=document.createElement("div");
-    emp.style.cssText="color:#7c86c8;text-align:center;padding:12px;font-size:12px";
-    emp.textContent="暂无记录";
+    emp.style.cssText="color:#7c86c8;text-align:center;padding:10px;font-size:12px;line-height:1.6";
+    emp.textContent="暂无全网记录\n打一局即可上传你的终身金币";
     box.appendChild(emp);
-    return;
   }
   for(var i=0;i<arr.length;i++){
     var r=arr[i]||{};
@@ -7338,15 +7337,15 @@ function lbFetchRich(){
       try{
         var d=JSON.parse(x.responseText||"[]");
         lbCacheRich=d||[];
-        lbRenderRich();
-        try{ if(typeof homeRankRender==="function")homeRankRender(); }catch(e){}
-        lbStat("富豪榜 "+lbCacheRich.length+" 条");
-      }catch(e){ lbStat("解析失败"); }
-    } else { lbStat("加载失败"); }
+      }catch(e){ lbCacheRich=[]; }
+    } else { lbCacheRich=[]; }
+    lbRenderRich();
+    try{ if(typeof homeRankRender==="function")homeRankRender(); }catch(e){}
+    lbStat("富豪榜 "+lbCacheRich.length+" 条");
   };
-  x.onerror=function(){ lbStat("无网络"); };
-  x.ontimeout=function(){ lbStat("超时"); };
-  try{ x.send(); }catch(e){ lbStat("离线"); }
+  x.onerror=function(){ lbCacheRich=[]; lbRenderRich(); try{ if(typeof homeRankRender==="function")homeRankRender(); }catch(e){} lbStat("离线·显示本机"); };
+  x.ontimeout=function(){ lbCacheRich=[]; lbRenderRich(); try{ if(typeof homeRankRender==="function")homeRankRender(); }catch(e){} lbStat("超时·显示本机"); };
+  try{ x.send(); }catch(e){ lbCacheRich=[]; lbRenderRich(); lbStat("离线"); }
 }
 
 function lbSubmit(sc,ds){
@@ -7586,7 +7585,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.9</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.0</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7617,6 +7616,10 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 09:49:25",items:[
+      "🐛 修复性能闪退：狂暴触发频率过高（每帧累积→按时间累积）",
+      "💰 修复富豪榜卡加载：网络失败/超时兜底显示本机数据"
+    ]},
     {time:"2026-10-24 09:40:20",items:[
       "💰 富豪榜升级为全网排名：按终身累计金币 lifetime_coins 降序",
       "🪙 成绩提交时同步上传终身累计金币"
@@ -7748,7 +7751,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 09:40:20";
+    pd.textContent="更新于 2026 年 10 月 24 日 09:49:25";
   }
 })();
 </script>
