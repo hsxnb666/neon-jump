@@ -134,7 +134,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.4</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.5</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3203,13 +3203,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v5.4");
+    localStorage.setItem("njs_patch","v5.5");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v5.4"){
+    if(seen!=="v5.5"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7369,6 +7369,8 @@ function lbRenderRichTo(box){
 function lbRenderRich(){ lbRenderRichTo(document.getElementById("overBoard")); }
 
 function lbFetchAll(){
+  // 有待同步记录时先补传（补传完成会再调 lbFetchAll）
+  try{ if(typeof pendCount==="function"&&pendCount()>0&&!lbFetchAll._flushing){ lbFetchAll._flushing=true; setTimeout(function(){ lbFetchAll._flushing=false; try{lbFlushPending()}catch(e){} }, 60); } }catch(e){}
   if(typeof homeRankRender==="function"){try{homeRankRender()}catch(e){}}
   lbStat("加载中…");
   var _gm=(lbView==="smart"||lbView==="mesmart")?"smart":"normal";
@@ -7454,6 +7456,63 @@ function lbFetchRich(){
   try{ x.send(); }catch(e){ lbCacheRich=[]; lbRenderRich(); lbStat("离线"); }
 }
 
+/* ===== 待上传队列：提交失败的成绩不丢弃，下次自动补传 ===== */
+function pendKey(){ return "njs_pending"; }
+function pendLoad(){ try{ return JSON.parse(localStorage.getItem(pendKey())||"[]"); }catch(e){ return []; } }
+function pendSave(a){ try{ localStorage.setItem(pendKey(), JSON.stringify(a.slice(-30))); }catch(e){} }
+function pendAdd(rec){
+  try{
+    var a=pendLoad();
+    // 同昵称同模式只保留分数最高的一条，避免堆积
+    var found=false;
+    for(var i=0;i<a.length;i++){
+      if(a[i].name===rec.name&&a[i].gamemode===rec.gamemode){
+        if((rec.score||0)>=(a[i].score||0))a[i]=rec;
+        found=true; break;
+      }
+    }
+    if(!found)a.push(rec);
+    pendSave(a);
+  }catch(e){}
+}
+function pendRemove(rec){
+  try{
+    var a=pendLoad(), out=[];
+    for(var i=0;i<a.length;i++){
+      if(!(a[i].name===rec.name&&a[i].gamemode===rec.gamemode&&a[i].score===rec.score))out.push(a[i]);
+    }
+    pendSave(out);
+  }catch(e){}
+}
+function pendCount(){ return pendLoad().length; }
+
+// 补传：把待上传列表逐条重新提交（POST 新记录 / PATCH 更新），成功后移除
+function lbFlushPending(){
+  var a=pendLoad();
+  if(!a.length)return;
+  lbStat("补传 "+a.length+" 条待同步…");
+  var i=0;
+  var next=function(){
+    if(i>=a.length){ lbStat("补传完成"); try{ lbFetchAll(); }catch(e){} return; }
+    var rec=a[i++];
+    var x=new XMLHttpRequest();
+    x.open("POST",LB_URL+"/rest/v1/scores",true);
+    x.setRequestHeader("apikey",LB_KEY);
+    x.setRequestHeader("Authorization","Bearer "+LB_KEY);
+    x.setRequestHeader("Content-Type","application/json");
+    x.setRequestHeader("Prefer","return=representation");
+    x.timeout=8000;
+    x.onload=function(){
+      if(x.status<300){ pendRemove(rec); }
+      next();
+    };
+    x.onerror=function(){ next(); };
+    x.ontimeout=function(){ next(); };
+    try{ x.send(JSON.stringify({name:rec.name,score:rec.score,dist:rec.dist,lv:rec.lv,gamemode:rec.gamemode,lifetime_coins:rec.lifetime_coins||0})); }catch(e){ next(); }
+  };
+  next();
+}
+
 function lbSubmit(sc,ds){
   try{ if(typeof reconLifetime==="function")reconLifetime(); }catch(e){} // 提交前对账，保证提交最新终身累计
   // 优先用输入框当前值，其次 localStorage，最后 lbName
@@ -7502,10 +7561,11 @@ function lbSubmit(sc,ds){
           saveScore(sc,ds);
           lbFetchAll();
           try{ if(lbView==="rich")lbFetchRich(); }catch(e){}
-        } else { lbStat("上传失败"); }
+        } else { pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("上传失败·已存待同步("+pendCount()+")"); }
       };
-      x.onerror=function(){ lbStat("上传失败(离线)"); };
-      try{ x.send(_body); }catch(e){}
+      x.onerror=function(){ pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("离线·已存待同步("+pendCount()+")"); };
+      x.ontimeout=function(){ pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("超时·已存待同步("+pendCount()+")"); };
+      try{ x.send(_body); }catch(e){ pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("发送失败·已存待同步"); }
     };
     var doPatch=function(id){
       var x=new XMLHttpRequest();
@@ -7522,9 +7582,10 @@ function lbSubmit(sc,ds){
           saveScore(sc,ds);
           lbFetchAll();
           try{ if(lbView==="rich")lbFetchRich(); }catch(e){}
-        } else { lbStat("更新失败"); }
+        } else { pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("更新失败·已存待同步("+pendCount()+")"); }
       };
-      x.onerror=function(){ lbStat("更新失败(离线)"); };
+      x.onerror=function(){ pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("更新离线·已存待同步("+pendCount()+")"); };
+      x.ontimeout=function(){ pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("更新超时·已存待同步("+pendCount()+")"); };
       try{ x.send(JSON.stringify({score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime})); }catch(e){}
     };
     // 已存在：新终身金币更高才更新（去重），否则不新增不更新
@@ -7535,7 +7596,8 @@ function lbSubmit(sc,ds){
       doPost();
     }
   };
-  q.onerror=function(){ lbStat("查询失败"); };
+  q.onerror=function(){ pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("查询离线·已存待同步("+pendCount()+")"); };
+  q.ontimeout=function(){ pendAdd({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime}); lbStat("查询超时·已存待同步("+pendCount()+")"); };
   try{ q.send(); }catch(e){}
 }
 
@@ -7560,6 +7622,12 @@ function closeHomeRank(){ try{ closeHomeRankFixed(); }catch(e){} }
 
 function backToHome(){
   try{ if(typeof stopBgm==="function") stopBgm(); }catch(e){}
+  // 兜底：本局有分数但还没提交过（如中途放弃），补提交一次
+  try{
+    if(gameState==="playing"||gameState==="paused"){
+      if(typeof score!=="undefined"&&score>0&&!backToHome._submitted){ try{ lbSubmit(score,distance); }catch(e){} }
+    }
+  }catch(e){}
   settleCoins();
   gameState="start";
   var ov=document.getElementById("overScreen"); if(ov) ov.classList.add("hidden");
@@ -7677,6 +7745,7 @@ function homeRankSwitch(v){
 
 /* ===== 打开/关闭浮层 ===== */
 function openHomeRankFixed(){
+  try{ if(typeof pendCount==="function"&&pendCount()>0)setTimeout(function(){try{lbFlushPending()}catch(e){}},150); }catch(e){}
   var lay=document.getElementById("rankLayer");
   if(!lay){return}
   lay.style.display="flex";
@@ -7715,6 +7784,7 @@ function bindNameInput(){
 try{ bindNameInput(); }catch(e){}
 try{ setTimeout(bindNameInput,300); }catch(e){}
 try{ setTimeout(bindNameInput,1200); }catch(e){}
+try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFlushPending(); },2500); }catch(e){}
 </script>
 <div id="rankLayer" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;z-index:8000;background:rgba(5,3,18,.97);flex-direction:column;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;touch-action:none">
   <div style="width:min(94vw,520px);max-height:86vh;display:flex;flex-direction:column;background:linear-gradient(160deg,rgba(20,14,48,.98),rgba(10,6,26,.98));border:1.5px solid rgba(0,242,255,.35);border-radius:16px;padding:14px;box-shadow:0 0 40px rgba(0,242,255,.18)">
@@ -7739,7 +7809,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.4</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.5</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7770,6 +7840,11 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 11:37:14",items:[
+      "🔄 成绩提交失败不再丢失：新增待上传队列，联网后自动补传",
+      "🐛 修复联网榜看不到成绩：PATCH 补全分数字段+刷新时机修正",
+      "🪙 富豪榜去重按模式独立：普通/聪明各记各的"
+    ]},
     {time:"2026-10-24 10:21:22",items:[
       "🐛 修复提交值与本地统计不一致：结算/提交前强制对账，富豪榜显示与本机终身同源同值"
     ]},
@@ -7920,7 +7995,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 10:21:22";
+    pd.textContent="更新于 2026 年 10 月 24 日 11:37:14";
   }
 })();
 </script>
