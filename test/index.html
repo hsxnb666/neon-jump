@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v8.1</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v8.2</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -517,10 +517,7 @@ document.addEventListener("touchend",function(e){for(var i=0;i<e.changedTouches.
 document.addEventListener("touchcancel",function(e){for(var i=0;i<e.changedTouches.length;i++){pUp(e.changedTouches[i].identifier)}},{passive:false});
 }else{var mD=false;document.addEventListener("mousedown",function(e){mD=true;pDown(999,e.clientX,e.clientY)});document.addEventListener("mousemove",function(e){if(mD)pMove(999,e.clientX,e.clientY)});document.addEventListener("mouseup",function(){mD=false;pUp(999)})}
 var keys={};addEventListener("keydown",function(e){keys[e.code]=true;if(e.code==="KeyP")togglePause();if(e.code==="KeyJ")castSkill()});
-addEventListener("keyup",function(e){
-  keys[e.code]=false;
-  if(e.code==="Space"||e.code==="KeyW"||e.code==="ArrowUp"){ try{jumpRelease()}catch(_){} }
-});
+addEventListener("keyup",function(e){keys[e.code]=false});
 
 /* 状态 */
 var gameState="start",lastTime=0,timeScale=1,slowTimer=0;
@@ -3473,60 +3470,21 @@ var _jumpBufT=0;          /* 跳跃缓冲：落地前按跳，落地瞬间自动
 var _jumpBufMax=0.14;
 var _landSquash=0;        /* 落地压扁动画 */
 var _jumpStretch=0;       /* 起跳拉长动画 */
-/* 落地统一处理：压扁动画 + 跳跃缓冲自动起跳 */
-function onLand(){
-  var p=player;
-  if(!p) return;
-  _landSquash=1;
-  p.jumps=0;
-  _coyoteT=0;
-  /* 跳跃缓冲：落地前按过跳键 → 立即起跳 */
-  if(_jumpBufT>0){ _jumpBufT=0; tryJump(); }
-  else if(p.vy>600){
-    /* 从高处摔落：尘土 + 轻微震屏 */
-    spawnParticles(p.x, p.y+p.h/2, 6, "#8a94a8", 40);
-    spawnShockRing(p.x, p.y+p.h/2, "#a0b0c8", 26);
-  }
-}
+/* ===== 跳跃：最初版本（简单二段跳）===== */
 function tryJump(){
   var p=player;
-  /* 空中且无土狼宽限 → 记入跳跃缓冲（松开后落地自动起跳） */
-  if(p.jumps>=2 || (!p.onGround && _coyoteT<=0 && p.jumps>0)){
-    _jumpBufT=_jumpBufMax;
-    return;
-  }
-  if(p.jumps===0){
-    /* 一段跳：初速 78%，按住补满（短按小跳 / 长按大跳） */
-    p.vy=-390; p.jumps=1; p.onGround=false;
-    _jumpStretch=1; _coyoteT=0;
+  if(p.jumps<2){
+    p.vy=-430; p.jumps++; p.onGround=false;
     sJump();
-    spawnParticles(p.x,p.y+p.h/2,8,"#00f2ff",58);
-    spawnShockRing(p.x,p.y+p.h/2,"#00f2ff",32);
-  }else{
-    /* 二段跳：轻盈 + 0.16 秒上浮补偿 */
-    p.vy=-300; p.jumps=2; p.onGround=false; p.dblT=0.16;
-    _jumpStretch=1;
-    spawnShockRing(p.x,p.y+p.h/2,"#ff00aa",46);
-    spawnShockRing(p.x,p.y+p.h/2,"#ffffff",24);
-    for(var i=0;i<12;i++){
-      var a2=-Math.PI/2+(Math.random()-0.5)*1.4;
-      var sp=45+Math.random()*95;
-      spawnParticles(p.x+Math.cos(a2)*8, p.y+p.h/2+Math.sin(a2)*6, 1, i%2?"#ff00aa":"#00f2ff", sp);
+    spawnParticles(p.x,p.y+p.h/2,7,"#00f2ff",55);
+    if(p.jumps===2){
+      spawnParticles(p.x,p.y+p.h/2,10,"#ff00aa",90);
+      sfx(500,"sine",0.15,0.05,900);
+      spawnShockRing(p.x,p.y+p.h/2,"#ff00aa",40);
     }
-    sfx(680,"sine",0.16,0.05,1500);
-    if(!world.trails) world.trails=[];
-    world.trails.push({x:p.x,y:p.y,f:p.facing||1,life:0.26,max:0.26});
-    p.airT=0.35;
   }
-  _jumpHold=_jumpHoldMax;
-  _jumpBufT=0;
 }
-/* 松键：截断上升速度（短按=小跳） */
-function jumpRelease(){
-  _jumpHold=0;
-  var p=player;
-  if(p && p.vy<-170) p.vy=-170;
-}
+function jumpRelease(){}
 
 /* 射击 */
 function shoot(){var p=player;
@@ -7331,50 +7289,14 @@ if(world._rev||world._revCtrl)move=-move;
 if((keys.Space||keys.KeyW||keys.ArrowUp)&&!keys._jh)tryJump();
 keys._jh=keys.Space||keys.KeyW||keys.ArrowUp;
 var speed=240*attrMul("spd"),fr=12;
-
-/* ---- 跳跃相关计时器 ---- */
-if(_coyoteT>0) _coyoteT-=dt;
-if(_jumpBufT>0) _jumpBufT-=dt;
-if(_jumpStretch>0) _jumpStretch=Math.max(0,_jumpStretch-dt*6.5);
-if(_landSquash>0) _landSquash=Math.max(0,_landSquash-dt*5.5);
 if(p.airT>0){ p.airT-=dt; }
-
-/* ---- 水平移动 ---- */
-var _accel=(!p.onGround&&p.airT>0)?18:11;
-if(Math.abs(move)>0.1){
-  p.vx+=(move*speed-p.vx)*_accel*dt;
-  p.facing=move>0?1:-1;
-}else{
-  p.vx*=Math.max(0,1-fr*dt);
-}
-
+  var _accel=(!p.onGround&&p.airT>0)?18:10;
+  if(Math.abs(move)>0.1){p.vx+=(move*speed-p.vx)*_accel*dt;p.facing=move>0?1:-1}else{p.vx*=Math.max(0,1-fr*dt)}
 p.dashCd=Math.max(0,p.dashCd-rdt);
 if(p.shield>0)p.shield-=rdt;
-
-/* ---- 可变跳跃高度：按住继续抵消重力 ---- */
-if(_jumpHold>0 && p.vy<0){
-  _jumpHold-=dt;
-  p.vy-=1650*dt;          /* 抵消重力 1150 并额外上升 */
-}else{
-  _jumpHold=0;
-}
-
-/* ---- 二段跳上浮补偿 ---- */
-if(p.dblT>0){ p.dblT-=dt; p.vy-=980*dt; }
-
-/* ---- 重力：上升轻、下落重（经典跳跃手感曲线） ---- */
-var _gravUp=1180, _gravDown=1780, _gravApex=620;
-if(p.vy<-90)      p.vy+=_gravUp*dt;
-else if(p.vy<90)  p.vy+=_gravApex*dt;   /* 顶点滞空：重力减半，有"悬停感" */
-else              p.vy+=_gravDown*dt;
-
-/* ---- 终端速度 ---- */
-if(p.vy>1450) p.vy=1450;
-
-p.x+=p.vx*dt; p.y+=p.vy*dt; p.anim+=dt;
+p.vy+=1100*dt;
+p.x+=p.vx*dt;p.y+=p.vy*dt;p.anim+=dt;
 for(var i=0;i<world.platforms.length;i++){if(world.platforms[i].moving){var pl=world.platforms[i];pl.mvPhase+=dt*1.2;pl.y=pl.origY+Math.sin(pl.mvPhase)*pl.mvRange}}
-/* 土狼时间：本帧之前在地上、现在要判定离地 → 给宽限 */
-if(p.onGround && p.vy>0){ _coyoteT=_coyoteMax; }
 p.onGround=false;
 for(var i=0;i<world.platforms.length;i++){
   var plat=world.platforms[i];
@@ -7382,7 +7304,7 @@ for(var i=0;i<world.platforms.length;i++){
     var top=plat.y-plat.h/2;
     if(p.y+p.h/2>=top&&p.y+p.h/2<=top+34){
       if(plat.bounce){p.y=top-p.h/2;p.vy=-680;p.jumps=0;sBounce();spawnShockRing(p.x,top,"#ffe600",90);world.texts.push({x:p.x,y:top-40,text:"弹射!",life:0.5,vy:-40})}
-      else{p.y=top-p.h/2;p.vy=0;p.onGround=true;onLand()}
+      else{p.y=top-p.h/2;p.vy=0;p.onGround=true;p.jumps=0}
     }
   }
 }
@@ -7474,7 +7396,7 @@ for(var i=0;i<world.wells.length;i++){var wl=world.wells[i];wl.t+=dt;if(Math.abs
 // 时间结晶
 for(var i=world.tcrystals.length-1;i>=0;i--){var tc=world.tcrystals[i];tc.t+=dt;if(Math.abs(p.x-tc.x)<35&&Math.abs(p.y-tc.y)<40){world.tcrystals.splice(i,1);skillCd=Math.max(0,skillCd-3);world.flash=0.25;sfx(500,"sine",0.4,0.1,2000);world.texts.push({x:p.x,y:p.y-70,text:"时间结晶! 技能CD-3s",life:1.2,vy:-40});spawnShockRing(p.x,p.y-30,"#7fdcff",100)}}
 // 幽灵平台
-for(var i=0;i<world.ghosts.length;i++){var gh=world.ghosts[i];gh.t+=dt;if(p.x>gh.x&&p.x<gh.x+gh.w&&Math.abs(p.y+p.h/2-gh.y)<30&&p.vy>=0){p.y=gh.y-p.h/2;p.vy=0;p.onGround=true;onLand();gh.touched=true}}
+for(var i=0;i<world.ghosts.length;i++){var gh=world.ghosts[i];gh.t+=dt;if(p.x>gh.x&&p.x<gh.x+gh.w&&Math.abs(p.y+p.h/2-gh.y)<30&&p.vy>=0){p.y=gh.y-p.h/2;p.vy=0;p.onGround=true;p.jumps=0;gh.touched=true}}
 // 磁力/双倍
 if(world.magnetT>0){world.magnetT-=rdt;for(var i=0;i<world.coins.length;i++){var mc=world.coins[i];if(!mc.got){var mdx=p.x-mc.x,mdy=p.y-mc.y,md2=Math.sqrt(mdx*mdx+mdy*mdy);if(md2<260){mc.x+=mdx/md2*300*dt;mc.y+=mdy/md2*300*dt}}}}
 if(world.doubleT>0){world.doubleT-=rdt}
@@ -8069,13 +7991,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v8.1");
+    localStorage.setItem("njs_patch","v8.2");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v8.1"){
+    if(seen!=="v8.2"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -11638,29 +11560,7 @@ function draw(){
       }
       ctx.globalAlpha=p.inv>0&&Math.floor(Date.now()/70)%2?0.45:1;
     }
-    /* ===== 跳跃形变（squash & stretch）：消除僵硬感 ===== */
-    var _sqx=1, _sqy=1;
-    if(_jumpStretch>0){
-      /* 起跳：纵向拉长、横向收窄 */
-      var _js=_jumpStretch*_jumpStretch;
-      _sqy=1+0.22*_js; _sqx=1-0.14*_js;
-    }else if(_landSquash>0){
-      /* 落地：纵向压扁、横向变宽 */
-      var _ls=_landSquash*_landSquash;
-      _sqy=1-0.26*_ls; _sqx=1+0.18*_ls;
-    }else if(!p.onGround){
-      /* 空中：按垂直速度轻微拉伸（上升拉长，下落收缩） */
-      var _airS=Math.max(-1,Math.min(1,-p.vy/700));
-      _sqy=1+0.10*_airS; _sqx=1-0.07*_airS;
-    }
-    ctx.save();
-    /* 以脚底为锚点做形变，避免人物整体位移 */
-    var _footY=p.y+p.h/2;
-    ctx.translate(p.x,_footY);
-    ctx.scale(_sqx,_sqy);
-    ctx.translate(-p.x,-_footY);
     drawHero(p.x,p.y+p.h/2,1.1,p.facing,p.anim,p.onGround,p.vx);
-    ctx.restore();
     ctx.globalAlpha=1;
     // 护盾光罩
     if(p.shield>0){
@@ -12757,7 +12657,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v8.1</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v8.2</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -12788,6 +12688,11 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 23:11:18",items:[
+      "↩ 跳跃手感回退到最初版本（初速 -430 / 重力 1100 / 简单二段跳）",
+      "🔙 已移除：可变跳跃高度 / 土狼时间 / 跳跃缓冲 / 三段重力 / squash形变",
+      "✅ 保留：特效系统 58 种形状 / 角色皮肤 v2 分段骨架 / 属性系统"
+    ]},
     {time:"2026-10-24 22:42:55",items:[
       "🦘 跳跃手感全面重做：可变跳跃高度（短按小跳/长按大跳）",
       "⏱ 新增土狼时间 100ms + 跳跃缓冲 140ms（落地前按跳会自动起跳）",
@@ -13062,7 +12967,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 22:42:55";
+    pd.textContent="更新于 2026 年 10 月 24 日 23:11:18";
   }
 })();
 </script>
