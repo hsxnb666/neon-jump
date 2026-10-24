@@ -171,7 +171,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v6.4</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v6.5</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -2764,549 +2764,879 @@ function lvFx(c,pal,lv,seg,len,hh,T){
 }
 
 /* ==========================================================
-   ① 手枪 —— 军工复古：方正 + 倒角 + 黄铜配重
+   武器绘制 v4 —— 流线曲面体系
+   1. 主体用曲线轮廓（flowShape），不用直角矩形拼接
+   2. 三段式：后段(握把/腔体) + 中段(机匣) + 前段(枪管/核心)
+   3. 三层光影：暗面 → 主体渐变 → 顶部高光带（圆柱受光）
+   4. 能量件独立发光，不与装甲同层
+   ========================================================== */
+
+function flowShape(c, x0, x1, yTopFn, yBotFn, steps, pal, hi){
+  steps = steps||12;
+  c.beginPath();
+  c.moveTo(x0, yTopFn(0));
+  for(var i=1;i<=steps;i++){ var t=i/steps; c.lineTo(x0+(x1-x0)*t, yTopFn(t)); }
+  for(var i=steps;i>=0;i--){ var t=i/steps; c.lineTo(x0+(x1-x0)*t, yBotFn(t)); }
+  c.closePath();
+  var yt=yTopFn(0.5), yb=yBotFn(0.5);
+  var mid=(yt+yb)/2, half=Math.max(2,(yb-yt)/2);
+  var g=c.createLinearGradient(0,mid-half,0,mid+half);
+  g.addColorStop(0, hi||pal.h); g.addColorStop(0.18, pal.m);
+  g.addColorStop(0.72, pal.m); g.addColorStop(1, "#04060b");
+  c.fillStyle=g; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.4; c.lineWidth=0.7; c.stroke(); c.globalAlpha=1;
+}
+function topSheen(c, x0, x1, yFn, steps, alpha, lw){
+  steps=steps||12;
+  c.beginPath();
+  for(var i=0;i<=steps;i++){
+    var t=i/steps, x=x0+(x1-x0)*t;
+    if(i===0)c.moveTo(x, yFn(t)); else c.lineTo(x, yFn(t));
+  }
+  c.strokeStyle="rgba(255,255,255,"+(alpha||0.28)+")";
+  c.lineWidth=lw||1.1; c.lineCap="round"; c.stroke(); c.lineCap="butt";
+}
+function surfaceLines(c, x0, x1, yTopFn, yBotFn, n, alpha){
+  c.strokeStyle="rgba(0,0,0,"+(alpha||0.16)+")"; c.lineWidth=0.55;
+  for(var k=1;k<=n;k++){
+    var f=k/(n+1);
+    c.beginPath();
+    for(var i=0;i<=10;i++){
+      var t=i/10;
+      var y=yTopFn(t)+(yBotFn(t)-yTopFn(t))*f;
+      var x=x0+(x1-x0)*t;
+      if(i===0)c.moveTo(x,y); else c.lineTo(x,y);
+    }
+    c.stroke();
+  }
+}
+function innerGlow(c, x0, x1, yFn, color, width, alpha){
+  c.strokeStyle=color;
+  c.globalAlpha=alpha===undefined?0.75:alpha;
+  c.lineWidth=width||1.6; c.lineCap="round";
+  c.beginPath();
+  for(var i=0;i<=10;i++){
+    var t=i/10, x=x0+(x1-x0)*t;
+    if(i===0)c.moveTo(x,yFn(t)); else c.lineTo(x,yFn(t));
+  }
+  c.stroke();
+  c.globalAlpha=1; c.lineCap="butt";
+}
+function grip(c, x, y, h, w, pal, tilt){
+  tilt=tilt||0.18;
+  c.save(); c.translate(x,y); c.rotate(tilt);
+  c.beginPath();
+  c.moveTo(0,-h*0.1);
+  c.bezierCurveTo(w*0.9,-h*0.15, w*1.05,h*0.45, w*0.7,h*0.92);
+  c.bezierCurveTo(w*0.5,h*1.06, -w*0.1,h*1.04, -w*0.22,h*0.88);
+  c.bezierCurveTo(-w*0.4,h*0.5, -w*0.35,-h*0.05, 0,-h*0.1);
+  c.closePath();
+  var g=c.createLinearGradient(-w*0.3,0,w*0.8,0);
+  g.addColorStop(0,"#04060b"); g.addColorStop(0.55,"#0b0f18"); g.addColorStop(1,pal.m);
+  c.fillStyle=g; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.3; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
+  c.strokeStyle="rgba(255,255,255,.10)"; c.lineWidth=0.7;
+  for(var i=0;i<4;i++){
+    c.beginPath(); c.moveTo(-w*0.05, h*(0.18+i*0.2)); c.lineTo(w*0.55, h*(0.12+i*0.2)); c.stroke();
+  }
+  c.restore();
+}
+function barrel(c, x0, x1, y, r, pal, r2){
+  r2=r2||r*0.86;
+  var g=c.createLinearGradient(0,y-r,0,y+r);
+  g.addColorStop(0,pal.h); g.addColorStop(0.22,pal.m);
+  g.addColorStop(0.78,pal.m); g.addColorStop(1,"#04060b");
+  c.beginPath();
+  c.moveTo(x0,y-r);
+  c.lineTo(x1,y-r*0.94);
+  c.quadraticCurveTo(x1+r2*0.3, y, x1, y+r*0.94);
+  c.lineTo(x0,y+r);
+  c.quadraticCurveTo(x0-r*0.22, y, x0, y-r);
+  c.closePath();
+  c.fillStyle=g; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.35; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
+  c.strokeStyle="rgba(255,255,255,.3)"; c.lineWidth=0.8;
+  c.beginPath(); c.moveTo(x0+1,y-r*0.62); c.lineTo(x1-1,y-r*0.58); c.stroke();
+}
+function chamber(c, x, y, w, h, pal, T){
+  var p=0.7+0.3*Math.sin(T*3.4);
+  c.beginPath();
+  c.moveTo(x,y-h/2); c.lineTo(x+w,y-h/2*0.82);
+  c.quadraticCurveTo(x+w+h*0.16, y, x+w, y+h/2*0.82);
+  c.lineTo(x,y+h/2); c.quadraticCurveTo(x-h*0.16,y,x,y-h/2);
+  c.closePath();
+  c.fillStyle="#04070d"; c.fill();
+  var g=c.createLinearGradient(x,y-h/2,x,y+h/2);
+  g.addColorStop(0,pal.e); g.addColorStop(0.5,"#ffffff"); g.addColorStop(1,pal.e);
+  c.globalAlpha=0.42+0.24*p; c.fillStyle=g;
+  c.beginPath();
+  c.moveTo(x+1,y-h/2*0.72); c.lineTo(x+w-1.5,y-h/2*0.6);
+  c.lineTo(x+w-1.5,y+h/2*0.6); c.lineTo(x+1,y+h/2*0.72);
+  c.closePath(); c.fill();
+  c.globalAlpha=1;
+  glowAt(c,x+w/2,y,Math.max(w,h)*1.15,pal.e,0.4*p);
+  c.strokeStyle=pal.h; c.globalAlpha=0.45; c.lineWidth=0.55; c.stroke(); c.globalAlpha=1;
+}
+function ringShape(c, x, y, r, thick, pal, T, spin){
+  c.save(); c.translate(x,y);
+  if(spin)c.rotate(T*spin);
+  var g=c.createLinearGradient(-r,-r,r,r);
+  g.addColorStop(0,pal.h); g.addColorStop(0.5,pal.m); g.addColorStop(1,"#04060b");
+  c.beginPath(); c.arc(0,0,r,0,6.2832); c.arc(0,0,r-thick,0,6.2832,true);
+  c.fillStyle=g; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.4; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+  c.restore();
+}
+/* 等级级差：所有类型共用（灯管/铭纹/细节/能量槽逐级变化） */
+function lvFx(c,pal,lv,seg,len,hh,T){
+  var sub=(lv-1)%10;
+  // 微刻编号（1..10 条竖纹）
+  c.fillStyle=pal.e2; c.globalAlpha=0.82;
+  for(var i=0;i<=sub;i++) c.fillRect(len*0.08+i*1.02,-hh*1.0,0.62,1.35);
+  c.globalAlpha=1;
+  // 能量槽（位置随级数移动）
+  innerGlow(c, len*(0.3+sub*0.03), len*(0.46+sub*0.03),
+    function(t){return -hh*0.66;}, pal.e, 1.15, 0.55);
+  // 段内灯管
+  var tubeN=1+Math.floor(sub/3);
+  for(var i=0;i<tubeN;i++){
+    innerGlow(c, len*(0.15+i*0.16), len*(0.15+i*0.16)+3.4+sub*0.1,
+      function(t){return hh*0.72;}, pal.e2, 1.0, 0.5);
+  }
+  // 段位装饰环
+  if(seg>=3){
+    for(var i=0;i<seg-2;i++){
+      c.strokeStyle=pal.e2; c.globalAlpha=0.32; c.lineWidth=0.5;
+      c.beginPath(); c.arc(len*0.5,0,hh*(0.9+i*0.24),T*0.85+i,T*0.85+i+4.2);
+      c.stroke(); c.globalAlpha=1;
+    }
+  }
+}
+
+/* ==========================================================
+   ① 手枪 —— 军工流线
    ========================================================== */
 function famPistol(c,pal,seg,T,mk,lv){
-  var len=16+seg*1.5, hh=6.0+seg*0.55;
-  var ch=1.6+seg*0.2;  // 倒角
-  // 套筒（带倒角的方形）
-  bevel(c,0,-hh,len,hh*2,ch,pal);
-  // 套筒后部防滑纹
-  c.fillStyle="rgba(0,0,0,.42)";
-  for(var i=0;i<5;i++)c.fillRect(2+i*1.5,-hh+1.2,0.9,hh*2-2.4);
-  // 抛壳口
-  c.fillStyle="#04060b";c.fillRect(len*0.42,-hh+0.8,len*0.2,hh*0.72);
-  // 顶部瞄准缺口
-  c.fillStyle="#05070d";c.fillRect(len*0.72,-hh-1.0,1.6,1.0);
-  c.fillRect(2.5,-hh-1.0,1.4,1.0);
-  // 握把（黄铜配重风格）
-  c.fillStyle="#0a0c14";
-  c.beginPath();c.moveTo(1.5,hh*0.1);c.lineTo(-1.8,hh*2.5);c.lineTo(-7.6,hh*2.5);c.lineTo(-5.0,hh*0.1);c.closePath();c.fill();
-  // 握把贴片
-  c.fillStyle=pal.e2;c.globalAlpha=0.20;
-  c.fillRect(-5.6,hh*0.6,5.2,hh*1.5);c.globalAlpha=1;
-  rivets(c,-5.0,hh*2.1,2,3.4,pal,0.6);
-  // 扳机护圈
-  c.strokeStyle=pal.m;c.lineWidth=1.4;
-  c.beginPath();c.arc(1.8,hh*1.0,hh*0.52,0.05,Math.PI*0.95);c.stroke();
-  c.strokeStyle=pal.h;c.globalAlpha=0.35;c.lineWidth=0.5;c.stroke();c.globalAlpha=1;
-  // 单点能量核心
-  core(c,len*0.5,0,1.7+seg*0.24,pal,T,seg>=3?"diamond":"orb");
-  // 专属特征
-  if(mk==="mag"){
-    bevel(c,len*0.18,hh*0.7,3.2+seg*0.3,hh*1.25,0.8,pal);
-    c.fillStyle=pal.e;c.globalAlpha=0.55;c.fillRect(len*0.18+0.7,hh*0.85,1.8+seg*0.15,hh*0.95);c.globalAlpha=1;
-  }else if(mk==="horn"){
-    c.fillStyle=pal.m;
-    c.beginPath();c.moveTo(len,-hh*0.55);c.lineTo(len+3.6,-hh*0.9);c.lineTo(len+3.6,hh*0.9);c.lineTo(len,hh*0.55);c.closePath();c.fill();
-    c.strokeStyle=pal.h;c.globalAlpha=0.45;c.lineWidth=0.6;c.stroke();c.globalAlpha=1;
-    glowAt(c,len+3.6,0,4.2,pal.e,0.6);
-  }else if(mk==="fin"){
-    fins(c,4,-hh-2.4-seg*0.3,3,3.0,1.8,2.4+seg*0.3,pal);
-  }else{
-    // 侧挂黄铜配重
-    bevel(c,len*0.22,hh*0.45,4.0,2.4,0.6,pal);
-    c.fillStyle=pal.e2;c.globalAlpha=0.55;c.beginPath();c.arc(len*0.22+2.0,hh*0.45+1.2,0.9,0,6.2832);c.fill();c.globalAlpha=1;
+  var len=19+seg*1.4, hh=5.8+seg*0.5;
+  var yT=function(t){ return -hh*(0.72+0.28*Math.pow(1-t,0.6)); };
+  var yB=function(t){ return  hh*(0.86-0.16*t); };
+  flowShape(c, 0, len, yT, yB, 14, pal);
+  topSheen(c, 0, len, function(t){return -hh*(0.66+0.28*Math.pow(1-t,0.6));}, 12, 0.32);
+  surfaceLines(c, 3, len*0.94, yT, yB, 1, 0.2);
+  c.strokeStyle="rgba(0,0,0,.4)"; c.lineWidth=1.1;
+  for(var i=0;i<5;i++){
+    c.beginPath(); c.moveTo(2.5+i*1.6,-hh*0.6); c.lineTo(3.4+i*1.6,hh*0.64); c.stroke();
   }
-  // 等级铭刻
-
-  /* ---- 等级级差件（让每一级都有可见差异） ---- */
+  c.fillStyle="#04070d";
+  c.beginPath(); c.ellipse(len*0.52,-hh*0.32,len*0.1,hh*0.2,0,0,6.2832); c.fill();
+  grip(c, 1.2, hh*0.5, hh*2.0, 5.2, pal, 0.22);
+  c.strokeStyle=pal.m; c.lineWidth=1.3;
+  c.beginPath(); c.ellipse(2.6,hh*1.14,hh*0.6,hh*0.48,0.1,0,6.2832); c.stroke();
+  core(c, len*0.46, -hh*0.04, 1.9+seg*0.24, pal, T, seg>=3?"diamond":"orb");
+  if(mk==="mag"){
+    flowShape(c, len*0.14, len*0.28,
+      function(t){return hh*0.7;},
+      function(t){return hh*(1.45+0.28*Math.sin(t*3.14));}, 8, pal);
+    chamber(c, len*0.155, hh*1.05, len*0.1, hh*0.5, pal, T);
+  }else if(mk==="horn"){
+    c.beginPath();
+    c.moveTo(len,-hh*0.48);
+    c.bezierCurveTo(len+2.2,-hh*0.7, len+3.6,-hh*0.98, len+3.9,-hh*1.04);
+    c.lineTo(len+3.9,hh*1.04);
+    c.bezierCurveTo(len+3.6,hh*0.98, len+2.2,hh*0.7, len,hh*0.48);
+    c.closePath();
+    var g=c.createLinearGradient(0,-hh,0,hh);
+    g.addColorStop(0,pal.h); g.addColorStop(0.5,pal.m); g.addColorStop(1,"#04060b");
+    c.fillStyle=g; c.fill();
+    c.strokeStyle=pal.h; c.globalAlpha=0.4; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
+    glowAt(c,len+3.9,0,4.6,pal.e,0.6);
+  }else if(mk==="fin"){
+    for(var i=0;i<3;i++){
+      var bx=4+i*3.2;
+      c.beginPath(); c.moveTo(bx,-hh*0.88);
+      c.quadraticCurveTo(bx+1.0,-hh-2.0-seg*0.24, bx+2.0,-hh*0.88);
+      c.closePath();
+      c.fillStyle=pal.m; c.fill();
+      c.strokeStyle=pal.h; c.globalAlpha=0.32; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+    }
+  }else{
+    c.beginPath(); c.ellipse(len*0.26,hh*0.84,2.6,1.5,0,0,6.2832);
+    c.fillStyle=pal.m; c.fill();
+    c.fillStyle=pal.e2; c.globalAlpha=0.7;
+    c.beginPath(); c.arc(len*0.26,hh*0.84,0.85,0,6.2832); c.fill(); c.globalAlpha=1;
+  }
   lvFx(c,pal,lv,seg,len,hh,T);
-  ticks(c,3,-hh*0.62,6,3+lv%4,pal,1.8);
   return {mx:len+2,my:0};
 }
 
 /* ==========================================================
-   ② 步枪 —— 战术现代：长导轨 + 模组化 + 密集刻度
+   ② 步枪 —— 战术流线：长直 + 一体化护木 + 导轨
    ========================================================== */
 function famRifle(c,pal,seg,T,mk,lv){
-  var len=30+seg*3.2, hh=4.4+seg*0.4;
-  // 肩托（可调式）
-  bevel(c,-9.5,-hh*1.15,-1.5,hh*0.4,0.6,pal);
-  c.fillStyle=pal.m;c.fillRect(-9.5,-hh*1.15,9.5,hh*2.3);
-  c.fillStyle="#05070d";c.fillRect(-9.8,-hh*0.85,1.9,hh*1.7);
-  // 机匣
-  bevel(c,0,-hh,len*0.72,hh*2,1.2,pal);
-  // 前护木（模组化开槽）
-  c.fillStyle="rgba(0,0,0,.42)";
-  for(var i=0;i<5+seg;i++)c.fillRect(len*0.34+i*(len*0.068),-hh+0.9,0.9,hh*2-1.8);
-  // 顶部皮卡汀尼导轨
-  c.fillStyle="#06090f";c.fillRect(1,-hh-2.0,len*0.7,2.0);
-  c.fillStyle=pal.h;c.globalAlpha=0.4;
-  for(var i=0;i<14;i++)c.fillRect(2+i*(len*0.05),-hh-2.0,1.2,2.0);
+  var len=32+seg*3.2, hh=4.4+seg*0.38;
+  // 可调肩托（流线梯形）
+  c.beginPath();
+  c.moveTo(-10.5,-hh*1.05);
+  c.bezierCurveTo(-6,-hh*1.0, -2,-hh*0.82, 0,-hh*0.7);
+  c.lineTo(0,hh*0.7);
+  c.bezierCurveTo(-2,hh*0.82, -6,hh*1.0, -10.5,hh*1.05);
+  c.quadraticCurveTo(-11.6,0,-10.5,-hh*1.05);
+  c.closePath();
+  var sg=c.createLinearGradient(0,-hh,0,hh);
+  sg.addColorStop(0,pal.h); sg.addColorStop(0.2,pal.m); sg.addColorStop(1,"#04060b");
+  c.fillStyle=sg; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.35; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
+  // 机匣主体（前段收窄流线）
+  var yT=function(t){ return -hh*(1.0-0.34*Math.pow(t,1.4)); };
+  var yB=function(t){ return  hh*(1.0-0.34*Math.pow(t,1.4)); };
+  flowShape(c, 0, len*0.78, yT, yB, 14, pal);
+  topSheen(c, 1, len*0.76, function(t){return -hh*(0.94-0.32*Math.pow(t,1.4));}, 12, 0.3);
+  surfaceLines(c, 3, len*0.76, yT, yB, 1, 0.18);
+  // 前护木（模组开槽）
+  for(var i=0;i<5+seg;i++){
+    var sx=len*0.32+i*(len*0.07);
+    c.beginPath();
+    c.moveTo(sx,-hh*0.62); c.quadraticCurveTo(sx+1.2,0,sx,hh*0.62);
+    c.strokeStyle="rgba(0,0,0,.36)"; c.lineWidth=1.1; c.stroke();
+  }
+  // 枪管（圆柱）
+  barrel(c, len*0.74, len*1.02, -hh*0.06, hh*0.42, pal);
+  // 顶部导轨（曲线贴合）
+  c.beginPath();
+  c.moveTo(1,-hh*0.96);
+  c.quadraticCurveTo(len*0.4,-hh*1.02, len*0.74,-hh*0.7);
+  c.strokeStyle="#06090f"; c.lineWidth=2.2; c.stroke();
+  c.strokeStyle=pal.h; c.globalAlpha=0.45; c.lineWidth=0.55;
+  c.beginPath(); c.moveTo(1,-hh*0.96); c.quadraticCurveTo(len*0.4,-hh*1.02,len*0.74,-hh*0.7); c.stroke();
   c.globalAlpha=1;
-  // 枪管
-  c.fillStyle=pal.m;c.fillRect(len*0.72,-hh*0.38,len*0.28,hh*0.76);
-  c.fillStyle=pal.h;c.globalAlpha=0.28;c.fillRect(len*0.72,-hh*0.38,len*0.28,hh*0.2);c.globalAlpha=1;
-  // 握把 + 扳机
-  c.fillStyle="#070a12";
-  c.beginPath();c.moveTo(len*0.24,-hh*0.05);c.lineTo(len*0.2,hh*2.2);c.lineTo(len*0.14,hh*2.2);c.lineTo(len*0.18,-hh*0.05);c.closePath();c.fill();
-  c.strokeStyle=pal.m;c.lineWidth=1.2;
-  c.beginPath();c.arc(len*0.28,hh*1.0,hh*0.5,0.05,Math.PI*0.95);c.stroke();
-  rivets(c,len*0.1,hh*0.62,3,2.6,pal,0.7);
-  core(c,len*0.44,0,1.5+seg*0.2,pal,T,"hex");
-  // 冷光条（战术风）
-  neonTube(c,2,-hh*0.55,len*0.3,pal,T,false);
+  for(var i=0;i<12;i++){
+    var tx=2+i*(len*0.058);
+    c.fillStyle=pal.h; c.globalAlpha=0.32;
+    c.fillRect(tx,-hh*1.06,1.0,1.5); c.globalAlpha=1;
+  }
+  grip(c, len*0.24, hh*0.62, hh*1.9, 3.6, pal, 0.24);
+  core(c, len*0.42, -hh*0.05, 1.6+seg*0.2, pal, T, "hex");
+  // 冷光条
+  innerGlow(c, 3, len*0.3, function(t){return -hh*0.5;}, pal.e, 1.3, 0.5);
   // 专属特征
   if(mk==="scope"){
-    c.fillStyle="#06090f";c.fillRect(len*0.26,-hh-4.4,len*0.22,2.6);
-    c.fillStyle=pal.m;c.fillRect(len*0.26,-hh-4.7,len*0.22,0.5);
-    c.fillStyle=pal.e;c.globalAlpha=0.85;c.beginPath();c.arc(len*0.26,-hh-3.1,1.1,0,6.2832);c.fill();c.globalAlpha=1;
-    glowAt(c,len*0.26,-hh-3.1,4,pal.e,0.55);
+    barrel(c, len*0.24, len*0.5, -hh*1.72, hh*0.36, pal);
+    c.fillStyle=pal.e; c.globalAlpha=0.85;
+    c.beginPath(); c.arc(len*0.24,-hh*1.72,1.1,0,6.2832); c.fill(); c.globalAlpha=1;
+    glowAt(c,len*0.24,-hh*1.72,4,pal.e,0.55);
+    c.strokeStyle=pal.m; c.lineWidth=1.0;
+    c.beginPath(); c.moveTo(len*0.3,-hh*0.95); c.lineTo(len*0.3,-hh*1.5);
+    c.moveTo(len*0.44,-hh*0.9); c.lineTo(len*0.44,-hh*1.5); c.stroke();
   }else if(mk==="bipod"){
-    piston(c,len*0.62,hh,len*0.55,hh*2.9,pal);
-    piston(c,len*0.62,hh,len*0.7,hh*2.9,pal);
+    c.strokeStyle=pal.m; c.lineWidth=1.8;
+    c.beginPath(); c.moveTo(len*0.6,hh*0.6); c.quadraticCurveTo(len*0.54,hh*1.9,len*0.5,hh*2.8); c.stroke();
+    c.beginPath(); c.moveTo(len*0.6,hh*0.6); c.quadraticCurveTo(len*0.68,hh*1.9,len*0.72,hh*2.8); c.stroke();
+    c.strokeStyle=pal.h; c.globalAlpha=0.4; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
   }else if(mk==="drum"){
-    bevel(c,len*0.24,hh*0.9,4.2,hh*1.3,1.0,pal);
-    glowAt(c,len*0.24+2.1,hh*0.9+hh*0.65,5,pal.e,0.45);
+    c.beginPath(); c.ellipse(len*0.28,hh*1.5,3.4,2.6,0,0,6.2832);
+    c.fillStyle=pal.m; c.fill();
+    c.strokeStyle=pal.h; c.globalAlpha=0.35; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
+    glowAt(c,len*0.28,hh*1.5,6,pal.e,0.4);
   }else{
-    bevel(c,len*0.44,hh*0.55,len*0.2,2.4,0.5,pal);
-    c.fillStyle=pal.e;c.globalAlpha=0.6;c.fillRect(len*0.45,hh*0.85,len*0.18,1.2);c.globalAlpha=1;
+    chamber(c, len*0.46, hh*0.78, len*0.18, 2.4, pal, T);
   }
-  // 悬浮期：浮游导轨
+  // 悬浮期导轨
   if(seg>=4){
-    for(var i=0;i<2;i++){
-      var yy=i?hh*2.0:-hh*2.4;
-      c.fillStyle=pal.m;c.fillRect(len*0.36,yy-0.7,len*0.3,1.4);
-      neonTube(c,len*0.37,yy-0.25,len*0.28,pal,T,false);
+    for(var i=-1;i<=1;i+=2){
+      innerGlow(c, len*0.34, len*0.68,
+        (function(ii){return function(t){return ii*hh*(1.5+t*0.32);};})(i), pal.e2, 1.2, 0.5);
     }
   }
-
-  /* ---- 等级级差件（让每一级都有可见差异） ---- */
   lvFx(c,pal,lv,seg,len,hh,T);
-  ticks(c,3,hh*1.42,10,5+lv%4,pal,1.6);
-  return {mx:len+1,my:0};
+  return {mx:len+2,my:0};
 }
 
 /* ==========================================================
-   ③ 狙击 —— 精密仪器：极长细杆 + 大光学镜 + 螺旋膛线
+   ③ 狙击 —— 精密流线：极长细身 + 大光学镜 + 膛线
    ========================================================== */
 function famSniper(c,pal,seg,T,mk,lv){
-  var len=44+seg*4.4, hh=3.2+seg*0.3;
-  // 精密铝合金骨架（镂空）
-  bevel(c,0,-hh,len*0.62,hh*2,0.8,pal);
-  // 镂空减重孔
-  c.fillStyle="#04060b";
-  for(var i=0;i<3+seg;i++)c.fillRect(len*0.14+i*(len*0.11),-hh*0.42,len*0.06,hh*0.84);
+  var len=46+seg*4.2, hh=3.0+seg*0.28;
+  // 骨架（极细流线）
+  var yT=function(t){ return -hh*(1.0-0.24*Math.pow(t,2)); };
+  var yB=function(t){ return  hh*(1.0-0.24*Math.pow(t,2)); };
+  flowShape(c, -10, len*0.62, function(t){ return yT(t)*1.15; }, function(t){ return yB(t)*1.15; }, 12, pal);
+  // 镂空减重孔（椭圆）
+  for(var i=0;i<3+seg;i++){
+    c.fillStyle="#04070d";
+    c.beginPath(); c.ellipse(len*0.1+i*(len*0.1), 0, len*0.026, hh*0.42, 0, 0, 6.2832); c.fill();
+  }
+  topSheen(c, -9, len*0.6, function(t){return yT(t)*1.12;}, 12, 0.32);
   // 极长枪管
-  c.fillStyle=pal.m;c.fillRect(len*0.62,-hh*0.55,len*0.38,hh*1.1);
-  c.fillStyle=pal.h;c.globalAlpha=0.3;c.fillRect(len*0.62,-hh*0.55,len*0.38,hh*0.24);c.globalAlpha=1;
-  // 螺旋膛线（族核心：精密感）
-  rifling(c,len*0.64,0,len*0.33,hh*0.3,pal,T);
-  // 大型光学镜
-  c.fillStyle="#05080e";c.fillRect(len*0.2,-hh-5.6,len*0.3,3.8);
-  bevel(c,len*0.2,-hh-6.0,len*0.3,0.7,0.2,pal,true);
-  c.fillStyle=pal.e;c.globalAlpha=0.9;c.beginPath();c.arc(len*0.2,-hh-3.7,1.6,0,6.2832);c.fill();c.globalAlpha=1;
-  glowAt(c,len*0.2,-hh-3.7,6.5,pal.e,0.6);
-  // 镜筒刻度环
-  c.fillStyle=pal.h;c.globalAlpha=0.5;
-  for(var i=0;i<5;i++)c.fillRect(len*0.22+i*len*0.055,-hh-5.6,0.7,3.8);
+  barrel(c, len*0.6, len*1.04, -hh*0.04, hh*0.5, pal);
+  // 膛线
+  c.strokeStyle=pal.h; c.globalAlpha=0.3; c.lineWidth=0.5;
+  for(var k=0;k<3;k++){
+    c.beginPath();
+    for(var i=0;i<=14;i++){
+      var t=i/14;
+      c.lineTo(len*0.62+t*len*0.4, Math.sin(t*9+T*0.4+k*2.1)*hh*0.3);
+    }
+    c.stroke();
+  }
   c.globalAlpha=1;
-  // 镜架（双环）
-  c.strokeStyle=pal.m;c.lineWidth=1.1;
-  c.beginPath();c.moveTo(len*0.24,-hh);c.lineTo(len*0.24,-hh-2.2);
-  c.moveTo(len*0.46,-hh);c.lineTo(len*0.46,-hh-2.2);c.stroke();
-  // 握把
-  c.fillStyle="#06090f";
-  c.beginPath();c.moveTo(len*0.2,-hh*0.05);c.lineTo(len*0.16,hh*2.4);c.lineTo(len*0.1,hh*2.4);c.lineTo(len*0.14,-hh*0.05);c.closePath();c.fill();
-  core(c,len*0.4,0,1.3+seg*0.16,pal,T,"diamond");
+  // 大光学镜（圆柱）
+  barrel(c, len*0.16, len*0.5, -hh*2.1, hh*0.62, pal);
+  ringShape(c, len*0.47, -hh*2.1, hh*0.68, hh*0.14, pal, 0, 0);
+  c.fillStyle=pal.e; c.globalAlpha=0.9;
+  c.beginPath(); c.ellipse(len*0.17,-hh*2.1,hh*0.24,hh*0.5,0,0,6.2832); c.fill(); c.globalAlpha=1;
+  glowAt(c,len*0.17,-hh*2.1,6,pal.e,0.6);
+  // 镜筒刻度环
+  c.fillStyle=pal.h; c.globalAlpha=0.42;
+  for(var i=0;i<5;i++) c.fillRect(len*0.2+i*len*0.055,-hh*2.72,0.6,hh*1.24);
+  c.globalAlpha=1;
+  // 镜架
+  c.strokeStyle=pal.m; c.lineWidth=1.0;
+  c.beginPath(); c.moveTo(len*0.22,-hh*1.0); c.lineTo(len*0.22,-hh*1.5);
+  c.moveTo(len*0.44,-hh*0.98); c.lineTo(len*0.44,-hh*1.5); c.stroke();
+  grip(c, len*0.2, hh*0.9, hh*2.1, 3.0, pal, 0.26);
+  core(c, len*0.38, -hh*0.04, 1.3+seg*0.16, pal, T, "diamond");
   // 专属特征
   if(mk==="muzzle3"){
-    c.fillStyle=pal.m;
-    for(var i=-1;i<=1;i++)c.fillRect(len-0.4,i*hh*0.72-0.45,4.6,0.9);
-    neonTube(c,len+1.2,-hh*0.72,2.4,pal,T,true);
+    for(var i=-1;i<=1;i++){
+      c.beginPath();
+      c.moveTo(len-0.4, i*hh*0.5);
+      c.quadraticCurveTo(len+2.4, i*hh*0.72, len+4.6, i*hh*0.78);
+      c.strokeStyle=pal.m; c.lineWidth=1.1; c.stroke();
+      c.strokeStyle=pal.h; c.globalAlpha=0.4; c.lineWidth=0.4; c.stroke(); c.globalAlpha=1;
+    }
   }else if(mk==="ring"){
-    c.strokeStyle=pal.m;c.lineWidth=2.0;c.beginPath();c.arc(len+2.4,0,hh*0.95,0,6.2832);c.stroke();
-    c.strokeStyle=pal.e;c.lineWidth=0.9;c.beginPath();c.arc(len+2.4,0,hh*0.6,T*2,T*2+4.4);c.stroke();
+    ringShape(c, len+2.2, 0, hh*1.0, hh*0.2, pal, 0, 0);
+    c.strokeStyle=pal.e; c.globalAlpha=0.75; c.lineWidth=0.85;
+    c.beginPath(); c.arc(len+2.2,0,hh*0.62,T*2,T*2+4.4); c.stroke(); c.globalAlpha=1;
   }else if(mk==="square"){
-    c.fillStyle="#04060b";c.fillRect(len-0.6,-hh*0.9,3.6,hh*1.8);
-    c.fillStyle=pal.e;c.globalAlpha=0.75;c.fillRect(len+1.8,-hh*0.62,1.3,hh*1.24);c.globalAlpha=1;
+    c.fillStyle="#04070d";
+    c.beginPath();
+    c.moveTo(len-0.4,-hh*0.86); c.quadraticCurveTo(len+1.6,-hh*0.9,len+3.2,-hh*0.7);
+    c.lineTo(len+3.2,hh*0.7); c.quadraticCurveTo(len+1.6,hh*0.9,len-0.4,hh*0.86);
+    c.closePath(); c.fill();
+    c.fillStyle=pal.e; c.globalAlpha=0.72;
+    c.fillRect(len+1.6,-hh*0.5,1.1,hh*1.0); c.globalAlpha=1;
   }else{
-    c.fillStyle=pal.m;
-    for(var i=0;i<5;i++){var a=i*1.2566;
-      c.beginPath();c.moveTo(len,0);c.lineTo(len+3.6*Math.cos(a),3.6*Math.sin(a));c.lineTo(len+3.6*Math.cos(a+0.45),3.6*Math.sin(a+0.45));c.closePath();c.fill();}
-  }
-  // 悬浮期：平行导轨
-  if(seg>=4){
-    for(var i=-1;i<=1;i+=2){
-      c.strokeStyle=pal.e2;c.globalAlpha=0.5;c.lineWidth=0.9;
-      c.beginPath();c.moveTo(len*0.08,i*hh*2.6);c.lineTo(len*0.9,i*hh*2.6);c.stroke();c.globalAlpha=1;
+    for(var i=0;i<5;i++){
+      var ang=i*1.2566;
+      c.beginPath();
+      c.moveTo(len,0);
+      c.quadraticCurveTo(len+2.2*Math.cos(ang+0.2), 2.2*Math.sin(ang+0.2), len+3.8*Math.cos(ang), 3.8*Math.sin(ang));
+      c.strokeStyle=pal.m; c.lineWidth=1.2; c.stroke();
     }
   }
-
-  /* ---- 等级级差件（让每一级都有可见差异） ---- */
+  if(seg>=4){
+    for(var i=-1;i<=1;i+=2){
+      innerGlow(c, len*0.06, len*0.9,
+        (function(ii){return function(t){return ii*hh*(2.5-0.4*t);};})(i), pal.e2, 1.0, 0.45);
+    }
+  }
   lvFx(c,pal,lv,seg,len,hh,T);
-  ticks(c,3,hh*1.7,12,6+lv%4,pal,1.5);
   return {mx:len+3,my:0};
 }
 
 /* ==========================================================
-   ④ 霰弹 —— 重工粗犷：双管 + 铆钉 + 裸露弹仓 + 热浪配色
+   ④ 霰弹 —— 重工流线：粗壮 + 双管 + 泵动护木
    ========================================================== */
 function famShotgun(c,pal,seg,T,mk,lv){
-  var len=24+seg*2.4, hh=6.0+seg*0.58;
-  // 粗壮机匣
-  bevel(c,-9,-hh,len*0.44,hh*2,2.0,pal);
-  // 铆钉密布（重工感）
-  rivets(c,-7.5,-hh*0.62,4,4.2,pal,0.9);
-  rivets(c,-7.5,hh*0.62,4,4.2,pal,0.9);
-  // 双管并列
-  c.fillStyle="#070a11";
-  c.fillRect(len*0.3,-hh*0.68,len*0.72,hh*0.56);
-  c.fillRect(len*0.3,hh*0.12,len*0.72,hh*0.56);
-  c.fillStyle=pal.h;c.globalAlpha=0.26;
-  c.fillRect(len*0.3,-hh*0.64,len*0.72,0.6);
-  c.fillRect(len*0.3,hh*0.16,len*0.72,0.6);c.globalAlpha=1;
-  // 裸露弹仓（管下方）
-  c.fillStyle=pal.m;c.fillRect(len*0.34,hh*0.82,len*0.52,hh*0.42);
-  rivets(c,len*0.36,hh*1.03,4,3.6,pal,0.55);
-  // 泵动护木
-  c.fillStyle="#0a0d15";
-  c.fillRect(len*0.22,-hh*1.0,len*0.2,hh*2.0);
-  c.fillStyle=pal.h;c.globalAlpha=0.3;
-  for(var i=0;i<5;i++)c.fillRect(len*0.23+i*len*0.038,-hh*0.98,1.0,hh*1.96);
-  c.globalAlpha=1;
-  // 握把
-  c.fillStyle="#070a12";
-  c.beginPath();c.moveTo(len*0.12,-hh*0.05);c.lineTo(len*0.09,hh*2.0);c.lineTo(len*0.04,hh*2.0);c.lineTo(len*0.07,-hh*0.05);c.closePath();c.fill();
-  core(c,len*0.4,0,2.0+seg*0.26,pal,T,"orb");
-  // 喇叭口
+  var len=25+seg*2.4, hh=5.8+seg*0.56;
+  // 机匣（厚实流线）
+  var yT=function(t){ return -hh*(1.0-0.2*Math.pow(t,2)); };
+  var yB=function(t){ return  hh*(1.0-0.2*Math.pow(t,2)); };
+  flowShape(c, -9.5, len*0.36, function(t){return yT(t)*1.08;}, function(t){return yB(t)*1.08;}, 12, pal);
+  topSheen(c, -9, len*0.34, function(t){return yT(t)*1.05;}, 12, 0.28);
+  // 双管（两根圆柱，上下并列）
+  barrel(c, len*0.32, len*1.0, -hh*0.42, hh*0.42, pal);
+  barrel(c, len*0.32, len*1.0,  hh*0.42, hh*0.42, pal);
+  // 管间连接筋
   c.fillStyle=pal.m;
-  c.beginPath();c.moveTo(len,-hh*0.82);c.lineTo(len+5.2,-hh*1.55);c.lineTo(len+5.2,hh*1.55);c.lineTo(len,hh*0.82);c.closePath();c.fill();
-  c.strokeStyle=pal.h;c.globalAlpha=0.42;c.lineWidth=0.7;c.stroke();c.globalAlpha=1;
-  c.fillStyle="#04060b";c.beginPath();c.ellipse(len+4.8,0,1.4,hh*1.36,0,0,6.2832);c.fill();
-  // 口沿铆钉
-  for(var i=0;i<8;i++){var a=i*0.785;
-    c.fillStyle=pal.h;c.globalAlpha=0.5;
-    c.beginPath();c.arc(len+4.8+Math.cos(a)*1.6,Math.sin(a)*hh*1.5,0.5,0,6.2832);c.fill();c.globalAlpha=1;}
-  glowAt(c,len+4.8,0,7,pal.e,0.45);
+  c.fillRect(len*0.36,-hh*0.1,len*0.5,hh*0.2);
+  // 裸露弹仓（下方曲线管）
+  c.beginPath();
+  c.moveTo(len*0.32,hh*0.92);
+  c.quadraticCurveTo(len*0.6,hh*1.16,len*0.86,hh*0.92);
+  c.lineTo(len*0.86,hh*1.34);
+  c.quadraticCurveTo(len*0.6,hh*1.58,len*0.32,hh*1.34);
+  c.closePath();
+  var mg=c.createLinearGradient(0,hh*0.9,0,hh*1.5);
+  mg.addColorStop(0,pal.h); mg.addColorStop(0.3,pal.m); mg.addColorStop(1,"#04060b");
+  c.fillStyle=mg; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.32; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+  // 泵动护木（流线套筒）
+  c.beginPath();
+  c.moveTo(len*0.2,-hh*0.98);
+  c.quadraticCurveTo(len*0.3,-hh*1.12,len*0.42,-hh*0.98);
+  c.lineTo(len*0.42,hh*0.98);
+  c.quadraticCurveTo(len*0.3,hh*1.12,len*0.2,hh*0.98);
+  c.closePath();
+  var pg=c.createLinearGradient(0,-hh,0,hh);
+  pg.addColorStop(0,pal.h); pg.addColorStop(0.22,"#0a0d15");
+  pg.addColorStop(0.78,"#0a0d15"); pg.addColorStop(1,"#04060b");
+  c.fillStyle=pg; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.36; c.lineWidth=0.55; c.stroke(); c.globalAlpha=1;
+  for(var i=0;i<6;i++){
+    c.strokeStyle="rgba(0,0,0,.4)"; c.lineWidth=1.0;
+    var gx=len*0.215+i*(len*0.032);
+    c.beginPath(); c.moveTo(gx,-hh*0.92); c.lineTo(gx,hh*0.92); c.stroke();
+  }
+  grip(c, len*0.1, hh*0.9, hh*1.85, 3.2, pal, 0.26);
+  core(c, len*0.4, -hh*0.04, 2.0+seg*0.26, pal, T, "orb");
+  // 喇叭口
+  c.beginPath();
+  c.moveTo(len,-hh*0.82);
+  c.bezierCurveTo(len+2.6,-hh*0.98, len+4.4,-hh*1.32, len+5.0,-hh*1.5);
+  c.lineTo(len+5.0,hh*1.5);
+  c.bezierCurveTo(len+4.4,hh*1.32, len+2.6,hh*0.98, len,hh*0.82);
+  c.closePath();
+  var hg=c.createLinearGradient(0,-hh*1.5,0,hh*1.5);
+  hg.addColorStop(0,pal.h); hg.addColorStop(0.25,pal.m);
+  hg.addColorStop(0.75,pal.m); hg.addColorStop(1,"#04060b");
+  c.fillStyle=hg; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.4; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
+  c.fillStyle="#04070d";
+  c.beginPath(); c.ellipse(len+4.7,0,1.5,hh*1.42,0,0,6.2832); c.fill();
+  glowAt(c,len+4.7,0,7.5,pal.e,0.45);
   // 专属特征
   if(mk==="pump"){
-    fins(c,len*0.3,-hh*1.5,3,3.2,1.9,hh*0.5,pal);
-    neonTube(c,len*0.3,-hh*1.55,len*0.24,pal,T,false);
+    for(var i=0;i<3;i++){
+      var fx=len*0.26+i*3.0;
+      c.beginPath(); c.moveTo(fx,-hh*1.02);
+      c.quadraticCurveTo(fx+1.0,-hh*1.42,fx+2.0,-hh*1.02);
+      c.closePath(); c.fillStyle=pal.m; c.fill();
+    }
+    innerGlow(c,len*0.26,len*0.42,function(t){return -hh*1.06;},pal.e2,1.1,0.5);
   }else if(mk==="shells"){
     for(var i=0;i<4;i++){
-      c.fillStyle=pal.m;c.fillRect(len*0.34,-hh*0.2+i*2.6,4.4,1.9);
-      c.fillStyle=pal.e2;c.globalAlpha=0.8;c.fillRect(len*0.34+0.4,-hh*0.2+i*2.6+0.3,3.6,1.3);c.globalAlpha=1;
+      c.beginPath(); c.ellipse(len*0.3+3.0,-hh*0.2+i*2.6,2.4,1.05,0,0,6.2832);
+      c.fillStyle=pal.m; c.fill();
+      c.fillStyle=pal.e2; c.globalAlpha=0.78;
+      c.beginPath(); c.ellipse(len*0.3+3.4,-hh*0.2+i*2.6,1.7,0.7,0,0,6.2832); c.fill(); c.globalAlpha=1;
     }
   }else if(mk==="grip2"){
-    c.fillStyle="#070a12";c.fillRect(len*0.4,hh*0.95,3.6,hh*1.35);
-    rivets(c,len*0.42,hh*1.25,2,1.8,pal,0.5);
+    grip(c, len*0.4, hh*1.1, hh*1.3, 2.8, pal, 0.12);
   }else{
-    c.strokeStyle=pal.m;c.lineWidth=1.0;
-    c.beginPath();c.moveTo(len*0.5,hh);c.lineTo(len*0.5,hh*2.4);c.stroke();
-    neonTube(c,len*0.5-0.8,hh*2.1,3.0,pal,T,true);
+    c.strokeStyle=pal.m; c.lineWidth=0.9;
+    c.beginPath(); c.moveTo(len*0.5,hh*1.4); c.lineTo(len*0.5,hh*2.3); c.stroke();
+    innerGlow(c,len*0.485,len*0.515,function(t){return hh*(2.0+t*0.3);},pal.e2,2.2,0.6);
   }
-
-  /* ---- 等级级差件（让每一级都有可见差异） ---- */
+  if(seg>=4){
+    for(var i=-1;i<=1;i+=2)
+      innerGlow(c,len*0.34,len*0.5,(function(ii){return function(t){return ii*hh*(1.3+t*0.3);};})(i),pal.e2,1.1,0.45);
+  }
   lvFx(c,pal,lv,seg,len,hh,T);
-  ticks(c,3,hh*1.5,8,4+lv%4,pal,1.7);
   return {mx:len+5,my:0};
 }
 
 /* ==========================================================
-   ⑤ 加特林 —— 机械狂热：多管旋转 + 弹链 + 齿轮 + 红热光带
+   ⑤ 加特林 —— 机械流线：多管旋转 + 齿轮 + 弹链
    ========================================================== */
 function famGatling(c,pal,seg,T,mk,lv){
-  var len=25+seg*2.8, hh=8.0+seg*0.75;
+  var len=27+seg*2.8, hh=8.0+seg*0.72;
   var tubeN=4+seg*2;
-  // 后部机匣（厚重）
-  bevel(c,-9,-hh*1.05,len*0.38,hh*2.1,2.2,pal);
-  // 顶部齿轮组（机械狂热核心）
-  gear(c,len*0.08,-hh*1.1,3.0+seg*0.3,10,pal,T,1.4);
-  gear(c,len*0.2,-hh*0.95,2.0+seg*0.2,8,pal,T,-1.9);
-  // 供弹箱
-  bevel(c,-8.5,-hh*1.75,len*0.18,hh*1.2,1.0,pal);
-  c.fillStyle=pal.e2;c.globalAlpha=0.65;c.fillRect(-7.6,-hh*1.6,1.5,hh*0.9);c.globalAlpha=1;
-  // 弹链
-  c.strokeStyle=pal.e2;c.globalAlpha=0.7;c.lineWidth=1.1;
-  c.beginPath();c.moveTo(-8,hh*0.9);
-  for(var i=0;i<7;i++)c.lineTo(-8+i*1.6,hh*0.9+Math.sin(i*0.8+T*4)*1.8);
-  c.stroke();c.globalAlpha=1;
-  // 多管旋转组
-  var spin=T*3.4;
+  // 后部机匣（厚重流线）
+  flowShape(c, -9.5, len*0.42,
+    function(t){ return -hh*(1.02-0.1*t); },
+    function(t){ return  hh*(1.02-0.1*t); }, 10, pal);
+  topSheen(c, -9, len*0.4, function(t){return -hh*(1.0-0.1*t);}, 10, 0.28);
+  // 供弹箱（侧挂曲线块）
+  c.beginPath();
+  c.moveTo(-8.5,-hh*1.7);
+  c.quadraticCurveTo(-5.5,-hh*1.86,-3.0,-hh*1.6);
+  c.lineTo(-3.0,-hh*0.9);
+  c.quadraticCurveTo(-5.5,-hh*0.78,-8.5,-hh*0.98);
+  c.closePath();
+  c.fillStyle=pal.m; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.3; c.lineWidth=0.55; c.stroke(); c.globalAlpha=1;
+  chamber(c,-7.6,-hh*1.28,4.2,hh*0.62,pal,T);
+  // 齿轮组（旋转件）
+  gear(c, len*0.08, -hh*1.06, 2.8+seg*0.28, 10, pal, T, 1.4);
+  gear(c, len*0.19, -hh*0.92, 1.9+seg*0.2, 8, pal, T, -1.9);
+  // 弹链（曲线垂坠）
+  c.strokeStyle=pal.e2; c.globalAlpha=0.68; c.lineWidth=1.15;
+  c.beginPath(); c.moveTo(-7.4,hh*0.9);
+  for(var i=0;i<8;i++) c.lineTo(-7.4+i*1.5, hh*0.9+Math.sin(i*0.8+T*4)*2.0);
+  c.stroke(); c.globalAlpha=1;
+  // 多管旋转组（每管用圆柱，前后缩放模拟旋转）
+  var spin=T*3.2;
   for(var i=0;i<tubeN;i++){
     var a=spin+i*6.2832/tubeN;
-    var ry=Math.sin(a)*hh*0.56;
-    var sc2=0.62+0.38*Math.cos(a);
-    c.fillStyle="#0b1018";
-    c.fillRect(len*0.38,ry-1.25*sc2,len*0.58,2.5*sc2);
-    c.fillStyle=pal.h;c.globalAlpha=0.24*sc2;
-    c.fillRect(len*0.38,ry-1.05*sc2,len*0.58,0.7*sc2);c.globalAlpha=1;
+    var ry=Math.sin(a)*hh*0.5;
+    var sc2=0.6+0.4*Math.cos(a);
+    barrel(c, len*0.4, len*0.98, ry, 1.15*sc2+0.35, pal);
   }
   // 前环
-  c.fillStyle=pal.m;c.beginPath();c.arc(len*0.95,0,hh*0.85,0,6.2832);c.fill();
-  c.strokeStyle=pal.h;c.globalAlpha=0.4;c.lineWidth=0.8;c.stroke();c.globalAlpha=1;
-  c.fillStyle="#04060b";c.beginPath();c.arc(len*0.95,0,hh*0.5,0,6.2832);c.fill();
-  glowAt(c,len*0.95,0,hh*1.15,pal.e,0.55);
-  // 散热鳍片
-  fins(c,len*0.42,-hh*1.34,4,2.5,1.4,hh*0.36,pal);
-  // 红热光带（高速射击的灼热感）
-  for(var i=0;i<3;i++)neonTube(c,len*0.44+i*3.0,-hh*0.95,1.8,pal,T,true);
-  // 握把
-  c.fillStyle="#070a12";
-  c.beginPath();c.moveTo(len*0.14,-hh*0.05);c.lineTo(len*0.11,hh*1.9);c.lineTo(len*0.05,hh*1.9);c.lineTo(len*0.08,-hh*0.05);c.closePath();c.fill();
-  core(c,len*0.16,0,2.2+seg*0.28,pal,T,"hex");
+  ringShape(c, len*0.96, 0, hh*0.82, hh*0.22, pal, 0, 0);
+  c.fillStyle="#04070d";
+  c.beginPath(); c.arc(len*0.96,0,hh*0.5,0,6.2832); c.fill();
+  glowAt(c,len*0.96,0,hh*1.1,pal.e,0.5);
+  // 散热鳍
+  for(var i=0;i<4;i++){
+    var fx=len*0.44+i*2.5;
+    c.beginPath(); c.moveTo(fx,-hh*1.02);
+    c.quadraticCurveTo(fx+0.8,-hh*1.36,fx+1.6,-hh*1.02);
+    c.closePath(); c.fillStyle=pal.m; c.fill();
+  }
+  grip(c, len*0.14, hh*0.9, hh*1.8, 3.4, pal, 0.24);
+  core(c, len*0.16, -hh*0.04, 2.2+seg*0.28, pal, T, "hex");
   // 专属特征
   if(mk==="belt"){
-    c.strokeStyle=pal.e2;c.globalAlpha=0.85;c.lineWidth=1.3;
-    c.beginPath();c.moveTo(-8,hh*0.9);
-    for(var i=0;i<8;i++)c.lineTo(-8+i*1.5,hh*0.9+Math.sin(i*0.9+T*4.4)*2.2);
-    c.stroke();c.globalAlpha=1;
+    c.strokeStyle=pal.e2; c.globalAlpha=0.8; c.lineWidth=1.25;
+    c.beginPath(); c.moveTo(-7.4,hh*0.9);
+    for(var i=0;i<9;i++) c.lineTo(-7.4+i*1.4, hh*0.9+Math.sin(i*0.9+T*4.4)*2.2);
+    c.stroke(); c.globalAlpha=1;
   }else if(mk==="heat"){
-    for(var i=0;i<4;i++)neonTube(c,len*0.4+i*2.8,-hh*1.05,1.6,pal,T,true);
+    for(var i=0;i<4;i++)
+      innerGlow(c,len*0.42+i*2.6,len*0.42+i*2.6+2.0,function(t){return -hh*0.94;},pal.e,1.5,0.62);
   }else if(mk==="shield"){
-    c.fillStyle=pal.m;
-    c.beginPath();c.moveTo(len*1.0,-hh*1.05);c.lineTo(len*1.13,0);c.lineTo(len*1.0,hh*1.05);c.closePath();c.fill();
-    c.strokeStyle=pal.e;c.globalAlpha=0.55;c.lineWidth=0.8;c.stroke();c.globalAlpha=1;
+    c.beginPath();
+    c.moveTo(len*1.0,-hh*1.02);
+    c.bezierCurveTo(len*1.12,-hh*0.6,len*1.12,hh*0.6,len*1.0,hh*1.02);
+    c.lineTo(len*0.98,0); c.closePath();
+    c.fillStyle=pal.m; c.fill();
+    c.strokeStyle=pal.e; c.globalAlpha=0.55; c.lineWidth=0.75; c.stroke(); c.globalAlpha=1;
   }else{
-    var sw=Math.sin(T*2.8)*hh*0.3;
-    bevel(c,len*0.48,hh*1.15+sw,len*0.22,2.4,0.6,pal);
-    c.fillStyle=pal.e2;c.globalAlpha=0.8;c.fillRect(len*0.52,hh*1.15+sw+0.7,1.3,1.0);c.globalAlpha=1;
+    var sw=Math.sin(T*2.8)*hh*0.32;
+    c.beginPath(); c.ellipse(len*0.56,hh*1.2+sw,3.0,1.5,0,0,6.2832);
+    c.fillStyle=pal.m; c.fill();
+    c.fillStyle=pal.e2; c.globalAlpha=0.8;
+    c.beginPath(); c.arc(len*0.56,hh*1.2+sw,0.9,0,6.2832); c.fill(); c.globalAlpha=1;
   }
-
-  /* ---- 等级级差件（让每一级都有可见差异） ---- */
   lvFx(c,pal,lv,seg,len,hh,T);
-  ticks(c,3,hh*1.72,10,5+lv%4,pal,1.6);
   return {mx:len*1.12,my:0};
 }
 
 /* ==========================================================
-   ⑥ 法杖 —— 神秘能量：细杆 + 悬浮水晶 + 多层光环 + 符文
+   ⑥ 法杖 —— 神秘流线：细杆 + 悬浮水晶 + 光环
    ========================================================== */
 function famStaff(c,pal,seg,T,mk,lv){
-  var len=28+seg*2.6, th=1.7+seg*0.2;
-  // 细长杆身（分段 + 符文）
-  c.fillStyle=pal.m;c.fillRect(0,-th,len,th*2);
-  c.fillStyle=pal.h;c.globalAlpha=0.20;c.fillRect(0,-th,len,th*0.65);c.globalAlpha=1;
-  // 分段接环
+  var len=29+seg*2.6, th=1.7+seg*0.2;
+  // 细杆（渐进收窄的流线）
+  var yT=function(t){ return -th*(1.0-0.26*t); };
+  var yB=function(t){ return  th*(1.0-0.26*t); };
+  flowShape(c, 0, len, yT, yB, 14, pal);
+  topSheen(c, 1, len-1, function(t){return -th*(0.92-0.24*t);}, 12, 0.34, 0.9);
+  // 分段接环（曲线套筒）
   for(var i=1;i<=seg;i++){
-    var px=len*(i-1)/seg;
-    c.fillStyle="#06080e";c.fillRect(px-0.5,-th-0.7,1.5,th*2+1.4);
-    c.fillStyle=pal.h;c.globalAlpha=0.35;c.fillRect(px-0.5,-th-0.7,1.5,0.7);c.globalAlpha=1;
+    var px=len*(i-0.5)/seg;
+    ringShape(c, px, 0, th*1.5, th*0.28, pal, 0, 0);
   }
-  // 杆身符文
-  for(var i=0;i<3+seg;i++)glyph(c,len*0.12+i*(len*0.72/(3+seg)),0,th*0.75,pal,T);
+  // 杆身符文（菱形刻痕，沿线排布）
+  for(var i=0;i<3+seg;i++){
+    var gx=len*0.1+i*(len*0.68/(3+seg));
+    c.save(); c.translate(gx,0);
+    c.beginPath();
+    c.moveTo(0,-th*0.62); c.lineTo(th*0.42,0); c.lineTo(0,th*0.62); c.lineTo(-th*0.42,0);
+    c.closePath();
+    c.strokeStyle=pal.e2; c.globalAlpha=0.55+0.22*Math.sin(T*2.6+i); c.lineWidth=0.65; c.stroke();
+    c.globalAlpha=1; c.restore();
+  }
   // 握把缠绕
-  c.fillStyle="#06080e";
-  for(var i=0;i<6;i++)c.fillRect(3+i*1.9,-th,1.1,th*2);
-  // 顶部悬浮水晶（脱离杆身）
-  var hx=len+6.0, hr=4.2+seg*0.66;
-  // 四爪托架
-  c.strokeStyle=pal.m;c.lineWidth=1.1;
-  for(var i=0;i<4;i++){
-    var a=i*1.5708+0.785;
-    c.beginPath();c.moveTo(len-0.4,0);
-    c.quadraticCurveTo(len+3.0+Math.cos(a)*hr*0.5,Math.sin(a)*hr*0.7,hx+Math.cos(a)*hr*0.82,Math.sin(a)*hr*0.82);
-    c.stroke();
+  for(var i=0;i<6;i++){
+    var wx=3+i*1.85;
+    c.beginPath();
+    c.moveTo(wx,-th*0.94); c.quadraticCurveTo(wx+0.9,0,wx,th*0.94);
+    c.strokeStyle="#06080e"; c.lineWidth=1.1; c.stroke();
   }
-  c.strokeStyle=pal.h;c.globalAlpha=0.3;c.lineWidth=0.5;c.stroke();c.globalAlpha=1;
-  // 多层光环（每段一圈）
+  // 顶部悬浮水晶
+  var hx=len+6.2, hr=4.0+seg*0.62;
+  // 四爪托架（曲线）
+  for(var i=0;i<4;i++){
+    var ang=i*1.5708+0.785;
+    c.beginPath();
+    c.moveTo(len-0.4,0);
+    c.bezierCurveTo(len+2.4+Math.cos(ang)*hr*0.3, Math.sin(ang)*hr*0.5,
+                    hx-Math.cos(ang)*hr*0.9, Math.sin(ang)*hr*0.7,
+                    hx+Math.cos(ang)*hr*0.84, Math.sin(ang)*hr*0.84);
+    c.strokeStyle=pal.m; c.lineWidth=1.1; c.stroke();
+    c.strokeStyle=pal.h; c.globalAlpha=0.3; c.lineWidth=0.4; c.stroke(); c.globalAlpha=1;
+  }
+  // 多层光环
   for(var i=0;i<seg;i++){
     c.strokeStyle=i%2?pal.e2:pal.e;
-    c.globalAlpha=0.5;c.lineWidth=1.0;
+    c.globalAlpha=0.48; c.lineWidth=1.0;
     c.beginPath();
-    c.ellipse(hx,0,hr*(1.35+i*0.24),hr*(0.4+i*0.13),T*(1.05+i*0.28)*(i%2?1:-1),0,6.2832);
-    c.stroke();c.globalAlpha=1;
+    c.ellipse(hx,0,hr*(1.3+i*0.24),hr*(0.38+i*0.13),T*(1.05+i*0.28)*(i%2?1:-1),0,6.2832);
+    c.stroke(); c.globalAlpha=1;
   }
-  // 水晶
-  glowAt(c,hx,0,hr*2.5,pal.e,0.6);
-  c.fillStyle=pal.e;
+  // 水晶（六棱曲面）
+  glowAt(c,hx,0,hr*2.4,pal.e,0.6);
   c.beginPath();
-  c.moveTo(hx,-hr*1.15);c.lineTo(hx+hr*0.62,-hr*0.25);c.lineTo(hx+hr*0.62,hr*0.25);
-  c.lineTo(hx,hr*1.15);c.lineTo(hx-hr*0.62,hr*0.25);c.lineTo(hx-hr*0.62,-hr*0.25);
-  c.closePath();c.fill();
+  c.moveTo(hx,-hr*1.15);
+  c.quadraticCurveTo(hx+hr*0.66,-hr*0.5, hx+hr*0.6,hr*0.2);
+  c.quadraticCurveTo(hx+hr*0.3,hr*0.9, hx,hr*1.15);
+  c.quadraticCurveTo(hx-hr*0.3,hr*0.9, hx-hr*0.6,hr*0.2);
+  c.quadraticCurveTo(hx-hr*0.66,-hr*0.5, hx,-hr*1.15);
+  c.closePath();
+  var cg=c.createLinearGradient(hx-hr,0,hx+hr,0);
+  cg.addColorStop(0,"#ffffff"); cg.addColorStop(0.28,pal.e);
+  cg.addColorStop(0.75,pal.e); cg.addColorStop(1,pal.e2);
+  c.fillStyle=cg; c.fill();
+  c.strokeStyle="rgba(255,255,255,.6)"; c.globalAlpha=0.55; c.lineWidth=0.7; c.stroke(); c.globalAlpha=1;
   // 晶面高光
-  c.fillStyle="rgba(255,255,255,.55)";
-  c.beginPath();c.moveTo(hx,-hr*1.0);c.lineTo(hx+hr*0.4,-hr*0.2);c.lineTo(hx,-hr*0.1);c.closePath();c.fill();
-  c.fillStyle="rgba(255,255,255,.9)";c.beginPath();c.arc(hx-hr*0.1,-hr*0.2,hr*0.2,0,6.2832);c.fill();
+  c.fillStyle="rgba(255,255,255,.85)";
+  c.beginPath(); c.ellipse(hx-hr*0.18,-hr*0.38,hr*0.16,hr*0.34,-0.3,0,6.2832); c.fill();
   // 专属特征
   if(mk==="orbital"){
     for(var i=0;i<3;i++){
       var a=T*1.9+i*2.094;
       var ox=hx+Math.cos(a)*hr*2.0, oy=Math.sin(a)*hr*2.0;
-      glowAt(c,ox,oy,3.2,pal.e2,0.7);
-      c.fillStyle=pal.e2;c.globalAlpha=0.95;
-      c.save();c.translate(ox,oy);c.rotate(a);
-      c.beginPath();c.moveTo(0,-1.3);c.lineTo(1.0,0);c.lineTo(0,1.3);c.lineTo(-1.0,0);c.closePath();c.fill();
-      c.restore();c.globalAlpha=1;
+      glowAt(c,ox,oy,3.0,pal.e2,0.65);
+      c.save(); c.translate(ox,oy); c.rotate(a);
+      c.beginPath(); c.moveTo(0,-1.25); c.lineTo(0.95,0); c.lineTo(0,1.25); c.lineTo(-0.95,0); c.closePath();
+      c.fillStyle=pal.e2; c.globalAlpha=0.95; c.fill(); c.globalAlpha=1;
+      c.restore();
     }
   }else if(mk==="crown"){
-    c.fillStyle=pal.e2;
     for(var i=0;i<5;i++){
-      var a=-1.5708+i*0.6;
+      var a2=-1.5708+i*0.6;
       c.beginPath();
-      c.moveTo(hx+Math.cos(a)*hr*0.7,-hr*0.9+Math.sin(a)*hr*0.5);
-      c.lineTo(hx+Math.cos(a)*hr*1.9,-hr*1.5+Math.sin(a)*hr*0.9);
-      c.lineTo(hx+Math.cos(a+0.22)*hr*1.5,-hr*0.9+Math.sin(a+0.22)*hr*0.5);
-      c.closePath();c.fill();
+      c.moveTo(hx+Math.cos(a2)*hr*0.66,-hr*0.86+Math.sin(a2)*hr*0.46);
+      c.quadraticCurveTo(hx+Math.cos(a2)*hr*1.4,-hr*1.2+Math.sin(a2)*hr*0.7,
+                         hx+Math.cos(a2)*hr*1.86,-hr*1.46+Math.sin(a2)*hr*0.88);
+      c.strokeStyle=pal.e2; c.globalAlpha=0.8; c.lineWidth=1.1; c.stroke(); c.globalAlpha=1;
     }
   }else if(mk==="chain"){
     for(var i=0;i<4;i++){
-      c.fillStyle=pal.e2;c.globalAlpha=0.65;
-      c.beginPath();c.arc(hx+hr*0.5+i*0.5,hr*1.2+i*2.3,0.85,0,6.2832);c.fill();c.globalAlpha=1;
+      c.fillStyle=pal.e2; c.globalAlpha=0.6;
+      c.beginPath(); c.arc(hx+hr*0.42+i*0.45, hr*1.15+i*2.2, 0.8, 0, 6.2832); c.fill(); c.globalAlpha=1;
     }
   }else{
-    c.fillStyle=pal.m;
-    for(var i=-1;i<=1;i+=2)c.fillRect(len*0.7,i*hr*1.15,len*0.18,1.3);
-    neonTube(c,len*0.88,-hr*1.15,hr*2.3,pal,T,true);
+    for(var i=-1;i<=1;i+=2){
+      c.beginPath();
+      c.moveTo(len*0.8, i*hr*1.1);
+      c.quadraticCurveTo(len*0.9, i*hr*1.35, len*0.98, i*hr*1.1);
+      c.lineTo(len*0.98, i*hr*1.5);
+      c.quadraticCurveTo(len*0.9, i*hr*1.75, len*0.8, i*hr*1.5);
+      c.closePath(); c.fillStyle=pal.m; c.fill();
+    }
   }
-
-  /* ---- 等级级差件（让每一级都有可见差异） ---- */
   lvFx(c,pal,lv,seg,len,th,T);
-  ticks(c,3,th*2.5,6,3+lv%4,pal,1.4);
-  return {mx:hx+hr*1.35,my:0};
+  return {mx:hx+hr*1.3,my:0};
 }
 
 /* ==========================================================
-   ⑦ 巨炮 —— 要塞工程：超厚装甲 + 液压支架 + 冷却鳍 + 熔炉口
+   ⑦ 巨炮 —— 要塞流线：超厚 + 液压腿 + 熔炉口
    ========================================================== */
 function famCannon(c,pal,seg,T,mk,lv){
-  var len=27+seg*3.0, hh=9.5+seg*0.85;
-  // 液压支撑腿（要塞感）
-  piston(c,-2,hh*0.6,-12,hh*2.6,pal);
-  piston(c,-2,-hh*0.6,-12,-hh*2.6,pal);
-  // 支撑脚座
-  bevel(c,-14,hh*2.2,4.5,2.4,0.8,pal);
-  bevel(c,-14,-hh*2.6,4.5,2.4,0.8,pal);
-  // 超厚主装甲（双层）
-  bevel(c,0,-hh,len*0.62,hh*2.0,3.0,pal);
-  // 上层附加装甲板
-  c.fillStyle=pal.m;
-  c.fillRect(len*0.06,-hh*1.22,len*0.44,hh*0.5);
-  rivets(c,len*0.1,-hh*1.0,5,3.6,pal,0.8);
-  // 炮管（向前加厚）
-  bevel(c,len*0.6,-hh*1.1,len*0.42,hh*2.2,2.4,pal);
-  // 冷却鳍片组（要塞风核心）
-  fins(c,len*0.58,-hh*1.6,5,2.8,1.6,hh*0.55,pal);
-  fins(c,len*0.58,hh*1.05,5,2.8,1.6,hh*0.55,pal);
-  // 分段结构（分层期）
-  if(seg>=3){
-    c.fillStyle="#05080e";
-    c.fillRect(len*0.36,-hh*1.15,2.4,hh*2.3);
-    c.fillRect(len*0.62,-hh*1.18,2.2,hh*2.36);
-    energyCell(c,len*0.38,-hh*0.55,len*0.22,hh*1.1,pal,T);
+  var len=28+seg*3.0, hh=9.0+seg*0.82;
+  // 液压支撑腿（曲线杆 + 脚座）
+  for(var i=-1;i<=1;i+=2){
+    c.beginPath();
+    c.moveTo(-1.5, i*hh*0.55);
+    c.quadraticCurveTo(-7, i*hh*1.5, -11.5, i*hh*2.5);
+    c.strokeStyle="#05070d"; c.lineWidth=3.0; c.stroke();
+    c.strokeStyle=pal.h; c.globalAlpha=0.55; c.lineWidth=1.0; c.stroke(); c.globalAlpha=1;
+    // 脚座
+    c.beginPath();
+    c.ellipse(-12.2, i*hh*2.62, 2.8, 1.5, i*0.2, 0, 6.2832);
+    c.fillStyle=pal.m; c.fill();
+    c.strokeStyle=pal.h; c.globalAlpha=0.35; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
   }
-  // 熔炉方口
-  c.fillStyle="#04060b";c.fillRect(len-1.8,-hh*1.08,3.8,hh*2.16);
-  c.strokeStyle=pal.h;c.globalAlpha=0.45;c.lineWidth=1.0;c.strokeRect(len-1.8,-hh*1.08,3.8,hh*2.16);c.globalAlpha=1;
-  c.fillStyle=pal.e;c.globalAlpha=0.65;c.fillRect(len+0.6,-hh*0.85,1.7,hh*1.7);c.globalAlpha=1;
-  glowAt(c,len+1.5,0,hh*1.35,pal.e,0.5);
-  // 铆钉密集
-  rivets(c,3,hh*0.9,5,4.4,pal,0.9);
-  core(c,len*0.28,0,2.9+seg*0.38,pal,T,"hex");
+  // 主炮身（超厚流线，前段外扩）
+  var yT=function(t){ return -hh*(0.86+0.22*t-0.06*Math.sin(t*3.14)); };
+  var yB=function(t){ return  hh*(0.86+0.22*t-0.06*Math.sin(t*3.14)); };
+  flowShape(c, -1, len*0.98, yT, yB, 16, pal);
+  topSheen(c, 0, len*0.96, function(t){return -hh*(0.84+0.2*t);}, 14, 0.3, 1.3);
+  surfaceLines(c, 3, len*0.94, yT, yB, 2, 0.15);
+  // 上层附加装甲（曲线薄板）
+  c.beginPath();
+  c.moveTo(len*0.06,-hh*1.06);
+  c.quadraticCurveTo(len*0.3,-hh*1.2,len*0.52,-hh*1.1);
+  c.lineTo(len*0.52,-hh*0.88);
+  c.quadraticCurveTo(len*0.3,-hh*0.96,len*0.06,-hh*0.9);
+  c.closePath();
+  c.fillStyle=pal.m; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.3; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+  // 冷却鳍（曲线齿）
+  for(var i=0;i<5;i++){
+    var fx=len*0.56+i*2.7;
+    c.beginPath(); c.moveTo(fx,-hh*1.06);
+    c.quadraticCurveTo(fx+1.0,-hh*1.44,fx+2.0,-hh*1.06);
+    c.closePath(); c.fillStyle=pal.m; c.fill();
+    c.beginPath(); c.moveTo(fx,hh*1.06);
+    c.quadraticCurveTo(fx+1.0,hh*1.44,fx+2.0,hh*1.06);
+    c.closePath(); c.fillStyle=pal.m; c.fill();
+  }
+  // 分段能量腔
+  if(seg>=3) chamber(c, len*0.34, 0, len*0.2, hh*0.9, pal, T);
+  // 熔炉炮口（内凹曲线）
+  c.beginPath();
+  c.moveTo(len*0.96,-hh*1.08);
+  c.quadraticCurveTo(len+1.6,-hh*1.04,len+2.2,-hh*0.72);
+  c.lineTo(len+2.2,hh*0.72);
+  c.quadraticCurveTo(len+1.6,hh*1.04,len*0.96,hh*1.08);
+  c.closePath();
+  c.fillStyle="#04070d"; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.42; c.lineWidth=0.8; c.stroke(); c.globalAlpha=1;
+  // 炉心光
+  c.beginPath();
+  c.ellipse(len+1.4,0,0.9,hh*0.66,0,0,6.2832);
+  var fg=c.createLinearGradient(len,0,len+2.4,0);
+  fg.addColorStop(0,pal.e2); fg.addColorStop(0.5,"#ffffff"); fg.addColorStop(1,pal.e);
+  c.fillStyle=fg; c.globalAlpha=0.78; c.fill(); c.globalAlpha=1;
+  glowAt(c,len+1.6,0,hh*1.3,pal.e,0.52);
+  core(c, len*0.26, -hh*0.04, 2.9+seg*0.38, pal, T, "hex");
   // 专属特征
   if(mk==="wide"){
-    c.fillStyle=pal.m;
-    c.beginPath();c.moveTo(len,-hh*1.12);c.lineTo(len+8.4,-hh*2.05);c.lineTo(len+8.4,hh*2.05);c.lineTo(len,hh*1.12);c.closePath();c.fill();
-    c.strokeStyle=pal.h;c.globalAlpha=0.4;c.lineWidth=0.8;c.stroke();c.globalAlpha=1;
-    c.fillStyle="#04060b";c.beginPath();c.ellipse(len+7.8,0,1.9,hh*1.72,0,0,6.2832);c.fill();
-    for(var i=0;i<10;i++){var a=i*0.628;
-      c.fillStyle=pal.h;c.globalAlpha=0.45;
-      c.beginPath();c.arc(len+7.8+Math.cos(a)*2.1,Math.sin(a)*hh*1.85,0.55,0,6.2832);c.fill();c.globalAlpha=1;}
-    glowAt(c,len+7.8,0,hh*1.6,pal.e,0.55);
+    c.beginPath();
+    c.moveTo(len+1.8,-hh*1.0);
+    c.bezierCurveTo(len+5.0,-hh*1.3,len+8.0,-hh*1.9,len+8.6,-hh*2.0);
+    c.lineTo(len+8.6,hh*2.0);
+    c.bezierCurveTo(len+8.0,hh*1.9,len+5.0,hh*1.3,len+1.8,hh*1.0);
+    c.closePath();
+    var wg=c.createLinearGradient(0,-hh*2,0,hh*2);
+    wg.addColorStop(0,pal.h); wg.addColorStop(0.25,pal.m);
+    wg.addColorStop(0.75,pal.m); wg.addColorStop(1,"#04060b");
+    c.fillStyle=wg; c.fill();
+    c.strokeStyle=pal.h; c.globalAlpha=0.38; c.lineWidth=0.7; c.stroke(); c.globalAlpha=1;
+    c.fillStyle="#04070d";
+    c.beginPath(); c.ellipse(len+8.0,0,2.0,hh*1.76,0,0,6.2832); c.fill();
+    glowAt(c,len+8.0,0,hh*1.6,pal.e,0.55);
   }else if(mk==="tripod"){
-    piston(c,len*0.42,hh*1.2,len*0.3,hh*3.2,pal);
-    piston(c,len*0.42,hh*1.2,len*0.46,hh*3.5,pal);
-    piston(c,len*0.42,hh*1.2,len*0.66,hh*3.1,pal);
+    for(var i=0;i<3;i++){
+      var ang=(i-1)*0.55;
+      c.beginPath();
+      c.moveTo(len*0.4,hh*1.1);
+      c.quadraticCurveTo(len*0.36+ang*8,hh*2.2,len*0.32+ang*12,hh*3.1);
+      c.strokeStyle="#05070d"; c.lineWidth=2.3; c.stroke();
+      c.strokeStyle=pal.h; c.globalAlpha=0.5; c.lineWidth=0.8; c.stroke(); c.globalAlpha=1;
+    }
   }else if(mk==="vortex"){
     for(var i=0;i<3;i++){
-      c.strokeStyle=pal.e;c.globalAlpha=0.68;c.lineWidth=1.2;
-      c.beginPath();c.arc(len+2.2,0,hh*(0.5+i*0.32),T*2.5+i*1.1,T*2.5+i*1.1+4.2);c.stroke();c.globalAlpha=1;
+      c.strokeStyle=pal.e; c.globalAlpha=0.66; c.lineWidth=1.15;
+      c.beginPath(); c.arc(len+2.4,0,hh*(0.48+i*0.3),T*2.5+i*1.1,T*2.5+i*1.1+4.2);
+      c.stroke(); c.globalAlpha=1;
     }
   }else{
-    c.strokeStyle=pal.e2;c.globalAlpha=0.7;c.lineWidth=1.0;
     c.beginPath();
-    c.moveTo(len*0.14,-hh*0.75);c.lineTo(len*0.28,-hh*0.22);
-    c.lineTo(len*0.22,hh*0.26);c.lineTo(len*0.38,hh*0.75);
-    c.stroke();c.globalAlpha=1;
+    c.moveTo(len*0.12,-hh*0.72);
+    c.quadraticCurveTo(len*0.24,-hh*0.1,len*0.18,hh*0.28);
+    c.quadraticCurveTo(len*0.28,hh*0.6,len*0.36,hh*0.72);
+    c.strokeStyle=pal.e2; c.globalAlpha=0.68; c.lineWidth=0.95; c.stroke(); c.globalAlpha=1;
   }
-  // 悬浮期：环绕稳定环
   if(seg>=4){
     for(var i=0;i<2;i++){
-      c.strokeStyle=i?pal.e2:pal.e;c.globalAlpha=0.45;c.lineWidth=1.3;
-      c.beginPath();c.ellipse(len*0.42,0,hh*(1.55+i*0.38),hh*(0.62+i*0.22),T*(0.85+i*0.4)*(i%2?1:-1),0,6.2832);
-      c.stroke();c.globalAlpha=1;
+      c.strokeStyle=i?pal.e2:pal.e; c.globalAlpha=0.42; c.lineWidth=1.25;
+      c.beginPath();
+      c.ellipse(len*0.4,0,hh*(1.5+i*0.36),hh*(0.6+i*0.2),T*(0.85+i*0.4)*(i%2?1:-1),0,6.2832);
+      c.stroke(); c.globalAlpha=1;
     }
   }
-
-  /* ---- 等级级差件（让每一级都有可见差异） ---- */
   lvFx(c,pal,lv,seg,len,hh,T);
-  ticks(c,4,hh*1.28,10,5+lv%4,pal,1.6);
   return {mx:len+6,my:0};
 }
 
 /* ==========================================================
-   ⑧ 浮游 —— 赛博分体：碎片化主体 + 环绕单元 + 数据流 + 全息
+   ⑧ 浮游 —— 赛博流线：分体碎片 + 环绕单元 + 数据流
    ========================================================== */
 function famDrone(c,pal,seg,T,mk,lv){
-  var len=19+seg*2.2, hh=4.6+seg*0.46;
-  // 主体拆成 3 块碎片（分体感）
-  bevel(c,0,-hh,len*0.26,hh*2,1.0,pal);
-  bevel(c,len*0.34,-hh*0.78,len*0.2,hh*1.56,0.8,pal);
-  bevel(c,len*0.62,-hh*0.62,len*0.34,hh*1.24,0.8,pal);
-  // 全息投影连接（替代实体连接）
-  c.strokeStyle=pal.e;c.globalAlpha=0.5;c.lineWidth=1.2;
-  c.beginPath();c.moveTo(len*0.26,0);c.lineTo(len*0.34,0);c.stroke();
-  c.beginPath();c.moveTo(len*0.54,0);c.lineTo(len*0.62,0);c.stroke();
-  c.globalAlpha=1;
-  glowAt(c,len*0.3,0,4.5,pal.e,0.65);
-  glowAt(c,len*0.58,0,4.5,pal.e,0.65);
-  // 数据流线
-  dataStream(c,len*0.28,-hh*0.9,len*0.3,pal,T);
-  // 核心
-  core(c,len*0.14,0,1.9+seg*0.26,pal,T,"hex");
-  // 环绕浮游单元（数量随等级）
+  var len=21+seg*2.2, hh=4.4+seg*0.44;
+  // 三块碎片主体（每块独立曲面）
+  var frags=[[0,0.28,1.0],[0.36,0.2,0.78],[0.62,0.34,0.62]];
+  for(var k=0;k<frags.length;k++){
+    var f0=len*frags[k][0], fw=len*frags[k][1], fh=hh*frags[k][2];
+    var bob=Math.sin(T*1.6+k*1.4)*1.2;
+    flowShape(c, f0, f0+fw,
+      function(t){ return -fh*(0.72+0.28*Math.pow(1-t,0.5)) + bob; },
+      function(t){ return  fh*(0.72+0.28*Math.pow(1-t,0.5)) + bob; }, 10, pal);
+    topSheen(c, f0+0.5, f0+fw-0.5,
+      function(t){ return -fh*(0.68+0.26*Math.pow(1-t,0.5)) + bob; }, 8, 0.32);
+  }
+  // 全息连接（光带而非实体）
+  for(var k=0;k<2;k++){
+    var x1=len*(frags[k][0]+frags[k][1]), x2=len*frags[k+1][0];
+    innerGlow(c, x1, x2, function(t){return 0;}, pal.e, 1.6, 0.55);
+    glowAt(c,(x1+x2)/2,0,4.2,pal.e,0.6);
+  }
+  // 数据流线（平行淡线）
+  for(var k=0;k<3;k++){
+    c.strokeStyle=pal.e2; c.globalAlpha=0.32; c.lineWidth=0.5;
+    c.beginPath();
+    for(var i=0;i<=12;i++){
+      var t=i/12;
+      c.lineTo(len*(0.3+t*0.36), (k-1)*2.2+Math.sin(t*7+T*3+k)*1.1);
+    }
+    c.stroke(); c.globalAlpha=1;
+  }
+  core(c, len*0.13, 0, 1.9+seg*0.26, pal, T, "hex");
+  // 环绕浮游单元
   var n=2+Math.floor(seg*0.9);
   for(var i=0;i<n;i++){
     var a=T*1.5+i*6.2832/n;
-    var ox=len*0.42+Math.cos(a)*len*0.44;
-    var oy=Math.sin(a)*hh*2.9;
-    var sz=1.5+seg*0.22;
-    glowAt(c,ox,oy,sz*2.6,pal.e2,0.48);
-    c.save();c.translate(ox,oy);c.rotate(a*1.3);
-    // 浮游单元：棱角化小方块 + 能量缝
-    c.fillStyle=pal.m;
+    var ox=len*0.42+Math.cos(a)*len*0.42;
+    var oy=Math.sin(a)*hh*2.8;
+    var sz=1.4+seg*0.2;
+    glowAt(c,ox,oy,sz*2.5,pal.e2,0.46);
+    c.save(); c.translate(ox,oy); c.rotate(a*1.3);
+    // 棱角化小单元（曲线边）
     c.beginPath();
-    c.moveTo(-sz,-sz*0.42);c.lineTo(-sz*0.55,-sz*0.62);c.lineTo(sz*0.55,-sz*0.62);
-    c.lineTo(sz,0);c.lineTo(sz*0.55,sz*0.62);c.lineTo(-sz*0.55,sz*0.62);c.lineTo(-sz,-sz*0.42);
-    c.closePath();c.fill();
-    c.fillStyle=pal.e2;c.globalAlpha=0.9;
-    c.fillRect(-sz*0.2,-sz*0.2,sz*1.0,sz*0.4);c.globalAlpha=1;
+    c.moveTo(-sz,-sz*0.4);
+    c.quadraticCurveTo(-sz*0.5,-sz*0.62, sz*0.55,-sz*0.58);
+    c.quadraticCurveTo(sz,0, sz*0.55,sz*0.58);
+    c.quadraticCurveTo(-sz*0.5,sz*0.62, -sz,sz*0.4);
+    c.closePath();
+    c.fillStyle=pal.m; c.fill();
+    c.strokeStyle=pal.h; c.globalAlpha=0.35; c.lineWidth=0.45; c.stroke(); c.globalAlpha=1;
+    innerGlow(c, -sz*0.2, sz*0.9, function(t){return 0;}, pal.e2, 1.0, 0.85);
     c.restore();
     // 牵引光丝
-    c.strokeStyle=pal.e;c.globalAlpha=0.14;c.lineWidth=0.6;
-    c.beginPath();c.moveTo(len*0.42,0);c.lineTo(ox,oy);c.stroke();c.globalAlpha=1;
+    c.strokeStyle=pal.e; c.globalAlpha=0.12; c.lineWidth=0.55;
+    c.beginPath(); c.moveTo(len*0.42,0); c.lineTo(ox,oy); c.stroke(); c.globalAlpha=1;
   }
   // 专属特征
   if(mk==="shoulder"){
-    bevel(c,-6.5,-hh*2.05,7.0,hh*1.45,1.0,pal);
-    energyCell(c,-5.8,-hh*1.92,5.0,hh*1.2,pal,T);
+    c.beginPath();
+    c.moveTo(-6.8,-hh*2.0);
+    c.quadraticCurveTo(-3.2,-hh*2.2,-0.6,-hh*1.96);
+    c.lineTo(-0.6,-hh*0.7);
+    c.quadraticCurveTo(-3.2,-hh*0.6,-6.8,-hh*0.86);
+    c.closePath();
+    c.fillStyle=pal.m; c.fill();
+    c.strokeStyle=pal.h; c.globalAlpha=0.3; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+    chamber(c,-6.0,-hh*1.36,4.4,hh*0.9,pal,T);
   }else if(mk==="wings"){
-    c.strokeStyle=pal.h;c.lineWidth=1.2;
     for(var i=0;i<3;i++){
-      c.beginPath();c.moveTo(len*0.14,-hh);c.lineTo(len*0.08-i*1.7,-hh-3.0-i*2.1);c.stroke();
-      c.beginPath();c.moveTo(len*0.14,hh);c.lineTo(len*0.08-i*1.7,hh+3.0+i*2.1);c.stroke();
+      for(var s=-1;s<=1;s+=2){
+        c.beginPath();
+        c.moveTo(len*0.14, s*hh*0.9);
+        c.quadraticCurveTo(len*0.08-i*1.2, s*(hh+2.0+i*1.8), len*0.06-i*1.9, s*(hh+3.0+i*2.1));
+        c.strokeStyle=pal.h; c.globalAlpha=0.5; c.lineWidth=0.9; c.stroke(); c.globalAlpha=1;
+      }
     }
-    for(var i=0;i<2;i++)neonTube(c,len*0.04-i*1.9,-hh-4.2-i*2.1,1.9,pal,T,true);
+    for(var i=0;i<2;i++)
+      innerGlow(c,len*0.02-i*1.6,len*0.02-i*1.6+1.6,function(t){return -hh-3.4;},pal.e2,1.4,0.55);
   }else if(mk==="tethers"){
-    c.strokeStyle=pal.e2;c.globalAlpha=0.6;c.lineWidth=0.85;
-    c.beginPath();c.moveTo(len*0.02,hh);
-    for(var i=1;i<=6;i++)c.lineTo(len*0.02-i*2.0,hh+Math.sin(i*0.85+T*3.2)*1.7);
-    c.stroke();c.globalAlpha=1;
+    c.strokeStyle=pal.e2; c.globalAlpha=0.58; c.lineWidth=0.8;
+    c.beginPath(); c.moveTo(len*0.02,hh*0.8);
+    for(var i=1;i<=6;i++) c.lineTo(len*0.02-i*1.9, hh*0.8+Math.sin(i*0.85+T*3.2)*1.6);
+    c.stroke(); c.globalAlpha=1;
   }else{
-    c.strokeStyle=pal.m;c.lineWidth=1.6;
-    c.beginPath();c.arc(len*1.0,0,hh*0.92,0,6.2832);c.stroke();
-    c.strokeStyle=pal.e;c.lineWidth=0.85;
-    c.beginPath();c.arc(len*1.0,0,hh*0.92,T*2.2,T*2.2+4.6);c.stroke();
-    c.strokeStyle=pal.e2;c.globalAlpha=0.6;c.lineWidth=0.7;
-    c.beginPath();c.arc(len*1.0,0,hh*1.16,T*1.6+2,T*1.6+5.2);c.stroke();c.globalAlpha=1;
+    ringShape(c, len*1.0, 0, hh*0.9, hh*0.2, pal, 0, 0);
+    c.strokeStyle=pal.e; c.globalAlpha=0.75; c.lineWidth=0.8;
+    c.beginPath(); c.arc(len*1.0,0,hh*0.9,T*2.2,T*2.2+4.6); c.stroke(); c.globalAlpha=1;
+    c.strokeStyle=pal.e2; c.globalAlpha=0.5; c.lineWidth=0.6;
+    c.beginPath(); c.arc(len*1.0,0,hh*1.14,T*1.6+2,T*1.6+5.2); c.stroke(); c.globalAlpha=1;
   }
-
-  /* ---- 等级级差件（让每一级都有可见差异） ---- */
   lvFx(c,pal,lv,seg,len,hh,T);
-  ticks(c,3,hh*1.5,7,4+lv%4,pal,1.5);
   return {mx:len+2,my:0};
+}
+
+/* 齿轮（加特林专用） */
+function gear(c,x,y,r,teeth,pal,T,spin){
+  c.save(); c.translate(x,y); c.rotate(T*(spin||1));
+  c.beginPath();
+  for(var i=0;i<teeth;i++){
+    var a1=i*6.2832/teeth, a2=(i+0.5)*6.2832/teeth;
+    c.lineTo(Math.cos(a1)*r,Math.sin(a1)*r);
+    c.lineTo(Math.cos(a2)*r*0.76,Math.sin(a2)*r*0.76);
+  }
+  c.closePath();
+  var g=c.createRadialGradient(0,0,r*0.2,0,0,r);
+  g.addColorStop(0,pal.h); g.addColorStop(0.7,pal.m); g.addColorStop(1,"#04060b");
+  c.fillStyle=g; c.fill();
+  c.strokeStyle=pal.h; c.globalAlpha=0.4; c.lineWidth=0.55; c.stroke(); c.globalAlpha=1;
+  c.fillStyle="#04060b"; c.beginPath(); c.arc(0,0,r*0.4,0,6.2832); c.fill();
+  c.restore();
 }
 
 var FAM_DRAW={pistol:famPistol,rifle:famRifle,sniper:famSniper,shotgun:famShotgun,
@@ -4128,13 +4458,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v6.4");
+    localStorage.setItem("njs_patch","v6.5");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v6.4"){
+    if(seen!=="v6.5"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -8737,7 +9067,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v6.4</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v6.5</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -8768,6 +9098,12 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 15:42:01",items:[
+      "✨ 武器重置为流线曲面：贝塞尔曲线轮廓，不再直角块拼装",
+      "🎨 三层光影：主体渐变 + 顶部高光带 + 曲面细分线",
+      "📐 三段结构：后段握把 · 中段机匣 · 前段枪管/核心",
+      "🔧 新增曲线握把·圆柱枪管·能量腔·环件·曲线喇叭口"
+    ]},
     {time:"2026-10-24 13:45:15",items:[
       "🎨 8 类武器各自的风格语言：军工复古/战术现代/精密仪器/重工粗犷",
       "⚙️ 机械狂热/神秘能量/要塞工程/赛博分体 —— 不再共用一套骨架",
@@ -8965,7 +9301,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 13:45:15";
+    pd.textContent="更新于 2026 年 10 月 24 日 15:42:01";
   }
 })();
 </script>
