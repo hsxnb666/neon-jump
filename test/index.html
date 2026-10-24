@@ -7083,7 +7083,8 @@ function gameOver(){
   ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+" · 本局金币 +"+coinCount+(smartMode?"（聪明人双倍加成）":"");
   saveScore(score,distance);
   lbSubmit(score,distance);
-  switchBoard(smartMode?"smart":"all");
+  // 只设置视图（不拉数据），等 lbSubmit 成功回调后再刷新，避免显示提交前的旧榜
+  lbView=(smartMode?"smart":"all");
   ui.over.classList.remove("hidden");
   ui.hud.classList.add("hidden");
 }
@@ -7121,7 +7122,8 @@ function doGiveUp(){
   ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+(smartMode?" · 🧠聪明人":"")+(typeof _lastCoinGain!=="undefined"&&_lastCoinGain>0?" · 本局金币 +"+_lastCoinGain+(smartMode?"（双倍加成）":""):"");
   saveScore(score,distance);
   lbSubmit(score,distance);
-  switchBoard(smartMode?"smart":"all");
+  // 只设置视图（不拉数据），等 lbSubmit 成功回调后再刷新，避免显示提交前的旧榜
+  lbView=(smartMode?"smart":"all");
   ui.over.classList.remove("hidden");
   ui.hud.classList.add("hidden");
 }
@@ -7469,7 +7471,8 @@ function lbSubmit(sc,ds){
   var _body=JSON.stringify({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime});
   // 先去重查询：该昵称是否已有记录，取终身金币最高的一条
   var q=new XMLHttpRequest();
-  q.open("GET",LB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(nm)+"&select=id,lifetime_coins&order=lifetime_coins.desc&limit=1",true);
+  var _gmNow=(smartMode?"smart":"normal");
+  q.open("GET",LB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(nm)+"&gamemode=eq."+_gmNow+"&select=id,lifetime_coins&order=lifetime_coins.desc&limit=1",true);
   q.setRequestHeader("apikey",LB_KEY);
   q.setRequestHeader("Authorization","Bearer "+LB_KEY);
   q.timeout=8000;
@@ -7522,7 +7525,7 @@ function lbSubmit(sc,ds){
         } else { lbStat("更新失败"); }
       };
       x.onerror=function(){ lbStat("更新失败(离线)"); };
-      try{ x.send(JSON.stringify({lifetime_coins:_lifetime})); }catch(e){}
+      try{ x.send(JSON.stringify({score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime})); }catch(e){}
     };
     // 已存在：新终身金币更高才更新（去重），否则不新增不更新
     if(existId!==null){
