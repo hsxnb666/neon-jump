@@ -171,7 +171,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v7.0</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v7.1</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3659,63 +3659,112 @@ var SKIN_RAR={
 
 /* ===== 皮肤配置表（数据驱动，禁止每套写独立绘制代码） ===== */
 var SKIN_DEF={
-  /* ---------- 示例 A：至情至圣 · 炎羽天启 · 传说 ---------- */
-  flamingo:{
-    name:"至情至圣", rar:"gold", fam:"炎羽天启",
-    pal:{main:"#f4f0e8", sub:"#ff5a2a", hi:"#ffd45e", ene:"#ffb020", dark:"#2a1410"},
-    baseMat:"porcelain",         // 白瓷半透
-    shell:"feather",             // 羽片甲片
-    extend:"wings",              // 双侧火焰羽翼
-    floaters:["feather","ember"],// 悬浮羽片 + 火星
-    trail:"flame",               // 火焰拉丝
-    glow:3, dyn:"float",
-    muzzle:"dragonbreath", bullet:"flame", hit:"starmark", kill:"phoenix"
-  },
-  /* ---------- 示例 B：幽焰骑士 · 幽焰骑士 · 传说 ---------- */
-  duskKnight:{
-    name:"幽焰骑士", rar:"gold", fam:"幽焰骑士",
-    pal:{main:"#1a2418", sub:"#2d4a2a", hi:"#b8ff6a", ene:"#7cff3a", dark:"#080c06"},
-    baseMat:"obsidian",          // 黑曜石哑光
-    shell:"armor",               // 装甲片
-    extend:"cape",               // 焰状披风
-    floaters:["shard","ember"],
-    trail:"darkflame",
-    glow:3, dyn:"pulse",
-    muzzle:"darkvortex", bullet:"darkflame", hit:"crack", kill:"knight"
-  },
-  /* ---------- 示例 C：星梦奇缘 · 冰晶神谕 · 神话 ---------- */
+  /* ===== T0 神话 · 冰晶神谕 ===== */
   frostDream:{
     name:"星梦奇缘", rar:"red", fam:"冰晶神谕",
     pal:{main:"#dff4ff", sub:"#5fbfe8", hi:"#ffffff", ene:"#38d0ff", dark:"#0a1a28"},
-    baseMat:"crystal",           // 水晶半透
-    shell:"ice",                 // 冰棱甲片
-    extend:"icewing",            // 冰凤凰翼
-    floaters:["crystal","spark","rune"],
-    trail:"frost",
+    baseMat:"crystal", shell:"ice", extend:"icewing",
+    floaters:["crystal","spark","rune"], trail:"frost",
     glow:3, dyn:"flow",
     muzzle:"frostburst", bullet:"icecrystal", hit:"crack", kill:"icephoenix"
   },
-  /* ---------- 基础档：白/绿/蓝，验证稀有度梯度 ---------- */
+  /* ===== T1 传说 · 神兽吞兵（五爪金龙） ===== */
+  goldDragon:{
+    name:"五爪金龙", rar:"gold", fam:"神兽吞兵",
+    pal:{main:"#f0c040", sub:"#8a5a18", hi:"#fff2b0", ene:"#ff9a20", dark:"#1a0e04"},
+    baseMat:"obsidian", shell:"scaledragon", extend:"dragon",
+    floaters:["shard","ember"], trail:"flame",
+    glow:3, dyn:"flow",
+    muzzle:"dragonbreath", bullet:"goldspiral", hit:"starmark", kill:"dragon"
+  },
+  /* ===== T1 传说 · 炎羽天启（至情至圣） ===== */
+  flamingo:{
+    name:"至情至圣", rar:"gold", fam:"炎羽天启",
+    pal:{main:"#f4f0e8", sub:"#ff5a2a", hi:"#ffd45e", ene:"#ffb020", dark:"#2a1410"},
+    baseMat:"porcelain", shell:"feather", extend:"wings",
+    floaters:["feather","ember"], trail:"flame",
+    glow:3, dyn:"float",
+    muzzle:"dragonbreath", bullet:"flame", hit:"starmark", kill:"phoenix"
+  },
+  /* ===== T1 传说 · 珍珠幻梦（超新星） ===== */
+  supernova:{
+    name:"超新星", rar:"gold", fam:"珍珠幻梦",
+    pal:{main:"#f0e8ff", sub:"#b060ff", hi:"#ffffff", ene:"#e070ff", dark:"#180a2a"},
+    baseMat:"pearl", shell:"petal", extend:"butterfly",
+    floaters:["spark","rune"], trail:"star",
+    glow:3, dyn:"pulse",
+    muzzle:"petalburst", bullet:"stardust", hit:"petal", kill:"nova"
+  },
+  /* ===== T1 传说 · 深渊王权（墨龙九天） ===== */
+  inkDragon:{
+    name:"墨龙九天", rar:"gold", fam:"深渊王权",
+    pal:{main:"#2a2a3a", sub:"#14141f", hi:"#8a9ac0", ene:"#c060ff", dark:"#05050a"},
+    baseMat:"obsidian", shell:"scaledragon", extend:"crown",
+    floaters:["shard","rune"], trail:"voidflame",
+    glow:3, dyn:"flow",
+    muzzle:"voidrift", bullet:"void", hit:"crack", kill:"inkdragon"
+  },
+  /* ===== T0 神话 · 神兽吞兵（魔童闹海） ===== */
+  seaDragon:{
+    name:"魔童闹海", rar:"red", fam:"神兽吞兵",
+    pal:{main:"#a8e0f0", sub:"#2a6a9a", hi:"#ffffff", ene:"#40d0ff", dark:"#04101a"},
+    baseMat:"crystal", shell:"scaledragon", extend:"dragon",
+    floaters:["crystal","spark","rune"], trail:"frost",
+    glow:3, dyn:"flow",
+    muzzle:"frostburst", bullet:"icecrystal", hit:"crack", kill:"seadragon"
+  },
+  /* ===== T2 史诗 · 星舰幻游（梦幻火箭） ===== */
+  rocketDream:{
+    name:"梦幻火箭", rar:"purple", fam:"星舰幻游",
+    pal:{main:"#e8d0ff", sub:"#9a5ad0", hi:"#ffffff", ene:"#ff70d0", dark:"#231038"},
+    baseMat:"brushed", shell:"mechplate", extend:"mechwing",
+    floaters:["spark"], trail:"star",
+    glow:2, dyn:"rotate",
+    muzzle:"pulse", bullet:"holo", hit:"dot", kill:"plain"
+  },
+  /* ===== T3 稀有 · 粉心甜梦（火箭少女101） ===== */
+  pinkHeart:{
+    name:"火箭少女", rar:"blue", fam:"粉心甜梦",
+    pal:{main:"#ffd0e8", sub:"#ff5a98", hi:"#ffffff", ene:"#ff80b8", dark:"#3a0a20"},
+    baseMat:"matte", shell:"plate", extend:"ribbon",
+    floaters:["spark"], trail:null,
+    glow:1, dyn:"pulse",
+    muzzle:"heartburst", bullet:"heart", hit:"heart", kill:"plain"
+  },
+  /* ===== T0 神话 · 圣魔法阵（灵猫魔法师） ===== */
+  spiritCat:{
+    name:"灵猫魔法师", rar:"red", fam:"圣魔法阵",
+    pal:{main:"#ffe8a0", sub:"#c08a20", hi:"#ffffff", ene:"#60b0ff", dark:"#241804"},
+    baseMat:"lightmetal", shell:"runeplate", extend:"magiccircle",
+    floaters:["rune","spark","crystal"], trail:"star",
+    glow:3, dyn:"flow",
+    muzzle:"magicflash", bullet:"rune", hit:"hexagram", kill:"magiccat"
+  },
+  /* ===== T3 稀有 · 冰晶神谕（女娲灵识） ===== */
+  nuwaSoul:{
+    name:"女娲灵识", rar:"blue", fam:"冰晶神谕",
+    pal:{main:"#c8e8ff", sub:"#5a9ac8", hi:"#ffffff", ene:"#80d8ff", dark:"#0a1e30"},
+    baseMat:"crystal", shell:"ice", extend:null,
+    floaters:["crystal"], trail:null,
+    glow:1, dyn:"pulse",
+    muzzle:"frostburst", bullet:"icecrystal", hit:"dot", kill:"plain"
+  },
+  /* ===== T3 稀有 · 星舰幻游（无垠阁） ===== */
+  voidPavilion:{
+    name:"无垠阁", rar:"blue", fam:"星舰幻游",
+    pal:{main:"#b0c8f0", sub:"#3a5a9a", hi:"#ffffff", ene:"#50a0ff", dark:"#080e1e"},
+    baseMat:"brushed", shell:"mechplate", extend:"mechwing",
+    floaters:["spark"], trail:null,
+    glow:1, dyn:"rotate",
+    muzzle:"pulse", bullet:"holo", hit:"dot", kill:"plain"
+  },
+  /* ===== 基础档 ===== */
   basicWhite:{
     name:"素白涂装", rar:"white", fam:"战甲英雄",
     pal:{main:"#c8d0dc", sub:"#8a94a8", hi:"#e8eef8", ene:"#ffffff", dark:"#2a2e38"},
     baseMat:"matte", shell:null, extend:null, floaters:[], trail:null,
     glow:0, dyn:"static",
     muzzle:"plain", bullet:"plain", hit:"dot", kill:"plain"
-  },
-  basicGreen:{
-    name:"翠影精良", rar:"green", fam:"战甲英雄",
-    pal:{main:"#7ac888", sub:"#3a7a48", hi:"#c8ffd8", ene:"#4ade80", dark:"#142a1a"},
-    baseMat:"lightmetal", shell:"plate", extend:null, floaters:[], trail:null,
-    glow:1, dyn:"static",
-    muzzle:"plain", bullet:"plain", hit:"dot", kill:"plain"
-  },
-  basicBlue:{
-    name:"霜刃稀有", rar:"blue", fam:"星舰幻游",
-    pal:{main:"#8fb8d8", sub:"#3a6a9a", hi:"#dff0ff", ene:"#38bdf8", dark:"#0e1e30"},
-    baseMat:"brushed", shell:"mechplate", extend:null, floaters:["spark"], trail:null,
-    glow:1, dyn:"pulse",
-    muzzle:"pulse", bullet:"holo", hit:"dot", kill:"plain"
   }
 };
 
@@ -3767,6 +3816,14 @@ function matFill(c, x0, x1, yTopFn, yBotFn, pal, mat, T){
     g6.addColorStop(0.52,"#ffffff"); g6.addColorStop(0.74,pal.sub);
     g6.addColorStop(1,"#1a3a54");
     return g6;
+  }
+  if(mat==="pearl"){
+    // 珍珠贝母：虹彩 —— 四个色相交替
+    var g7=c.createLinearGradient(0,cy-hh,0,cy+hh);
+    g7.addColorStop(0,"#ffd8f0"); g7.addColorStop(0.22,"#ffffff");
+    g7.addColorStop(0.45,"#d8e8ff"); g7.addColorStop(0.68,"#f0d8ff");
+    g7.addColorStop(0.86,pal.main); g7.addColorStop(1,pal.dark);
+    return g7;
   }
   // 默认
   var gd=c.createLinearGradient(0,cy-hh,0,cy+hh);
@@ -3821,559 +3878,590 @@ function curveOutline(c, pts){
    第1层：枪身底壳（几何 + 4分区材质）
    所有武器类型共用一套"底壳几何"，用 type 切换外形
    ================================================================== */
+/* ==================================================================
+   通用绘制基元 —— 浮雕/镶边/圆柱 都是"有厚度"的
+   ================================================================== */
+/* 浮雕块：填色 + 顶面亮边 + 侧面暗边 + 外描金边。pts=[x,y,x,y,...] */
+function emboss(c, pts, colTop, colBody, colSide, rimCol, rimW){
+  var n=pts.length;
+  // 1. 侧壁（向下偏移 1.4，暗色）
+  c.beginPath();
+  c.moveTo(pts[0],pts[1]+1.5);
+  for(var i=2;i<n;i+=2) c.lineTo(pts[i],pts[i+1]+1.5);
+  c.closePath();
+  c.fillStyle=colSide; c.fill();
+  // 2. 主体渐变（上亮下暗）
+  var minY=1e9,maxY=-1e9,minX=1e9,maxX=-1e9;
+  for(var i=0;i<n;i+=2){ if(pts[i+1]<minY)minY=pts[i+1]; if(pts[i+1]>maxY)maxY=pts[i+1];
+    if(pts[i]<minX)minX=pts[i]; if(pts[i]>maxX)maxX=pts[i]; }
+  var g=c.createLinearGradient(0,minY,0,maxY);
+  g.addColorStop(0,colTop); g.addColorStop(0.45,colBody); g.addColorStop(1,colSide);
+  c.beginPath();
+  c.moveTo(pts[0],pts[1]);
+  for(var i=2;i<n;i+=2) c.lineTo(pts[i],pts[i+1]);
+  c.closePath();
+  c.fillStyle=g; c.fill();
+  // 3. 顶面高光边（沿上轮廓）
+  c.beginPath(); c.moveTo(pts[0],pts[1]);
+  for(var i=2;i<n;i+=2) c.lineTo(pts[i],pts[i+1]);
+  c.strokeStyle="rgba(255,255,255,0.42)"; c.lineWidth=0.7; c.stroke();
+  // 4. 金边勾轮廓
+  if(rimCol){
+    c.beginPath(); c.moveTo(pts[0],pts[1]);
+    for(var i=2;i<n;i+=2) c.lineTo(pts[i],pts[i+1]);
+    c.closePath();
+    c.strokeStyle=rimCol; c.lineWidth=(rimW||0.75); c.stroke();
+  }
+}
+/* 圆柱：金属管（带镜面 + 底部反光 + 内膛） */
+function cyl(c, x0,x1, cy, r, pal, extra){
+  var g=c.createLinearGradient(0,cy-r,0,cy+r);
+  g.addColorStop(0,pal.dark);
+  g.addColorStop(0.14,pal.sub);
+  g.addColorStop(0.34,pal.main);
+  g.addColorStop(0.46,"#ffffff");
+  g.addColorStop(0.56,pal.main);
+  g.addColorStop(0.8,pal.sub);
+  g.addColorStop(1,pal.dark);
+  c.beginPath();
+  c.moveTo(x0,cy-r); c.lineTo(x1,cy-r*0.94);
+  c.lineTo(x1,cy+r*0.94); c.lineTo(x0,cy+r);
+  c.closePath();
+  c.fillStyle=g; c.fill();
+  // 顶部镜面细线
+  c.fillStyle="rgba(255,255,255,0.62)";
+  c.beginPath(); c.moveTo(x0,cy-r*0.74); c.lineTo(x1,cy-r*0.7);
+  c.lineTo(x1,cy-r*0.52); c.lineTo(x0,cy-r*0.56); c.closePath(); c.fill();
+  // 底部反射
+  c.fillStyle=(pal.ene||"#fff"); c.globalAlpha=0.2;
+  c.beginPath(); c.moveTo(x0,cy+r*0.7); c.lineTo(x1,cy+r*0.66);
+  c.lineTo(x1,cy+r*0.9); c.lineTo(x0,cy+r*0.94); c.closePath(); c.fill();
+  c.globalAlpha=1;
+  // 描边
+  c.beginPath(); c.moveTo(x0,cy-r); c.lineTo(x1,cy-r*0.94);
+  c.strokeStyle="rgba(0,0,0,0.55)"; c.lineWidth=0.6; c.stroke();
+}
+/* 枪口：厚壁圆环 + 深膛 */
+function muzzle(c, x, cy, r, pal){
+  cyl(c, x-r*0.9, x+r*0.9, cy, r, pal);
+  c.beginPath(); c.ellipse(x,cy,r*0.34,r*0.9,0,0,6.2832);
+  c.fillStyle="#03050a"; c.fill();
+  c.strokeStyle="rgba(255,255,255,0.2)"; c.lineWidth=0.5; c.stroke();
+}
+
 function skinBase(c, type, L, pal, mat, T, W, H){
   var hh=H, len=W;
-  /* 通用部件工具：圆柱枪管（上下两条明暗带自带体积感） */
-  function tube(x0,x1,h,seg){
-    var cy=0;
-    outline(c,[x0,-h, x1,-h*0.92, x1,h*0.92, x0,h]);
-    var tg=c.createLinearGradient(0,-h,0,h);
-    tg.addColorStop(0,"#ffffff"); tg.addColorStop(0.14,pal.hi);
-    tg.addColorStop(0.36,pal.main); tg.addColorStop(0.72,pal.sub);
-    tg.addColorStop(0.93,pal.dark); tg.addColorStop(1,"#000000");
-    c.fillStyle=tg; c.fill();
-    // 顶部镜面高光细线
-    c.fillStyle="rgba(255,255,255,0.55)";
-    outline(c,[x0,-h*0.82, x1,-h*0.76, x1,-h*0.58, x0,-h*0.62]); c.fill();
-    // 底部反射光
-    c.fillStyle=pal.ene; c.globalAlpha=0.16;
-    outline(c,[x0,h*0.72, x1,h*0.68, x1,h*0.9, x0,h*0.94]); c.fill();
-    c.globalAlpha=1;
-    // 圆度分割线
-    if(seg){ for(var i=0;i<seg;i++){
-      var sx=x0+(x1-x0)*(0.14+i*(0.72/seg));
-      c.strokeStyle="rgba(0,0,0,0.28)"; c.lineWidth=0.5;
-      c.beginPath(); c.moveTo(sx,-h*0.9); c.lineTo(sx,h*0.9); c.stroke();
-    }}
-  }
-  /* 通用部件工具：倒角块（顶高光+底暗部+斜切） */
-  function bevelBlock(pts, base, hiA, darkA){
-    outline(c,pts); c.fillStyle=base; c.fill();
-    // 斜切高光（左上一半）
-    var n=pts.length/2;
-    c.save(); c.beginPath(); c.rect(-999,-999,9999,9999); c.clip();
-    c.restore();
-    c.strokeStyle="rgba(255,255,255,"+(hiA||0.28)+")"; c.lineWidth=0.7; c.stroke();
-    c.strokeStyle="rgba(0,0,0,"+(darkA||0.4)+")"; c.lineWidth=0.7;
-    c.beginPath(); c.moveTo(pts[0],pts[1]);
-    for(var i=2;i<pts.length;i+=2) c.lineTo(pts[i],pts[i+1]);
-    c.closePath(); c.stroke();
-  }
-
-  if(type==="pistol"){
-    var Ln=len, h=hh;
-    /* 1. 握把（后倾 18°） */
-    c.save();
-    c.translate(Ln*0.02, h*0.5); c.rotate(0.30);
-    outline(c,[-h*0.62,0, h*0.62,0, h*0.5,h*2.05, -h*0.44,h*2.05]);
-    var gg=c.createLinearGradient(-h*0.6,0,h*0.6,0);
-    gg.addColorStop(0,pal.dark); gg.addColorStop(0.35,pal.sub);
-    gg.addColorStop(0.6,pal.main); gg.addColorStop(1,pal.dark);
-    c.fillStyle=gg; c.fill();
-    // 防滑纹（6 道斜槽）
-    c.strokeStyle="rgba(0,0,0,0.42)"; c.lineWidth=0.65;
-    for(var i=0;i<6;i++){
-      var yy=h*0.28+i*h*0.29;
-      c.beginPath(); c.moveTo(-h*0.55,yy); c.lineTo(h*0.52,yy-h*0.1); c.stroke();
-    }
-    // 握把高光边
-    c.strokeStyle="rgba(255,255,255,0.3)"; c.lineWidth=0.6;
-    c.beginPath(); c.moveTo(-h*0.62,0); c.lineTo(-h*0.44,h*2.05); c.stroke();
-    c.restore();
-    /* 2. 扳机护圈（圆弧） */
-    c.strokeStyle=pal.sub; c.lineWidth=1.5; c.lineCap="round";
-    c.beginPath();
-    c.moveTo(Ln*0.2, h*0.5);
-    c.quadraticCurveTo(Ln*0.22, h*1.5, Ln*0.44, h*1.28);
-    c.stroke(); c.lineCap="butt";
-    /* 3. 扳机 */
-    c.strokeStyle=pal.ene; c.lineWidth=0.9;
-    c.beginPath(); c.moveTo(Ln*0.3,h*0.5); c.quadraticCurveTo(Ln*0.34,h*0.95,Ln*0.29,h*1.2); c.stroke();
-    /* 4. 弹匣（插入握把内，露一小段底） */
-    outline(c,[-h*0.12,h*2.05, h*0.3,h*2.05, h*0.34,h*2.55, -h*0.06,h*2.55]);
-    c.fillStyle=pal.dark; c.fill();
-    c.strokeStyle="rgba(255,255,255,0.18)"; c.lineWidth=0.5; c.stroke();
-    /* 5. 套筒（主体） */
-    outline(c,[-h*0.1,-h*0.94, Ln*0.95,-h*0.94, Ln,-h*0.62, Ln,-h*0.05, Ln*0.97,h*0.44, Ln*0.9,h*0.56, -h*0.1,h*0.56]);
-    var sg=c.createLinearGradient(0,-h,0,h*0.6);
-    sg.addColorStop(0,"#ffffff"); sg.addColorStop(0.1,pal.hi);
-    sg.addColorStop(0.3,pal.main); sg.addColorStop(0.66,pal.sub);
-    sg.addColorStop(0.88,pal.dark); sg.addColorStop(1,"#000");
-    c.fillStyle=sg; c.fill();
-    /* 6. 套筒顶部平面（不是圆的，是平顶） */
-    c.fillStyle="rgba(255,255,255,0.34)";
-    outline(c,[-h*0.1,-h*0.94, Ln*0.95,-h*0.94, Ln*0.95,-h*0.72, -h*0.1,-h*0.72]); c.fill();
-    /* 7. 套筒防滑纹（后段 8 道竖槽） */
-    c.strokeStyle="rgba(0,0,0,0.4)"; c.lineWidth=0.6;
-    for(var i=0;i<8;i++){
-      var xx=Ln*0.02+i*Ln*0.026;
-      c.beginPath(); c.moveTo(xx,-h*0.9); c.lineTo(xx+Ln*0.008,h*0.3); c.stroke();
-    }
-    /* 8. 抛壳口 */
-    outline(c,[Ln*0.42,-h*0.86, Ln*0.66,-h*0.86, Ln*0.64,-h*0.34, Ln*0.44,-h*0.34]);
-    c.fillStyle="#05070c"; c.fill();
-    c.strokeStyle="rgba(255,255,255,0.22)"; c.lineWidth=0.5; c.stroke();
-    /* 9. 分界线（套筒/底把） */
-    c.strokeStyle="rgba(0,0,0,0.55)"; c.lineWidth=0.8;
-    c.beginPath(); c.moveTo(-h*0.1,h*0.56); c.lineTo(Ln*0.9,h*0.56); c.stroke();
-    /* 10. 准星 + 照门 */
-    outline(c,[Ln*0.9,-h*1.16, Ln*0.95,-h*1.16, Ln*0.95,-h*0.94, Ln*0.9,-h*0.94]);
-    c.fillStyle=pal.hi; c.fill();
-    outline(c,[Ln*0.06,-h*1.16, Ln*0.12,-h*1.16, Ln*0.12,-h*0.94, Ln*0.06,-h*0.94]);
-    c.fillStyle=pal.dark; c.fill();
-    /* 11. 枪口内膛 */
-    c.beginPath(); c.ellipse(Ln*0.985,-h*0.3,h*0.09,h*0.22,0,0,6.2832);
-    c.fillStyle="#04060a"; c.fill();
-    return {len:Ln, hh:h, mz:Ln, mzy:-h*0.3};
-  }
+  var RIM=pal.hi;       // 金边/镶边色
+  var BODY=pal.main, SUB=pal.sub, DARK=pal.dark, TOP=pal.hi;
 
   if(type==="rifle"){
     var Ln=len, h=hh;
-    /* 1. 枪托（后段，带贴腮板） */
-    outline(c,[-Ln*0.3,-h*1.3, -Ln*0.16,-h*1.05, -Ln*0.13,h*0.9, -Ln*0.3,h*1.42]);
-    var sg2=c.createLinearGradient(0,-h*1.3,0,h*1.4);
-    sg2.addColorStop(0,pal.hi); sg2.addColorStop(0.28,pal.main);
-    sg2.addColorStop(0.72,pal.sub); sg2.addColorStop(1,pal.dark);
-    c.fillStyle=sg2; c.fill();
-    c.strokeStyle="rgba(255,255,255,0.2)"; c.lineWidth=0.6; c.stroke();
+    /* ============ 枪托（可辨识的斜面托腮） ============ */
+    emboss(c,[-Ln*0.34,-h*1.18, -Ln*0.16,-h*0.92, -Ln*0.14,h*0.86, -Ln*0.34,h*1.24],
+      TOP, BODY, DARK, RIM, 0.7);
     // 托底缓冲垫
-    outline(c,[-Ln*0.32,-h*1.34, -Ln*0.3,-h*1.3, -Ln*0.3,h*1.42, -Ln*0.32,h*1.46]);
-    c.fillStyle=pal.dark; c.fill();
-    /* 2. 机匣 */
-    outline(c,[-Ln*0.13,-h*1.02, Ln*0.44,-h*1.02, Ln*0.46,-h*0.66, Ln*0.46,h*0.66, Ln*0.44,h*1.02, -Ln*0.13,h*0.98]);
-    var rg=c.createLinearGradient(0,-h,0,h);
-    rg.addColorStop(0,"#ffffff"); rg.addColorStop(0.1,pal.hi);
-    rg.addColorStop(0.3,pal.main); rg.addColorStop(0.68,pal.sub);
-    rg.addColorStop(0.9,pal.dark); rg.addColorStop(1,"#000");
-    c.fillStyle=rg; c.fill();
-    // 机匣顶面亮带
-    c.fillStyle="rgba(255,255,255,0.3)";
-    outline(c,[-Ln*0.13,-h*1.02, Ln*0.44,-h*1.02, Ln*0.44,-h*0.78, -Ln*0.13,-h*0.8]); c.fill();
-    // 抛壳口
-    outline(c,[Ln*0.1,-h*0.78, Ln*0.3,-h*0.78, Ln*0.29,-h*0.28, Ln*0.11,-h*0.28]);
+    emboss(c,[-Ln*0.365,-h*1.22, -Ln*0.34,-h*1.18, -Ln*0.34,h*1.24, -Ln*0.365,h*1.3],
+      "#3a3f4a", "#22262e", "#0a0c10", null, 0);
+    // 托腮板凹槽
+    c.strokeStyle="rgba(0,0,0,0.5)"; c.lineWidth=0.9;
+    c.beginPath(); c.moveTo(-Ln*0.3,-h*0.3); c.lineTo(-Ln*0.17,-h*0.2); c.stroke();
+    c.beginPath(); c.moveTo(-Ln*0.3,h*0.32); c.lineTo(-Ln*0.17,h*0.24); c.stroke();
+
+    /* ============ 机匣（核心，最重要） ============ */
+    emboss(c,[-Ln*0.14,-h*1.04, Ln*0.44,-h*1.04, Ln*0.46,-h*0.6,
+              Ln*0.46,h*0.6, Ln*0.44,h*1.04, -Ln*0.14,h*0.98],
+      TOP, BODY, DARK, RIM, 0.8);
+    // 机匣顶面（平的，亮一档）
+    emboss(c,[-Ln*0.14,-h*1.04, Ln*0.44,-h*1.04, Ln*0.44,-h*0.82, -Ln*0.14,-h*0.88],
+      "#ffffff", TOP, BODY, null, 0);
+    // 抛壳口（深孔）
+    c.beginPath();
+    c.moveTo(Ln*0.08,-h*0.8); c.lineTo(Ln*0.3,-h*0.8);
+    c.lineTo(Ln*0.29,-h*0.3); c.lineTo(Ln*0.09,-h*0.3); c.closePath();
     c.fillStyle="#05070c"; c.fill();
-    c.strokeStyle="rgba(255,255,255,0.2)"; c.lineWidth=0.45; c.stroke();
-    /* 3. 顶部皮卡汀尼导轨（14 齿） */
-    c.fillStyle=pal.dark;
-    outline(c,[-Ln*0.12,-h*1.24, Ln*0.44,-h*1.24, Ln*0.44,-h*1.04, -Ln*0.12,-h*1.04]); c.fill();
-    c.fillStyle=pal.sub;
-    for(var i=0;i<14;i++){
-      var xx=-Ln*0.11+i*(Ln*0.54/14);
-      outline(c,[xx,-h*1.22, xx+Ln*0.028,-h*1.22, xx+Ln*0.028,-h*1.06, xx,-h*1.06]); c.fill();
+    c.strokeStyle="rgba(255,255,255,0.25)"; c.lineWidth=0.5; c.stroke();
+    // 抛壳口内侧上沿高光
+    c.strokeStyle="rgba(255,255,255,0.5)"; c.lineWidth=0.6;
+    c.beginPath(); c.moveTo(Ln*0.08,-h*0.8); c.lineTo(Ln*0.3,-h*0.8); c.stroke();
+    // 拉机柄
+    emboss(c,[Ln*0.02,-h*1.1, Ln*0.1,-h*1.1, Ln*0.1,-h*1.02, Ln*0.02,-h*1.02],
+      TOP, BODY, DARK, RIM, 0.5);
+
+    /* ============ 皮卡汀尼导轨（11 齿，真实齿形） ============ */
+    emboss(c,[-Ln*0.13,-h*1.3, Ln*0.45,-h*1.3, Ln*0.45,-h*1.06, -Ln*0.13,-h*1.1],
+      TOP, SUB, DARK, RIM, 0.5);
+    for(var i=0;i<11;i++){
+      var xx=-Ln*0.12+i*(Ln*0.56/11);
+      c.fillStyle=DARK;
+      c.beginPath();
+      c.moveTo(xx,-h*1.32); c.lineTo(xx+Ln*0.032,-h*1.32);
+      c.lineTo(xx+Ln*0.032,-h*1.1); c.lineTo(xx,-h*1.1);
+      c.closePath(); c.fill();
+      c.fillStyle="rgba(255,255,255,0.35)";
+      c.beginPath(); c.moveTo(xx,-h*1.32); c.lineTo(xx+Ln*0.032,-h*1.32);
+      c.lineTo(xx+Ln*0.032,-h*1.28); c.lineTo(xx,-h*1.28); c.closePath(); c.fill();
     }
-    /* 4. 弹匣（直插，微前倾） */
-    c.save(); c.translate(Ln*0.24,h*0.6); c.rotate(0.1);
-    outline(c,[-h*0.5,0, h*0.5,0, h*0.42,h*2.3, -h*0.42,h*2.3]);
-    var mg=c.createLinearGradient(-h*0.5,0,h*0.5,0);
-    mg.addColorStop(0,pal.dark); mg.addColorStop(0.4,pal.sub);
-    mg.addColorStop(0.7,pal.main); mg.addColorStop(1,pal.dark);
-    c.fillStyle=mg; c.fill();
-    // 弹匣加强筋
-    c.strokeStyle="rgba(0,0,0,0.36)"; c.lineWidth=0.55;
-    for(var i=0;i<4;i++){ var yy=h*0.4+i*h*0.46;
-      c.beginPath(); c.moveTo(-h*0.44,yy); c.lineTo(h*0.44,yy); c.stroke(); }
-    c.strokeStyle="rgba(255,255,255,0.22)"; c.lineWidth=0.55;
-    c.beginPath(); c.moveTo(-h*0.5,0); c.lineTo(-h*0.42,h*2.3); c.stroke();
+
+    /* ============ 弹匣（香蕉形，带加强筋） ============ */
+    c.save(); c.translate(Ln*0.19, h*0.55); c.rotate(0.13);
+    emboss(c,[-h*0.52,0, h*0.52,0, h*0.4,h*2.4, -h*0.44,h*2.4],
+      TOP, BODY, DARK, RIM, 0.7);
+    c.strokeStyle="rgba(0,0,0,0.42)"; c.lineWidth=0.7;
+    for(var i=0;i<4;i++){
+      var yy=h*0.42+i*h*0.47;
+      c.beginPath(); c.moveTo(-h*0.47,yy); c.lineTo(h*0.44,yy); c.stroke();
+    }
+    for(var i=0;i<4;i++){
+      var yy=h*0.42+i*h*0.47+h*0.06;
+      c.strokeStyle="rgba(255,255,255,0.24)"; c.lineWidth=0.5;
+      c.beginPath(); c.moveTo(-h*0.46,yy); c.lineTo(h*0.43,yy); c.stroke();
+    }
     c.restore();
-    /* 5. 握把 */
-    c.save(); c.translate(Ln*0.06,h*0.7); c.rotate(0.34);
-    outline(c,[-h*0.46,0, h*0.46,0, h*0.38,h*1.9, -h*0.42,h*1.9]);
-    var pg=c.createLinearGradient(-h*0.46,0,h*0.46,0);
-    pg.addColorStop(0,pal.dark); pg.addColorStop(0.45,pal.sub); pg.addColorStop(1,pal.dark);
-    c.fillStyle=pg; c.fill();
-    c.strokeStyle="rgba(0,0,0,0.4)"; c.lineWidth=0.55;
-    for(var i=0;i<5;i++){ var yy=h*0.3+i*h*0.32;
-      c.beginPath(); c.moveTo(-h*0.4,yy); c.lineTo(h*0.36,yy); c.stroke(); }
+
+    /* ============ 握把（后倾 19°，带防滑纹） ============ */
+    c.save(); c.translate(Ln*0.03, h*0.66); c.rotate(0.33);
+    emboss(c,[-h*0.48,0, h*0.48,0, h*0.38,h*2.0, -h*0.44,h*2.0],
+      TOP, SUB, DARK, RIM, 0.6);
+    c.strokeStyle="rgba(0,0,0,0.46)"; c.lineWidth=0.7;
+    for(var i=0;i<5;i++){
+      var yy=h*0.32+i*h*0.33;
+      c.beginPath(); c.moveTo(-h*0.42,yy); c.lineTo(h*0.36,yy-h*0.05); c.stroke();
+    }
     c.restore();
-    /* 6. 扳机护圈 */
-    c.strokeStyle=pal.sub; c.lineWidth=1.3; c.lineCap="round";
-    c.beginPath(); c.moveTo(Ln*0.08,h*0.7);
-    c.quadraticCurveTo(Ln*0.1,h*1.42,Ln*0.3,h*1.2); c.stroke(); c.lineCap="butt";
-    /* 7. 护木（前段，带散热孔） */
-    outline(c,[Ln*0.46,-h*0.9, Ln*0.76,-h*0.84, Ln*0.76,h*0.84, Ln*0.46,h*0.9]);
-    var hg=c.createLinearGradient(0,-h*0.9,0,h*0.9);
-    hg.addColorStop(0,pal.hi); hg.addColorStop(0.28,pal.main);
-    hg.addColorStop(0.72,pal.sub); hg.addColorStop(1,pal.dark);
-    c.fillStyle=hg; c.fill();
-    // 散热孔 3 组
-    c.fillStyle="#06090f";
+
+    /* ============ 扳机护圈 ============ */
+    c.strokeStyle=SUB; c.lineWidth=1.7; c.lineCap="round";
+    c.beginPath(); c.moveTo(Ln*0.05,h*0.68);
+    c.quadraticCurveTo(Ln*0.08,h*1.5,Ln*0.32,h*1.26); c.stroke();
+    c.strokeStyle="rgba(255,255,255,0.3)"; c.lineWidth=0.6;
+    c.beginPath(); c.moveTo(Ln*0.05,h*0.68);
+    c.quadraticCurveTo(Ln*0.08,h*1.5,Ln*0.32,h*1.26); c.stroke();
+    // 扳机
+    c.strokeStyle=pal.ene; c.lineWidth=1.0;
+    c.beginPath(); c.moveTo(Ln*0.14,h*0.7);
+    c.quadraticCurveTo(Ln*0.17,h*1.1,Ln*0.13,h*1.3); c.stroke();
+    c.lineCap="butt";
+
+    /* ============ 护木（前段，散热孔 + 短导轨） ============ */
+    emboss(c,[Ln*0.46,-h*0.92, Ln*0.74,-h*0.86, Ln*0.74,h*0.86, Ln*0.46,h*0.92],
+      TOP, BODY, DARK, RIM, 0.7);
+    // 顶部加强筋
+    emboss(c,[Ln*0.46,-h*0.92, Ln*0.74,-h*0.86, Ln*0.74,-h*0.7, Ln*0.46,-h*0.76],
+      "#ffffff", TOP, BODY, null, 0);
+    // 散热孔（5 组，真实穿孔感）
+    for(var i=0;i<5;i++){
+      var xx=Ln*(0.5+i*0.048);
+      c.beginPath(); c.ellipse(xx,0,h*0.1,h*0.28,0,0,6.2832);
+      c.fillStyle="#05070c"; c.fill();
+      c.strokeStyle="rgba(255,255,255,0.3)"; c.lineWidth=0.55; c.stroke();
+      // 孔内上沿高光
+      c.beginPath(); c.ellipse(xx,-h*0.08,h*0.07,h*0.13,0,3.34,6.08);
+      c.strokeStyle="rgba(255,255,255,0.2)"; c.lineWidth=0.4; c.stroke();
+    }
+    // 护木下端握把导轨
+    emboss(c,[Ln*0.5,h*0.92, Ln*0.66,h*0.88, Ln*0.66,h*1.1, Ln*0.5,h*1.14],
+      TOP, SUB, DARK, null, 0);
+
+    /* ============ 枪管（长圆柱） ============ */
+    cyl(c, Ln*0.74, Ln*0.99, 0, h*0.32, pal);
+    // 导气箍
+    emboss(c,[Ln*0.78,-h*0.44, Ln*0.83,-h*0.44, Ln*0.83,h*0.44, Ln*0.78,h*0.44],
+      "#ffffff", TOP, DARK, RIM, 0.5);
+
+    /* ============ 消焰器（火帽，多槽） ============ */
+    emboss(c,[Ln*0.99,-h*0.52, Ln*1.06,-h*0.48, Ln*1.06,h*0.48, Ln*0.99,h*0.52],
+      TOP, BODY, DARK, RIM, 0.7);
     for(var i=0;i<3;i++){
-      var xx=Ln*(0.5+i*0.08);
-      c.beginPath(); c.ellipse(xx,0,h*0.11,h*0.26,0,0,6.2832); c.fill();
-      c.strokeStyle="rgba(255,255,255,0.28)"; c.lineWidth=0.45; c.stroke();
+      var xx=Ln*(0.997+i*0.021);
+      c.fillStyle="#05070c";
+      c.beginPath(); c.moveTo(xx,-h*0.44); c.lineTo(xx+Ln*0.012,-h*0.44);
+      c.lineTo(xx+Ln*0.012,h*0.44); c.lineTo(xx,h*0.44); c.closePath(); c.fill();
     }
-    /* 8. 枪管（长，圆形） */
-    tube(Ln*0.76, Ln*0.99, h*0.34, 0);
-    /* 9. 消焰器 */
-    outline(c,[Ln*0.99,-h*0.42, Ln,-h*0.42, Ln,h*0.42, Ln*0.99,h*0.42]);
-    outline(c,[Ln*0.97,-h*0.5, Ln*1.04,-h*0.46, Ln*1.04,h*0.46, Ln*0.97,h*0.5]);
-    c.fillStyle=pal.dark; c.fill();
-    c.strokeStyle=pal.hi; c.globalAlpha=0.4; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
-    /* 10. 枪口内膛 */
-    c.beginPath(); c.ellipse(Ln*1.035,0,h*0.07,h*0.2,0,0,6.2832);
-    c.fillStyle="#04060a"; c.fill();
-    return {len:Ln*1.05, hh:h, mz:Ln*1.05, mzy:0};
+    muzzle(c, Ln*1.055, 0, h*0.34, pal);
+    return {len:Ln*1.07, hh:h, mz:Ln*1.07, mzy:0};
+  }
+
+  /* 其他类型沿用 v2 的部件清单（手枪/狙击/霰弹/加特林/法杖/巨炮/浮游） */
+  if(type==="pistol"){
+    var Ln=len, h=hh;
+    /* 握把 */
+    c.save(); c.translate(Ln*0.02,h*0.42); c.rotate(0.30);
+    emboss(c,[-h*0.64,0, h*0.64,0, h*0.52,h*2.15, -h*0.46,h*2.15], TOP, SUB, DARK, RIM, 0.7);
+    c.strokeStyle="rgba(0,0,0,0.46)"; c.lineWidth=0.7;
+    for(var i=0;i<6;i++){ var yy=h*0.3+i*h*0.3;
+      c.beginPath(); c.moveTo(-h*0.56,yy); c.lineTo(h*0.5,yy-h*0.08); c.stroke(); }
+    c.restore();
+    /* 弹匣底 */
+    emboss(c,[-h*0.14,h*2.1, h*0.34,h*2.1, h*0.38,h*2.6, -h*0.08,h*2.6], TOP, DARK, "#000", RIM, 0.5);
+    /* 扳机护圈 */
+    c.strokeStyle=SUB; c.lineWidth=1.7; c.lineCap="round";
+    c.beginPath(); c.moveTo(Ln*0.2,h*0.44);
+    c.quadraticCurveTo(Ln*0.22,h*1.55,Ln*0.46,h*1.3); c.stroke();
+    c.strokeStyle="rgba(255,255,255,0.3)"; c.lineWidth=0.6;
+    c.beginPath(); c.moveTo(Ln*0.2,h*0.44);
+    c.quadraticCurveTo(Ln*0.22,h*1.55,Ln*0.46,h*1.3); c.stroke();
+    c.strokeStyle=pal.ene; c.lineWidth=1.0;
+    c.beginPath(); c.moveTo(Ln*0.31,h*0.46); c.quadraticCurveTo(Ln*0.35,h*0.98,Ln*0.3,h*1.24); c.stroke();
+    c.lineCap="butt";
+    /* 套筒（主体） */
+    emboss(c,[-h*0.12,-h*0.98, Ln*0.94,-h*0.98, Ln,-h*0.66, Ln,-h*0.06,
+              Ln*0.96,h*0.46, Ln*0.88,h*0.6, -h*0.12,h*0.6],
+      TOP, BODY, DARK, RIM, 0.8);
+    /* 套筒平顶 */
+    emboss(c,[-h*0.12,-h*0.98, Ln*0.94,-h*0.98, Ln*0.94,-h*0.74, -h*0.12,-h*0.74],
+      "#ffffff", TOP, BODY, null, 0);
+    /* 后段防滑纹 9 道 */
+    c.strokeStyle="rgba(0,0,0,0.45)"; c.lineWidth=0.7;
+    for(var i=0;i<9;i++){
+      var xx=Ln*0.0+i*Ln*0.025;
+      c.beginPath(); c.moveTo(xx,-h*0.94); c.lineTo(xx+Ln*0.007,h*0.34); c.stroke();
+    }
+    /* 抛壳口 */
+    c.beginPath();
+    c.moveTo(Ln*0.44,-h*0.9); c.lineTo(Ln*0.68,-h*0.9);
+    c.lineTo(Ln*0.66,-h*0.36); c.lineTo(Ln*0.46,-h*0.36); c.closePath();
+    c.fillStyle="#05070c"; c.fill();
+    c.strokeStyle="rgba(255,255,255,0.28)"; c.lineWidth=0.55; c.stroke();
+    /* 套筒/底把分界 */
+    c.strokeStyle="rgba(0,0,0,0.6)"; c.lineWidth=0.9;
+    c.beginPath(); c.moveTo(-h*0.12,h*0.6); c.lineTo(Ln*0.88,h*0.6); c.stroke();
+    /* 准星 + 照门 */
+    emboss(c,[Ln*0.88,-h*1.22, Ln*0.94,-h*1.22, Ln*0.94,-h*0.98, Ln*0.88,-h*0.98], TOP, TOP, SUB, RIM, 0.4);
+    emboss(c,[Ln*0.06,-h*1.22, Ln*0.13,-h*1.22, Ln*0.13,-h*0.98, Ln*0.06,-h*0.98], TOP, DARK, "#000", RIM, 0.4);
+    /* 枪口 */
+    muzzle(c, Ln*0.99, -h*0.34, h*0.2, pal);
+    return {len:Ln, hh:h, mz:Ln, mzy:-h*0.34};
   }
 
   if(type==="sniper"){
     var Ln=len, h=hh;
-    /* 1. 枪托（带拇指孔） */
-    outline(c,[-Ln*0.28,-h*1.5, -Ln*0.14,-h*1.1, -Ln*0.12,h*1.0, -Ln*0.28,h*1.6]);
-    var sg3=c.createLinearGradient(0,-h*1.5,0,h*1.6);
-    sg3.addColorStop(0,pal.hi); sg3.addColorStop(0.3,pal.main);
-    sg3.addColorStop(0.75,pal.sub); sg3.addColorStop(1,pal.dark);
-    c.fillStyle=sg3; c.fill();
-    c.strokeStyle="rgba(255,255,255,0.22)"; c.lineWidth=0.6; c.stroke();
-    /* 2. 机匣 */
-    outline(c,[-Ln*0.12,-h*1.06, Ln*0.4,-h*1.0, Ln*0.42,-h*0.6, Ln*0.42,h*0.6, Ln*0.4,h*1.0, -Ln*0.12,h*1.04]);
-    var rg2=c.createLinearGradient(0,-h,0,h);
-    rg2.addColorStop(0,"#fff"); rg2.addColorStop(0.12,pal.hi);
-    rg2.addColorStop(0.32,pal.main); rg2.addColorStop(0.7,pal.sub);
-    rg2.addColorStop(0.92,pal.dark); rg2.addColorStop(1,"#000");
-    c.fillStyle=rg2; c.fill();
-    c.fillStyle="rgba(255,255,255,0.28)";
-    outline(c,[-Ln*0.12,-h*1.06, Ln*0.4,-h*1.0, Ln*0.4,-h*0.8, -Ln*0.12,-h*0.86]); c.fill();
-    /* 3. 瞄准镜（大口径，带镜环） */
-    outline(c,[Ln*0.06,-h*3.0, Ln*0.34,-h*3.0, Ln*0.34,-h*1.24, Ln*0.06,-h*1.24]);
-    var og=c.createLinearGradient(0,-h*3.0,0,-h*1.24);
-    og.addColorStop(0,"#fff"); og.addColorStop(0.16,pal.hi);
-    og.addColorStop(0.42,pal.main); og.addColorStop(0.78,pal.sub); og.addColorStop(1,pal.dark);
-    c.fillStyle=og; c.fill();
-    // 镜筒环箍（2 道）
-    c.fillStyle=pal.dark;
-    outline(c,[Ln*0.1,-h*3.06, Ln*0.14,-h*3.06, Ln*0.14,-h*1.18, Ln*0.1,-h*1.18]); c.fill();
-    outline(c,[Ln*0.26,-h*3.06, Ln*0.3,-h*3.06, Ln*0.3,-h*1.18, Ln*0.26,-h*1.18]); c.fill();
-    // 物镜
-    c.beginPath(); c.ellipse(Ln*0.07,-h*2.12,h*0.26,h*0.8,0,0,6.2832);
-    var lg=c.createRadialGradient(Ln*0.07,-h*2.3,h*0.05,Ln*0.07,-h*2.12,h*0.8);
-    lg.addColorStop(0,"#ffffff"); lg.addColorStop(0.3,pal.ene);
-    lg.addColorStop(0.75,pal.sub); lg.addColorStop(1,"#05080e");
-    c.fillStyle=lg; c.fill();
-    c.strokeStyle=pal.hi; c.lineWidth=0.6; c.stroke();
-    // 目镜
-    c.beginPath(); c.ellipse(Ln*0.33,-h*2.12,h*0.2,h*0.62,0,0,6.2832);
-    c.fillStyle="#05080e"; c.fill();
-    c.strokeStyle=pal.sub; c.lineWidth=0.5; c.stroke();
-    // 镜座
-    c.fillStyle=pal.sub;
-    outline(c,[Ln*0.11,-h*1.24, Ln*0.17,-h*1.24, Ln*0.17,-h*1.0, Ln*0.11,-h*1.0]); c.fill();
-    outline(c,[Ln*0.27,-h*1.24, Ln*0.33,-h*1.24, Ln*0.33,-h*1.0, Ln*0.27,-h*1.0]); c.fill();
-    /* 4. 弹匣 */
-    c.save(); c.translate(Ln*0.2,h*0.6); c.rotate(0.06);
-    outline(c,[-h*0.44,0, h*0.44,0, h*0.36,h*1.85, -h*0.36,h*1.85]);
-    var mg2=c.createLinearGradient(-h*0.44,0,h*0.44,0);
-    mg2.addColorStop(0,pal.dark); mg2.addColorStop(0.42,pal.sub);
-    mg2.addColorStop(0.72,pal.main); mg2.addColorStop(1,pal.dark);
-    c.fillStyle=mg2; c.fill();
-    c.restore();
-    /* 5. 握把 */
-    c.save(); c.translate(Ln*0.02,h*0.7); c.rotate(0.32);
-    outline(c,[-h*0.42,0, h*0.42,0, h*0.34,h*1.8, -h*0.38,h*1.8]);
-    c.fillStyle=pal.sub; c.fill();
-    c.strokeStyle="rgba(0,0,0,0.4)"; c.lineWidth=0.5;
-    for(var i=0;i<4;i++){ var yy=h*0.3+i*h*0.36;
-      c.beginPath(); c.moveTo(-h*0.36,yy); c.lineTo(h*0.32,yy); c.stroke(); }
-    c.restore();
-    /* 6. 两脚架 */
-    c.strokeStyle=pal.sub; c.lineWidth=1.6; c.lineCap="round";
-    c.beginPath(); c.moveTo(Ln*0.62,h*0.5); c.lineTo(Ln*0.5,h*2.4); c.stroke();
-    c.beginPath(); c.moveTo(Ln*0.62,h*0.5); c.lineTo(Ln*0.74,h*2.4); c.stroke();
-    c.lineCap="butt";
-    /* 7. 长枪管 */
-    tube(Ln*0.42, Ln*0.96, h*0.28, 0);
-    /* 8. 制退器（多槽） */
-    outline(c,[Ln*0.96,-h*0.52, Ln*1.05,-h*0.5, Ln*1.05,h*0.5, Ln*0.96,h*0.52]);
-    c.fillStyle=pal.dark; c.fill();
-    c.strokeStyle=pal.hi; c.globalAlpha=0.35; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
-    // 侧排气槽
-    c.fillStyle="#05080e";
+    /* 枪托 */
+    emboss(c,[-Ln*0.3,-h*1.66, -Ln*0.14,-h*1.1, -Ln*0.12,h*1.02, -Ln*0.3,h*1.7],
+      TOP, BODY, DARK, RIM, 0.7);
+    emboss(c,[-Ln*0.32,-h*1.72, -Ln*0.3,-h*1.66, -Ln*0.3,h*1.7, -Ln*0.32,h*1.76],
+      "#3a3f4a","#22262e","#0a0c10",null,0);
+    /* 拇指孔 */
+    c.beginPath(); c.ellipse(-Ln*0.19,h*0.2,h*0.24,h*0.5,0,0,6.2832);
+    c.fillStyle="#05070c"; c.fill();
+    c.strokeStyle="rgba(255,255,255,0.24)"; c.lineWidth=0.6; c.stroke();
+    /* 机匣 */
+    emboss(c,[-Ln*0.12,-h*1.06, Ln*0.4,-h*1.0, Ln*0.42,-h*0.58,
+              Ln*0.42,h*0.58, Ln*0.4,h*1.0, -Ln*0.12,h*1.04],
+      TOP, BODY, DARK, RIM, 0.8);
+    emboss(c,[-Ln*0.12,-h*1.06, Ln*0.4,-h*1.0, Ln*0.4,-h*0.8, -Ln*0.12,-h*0.86],
+      "#ffffff", TOP, BODY, null, 0);
+    /* 瞄准镜：大口径双段镜筒 */
+    emboss(c,[Ln*0.05,-h*3.1, Ln*0.35,-h*3.1, Ln*0.35,-h*1.2, Ln*0.05,-h*1.2],
+      TOP, BODY, DARK, RIM, 0.8);
+    /* 镜筒环箍 3 道 */
     for(var i=0;i<3;i++){
-      var xx=Ln*(0.975+i*0.026);
-      outline(c,[xx,-h*0.44, xx+Ln*0.014,-h*0.44, xx+Ln*0.014,h*0.44, xx,h*0.44]); c.fill();
+      var xx=Ln*(0.08+i*0.1);
+      emboss(c,[xx,-h*3.18, xx+Ln*0.038,-h*3.18, xx+Ln*0.038,-h*1.12, xx,-h*1.12],
+        "#ffffff", TOP, DARK, RIM, 0.5);
     }
-    c.beginPath(); c.ellipse(Ln*1.045,0,h*0.07,h*0.2,0,0,6.2832);
-    c.fillStyle="#04060a"; c.fill();
+    /* 物镜（青蓝玻璃） */
+    c.beginPath(); c.ellipse(Ln*0.055,-h*2.15,h*0.28,h*0.84,0,0,6.2832);
+    var lg=c.createRadialGradient(Ln*0.055,-h*2.5,h*0.04,Ln*0.055,-h*2.15,h*0.86);
+    lg.addColorStop(0,"#ffffff"); lg.addColorStop(0.22,pal.ene);
+    lg.addColorStop(0.6,pal.sub); lg.addColorStop(1,"#05080e");
+    c.fillStyle=lg; c.fill();
+    c.strokeStyle=RIM; c.lineWidth=0.7; c.stroke();
+    /* 目镜 */
+    c.beginPath(); c.ellipse(Ln*0.345,-h*2.15,h*0.22,h*0.68,0,0,6.2832);
+    c.fillStyle="#05080e"; c.fill();
+    c.strokeStyle=SUB; c.lineWidth=0.6; c.stroke();
+    /* 镜座 2 个 */
+    emboss(c,[Ln*0.1,-h*1.2, Ln*0.17,-h*1.2, Ln*0.17,-h*1.0, Ln*0.1,-h*1.0], TOP, SUB, DARK, RIM, 0.4);
+    emboss(c,[Ln*0.27,-h*1.2, Ln*0.34,-h*1.2, Ln*0.34,-h*1.0, Ln*0.27,-h*1.0], TOP, SUB, DARK, RIM, 0.4);
+    /* 弹匣 */
+    c.save(); c.translate(Ln*0.2,h*0.55); c.rotate(0.07);
+    emboss(c,[-h*0.46,0, h*0.46,0, h*0.36,h*1.95, -h*0.38,h*1.95], TOP, BODY, DARK, RIM, 0.6);
+    c.restore();
+    /* 握把 */
+    c.save(); c.translate(Ln*0.01,h*0.66); c.rotate(0.32);
+    emboss(c,[-h*0.44,0, h*0.44,0, h*0.34,h*1.9, -h*0.4,h*1.9], TOP, SUB, DARK, RIM, 0.6);
+    c.strokeStyle="rgba(0,0,0,0.44)"; c.lineWidth=0.6;
+    for(var i=0;i<4;i++){ var yy=h*0.32+i*h*0.36;
+      c.beginPath(); c.moveTo(-h*0.38,yy); c.lineTo(h*0.32,yy); c.stroke(); }
+    c.restore();
+    /* 两脚架 */
+    c.strokeStyle=SUB; c.lineWidth=1.8; c.lineCap="round";
+    c.beginPath(); c.moveTo(Ln*0.66,h*0.5); c.lineTo(Ln*0.52,h*2.5); c.stroke();
+    c.beginPath(); c.moveTo(Ln*0.66,h*0.5); c.lineTo(Ln*0.78,h*2.5); c.stroke();
+    c.strokeStyle="rgba(255,255,255,0.4)"; c.lineWidth=0.7;
+    c.beginPath(); c.moveTo(Ln*0.66,h*0.5); c.lineTo(Ln*0.52,h*2.5); c.stroke();
+    c.lineCap="butt";
+    /* 长枪管 */
+    cyl(c, Ln*0.42, Ln*0.96, 0, h*0.26, pal);
+    /* 制退器 */
+    emboss(c,[Ln*0.96,-h*0.54, Ln*1.05,-h*0.5, Ln*1.05,h*0.5, Ln*0.96,h*0.54],
+      TOP, BODY, DARK, RIM, 0.7);
+    for(var i=0;i<4;i++){
+      var xx=Ln*(0.972+i*0.02);
+      c.fillStyle="#05070c";
+      c.beginPath(); c.moveTo(xx,-h*0.46); c.lineTo(xx+Ln*0.011,-h*0.46);
+      c.lineTo(xx+Ln*0.011,h*0.46); c.lineTo(xx,h*0.46); c.closePath(); c.fill();
+    }
+    muzzle(c, Ln*1.045, 0, h*0.28, pal);
     return {len:Ln*1.06, hh:h, mz:Ln*1.06, mzy:0};
   }
 
   if(type==="shotgun"){
     var Ln=len, h=hh;
-    /* 1. 枪托 */
-    outline(c,[-Ln*0.26,-h*1.2, -Ln*0.14,-h*0.95, -Ln*0.12,h*0.85, -Ln*0.26,h*1.32]);
-    var sg4=c.createLinearGradient(0,-h*1.2,0,h*1.3);
-    sg4.addColorStop(0,pal.hi); sg4.addColorStop(0.3,pal.main);
-    sg4.addColorStop(0.75,pal.sub); sg4.addColorStop(1,pal.dark);
-    c.fillStyle=sg4; c.fill();
-    c.strokeStyle="rgba(255,255,255,0.2)"; c.lineWidth=0.6; c.stroke();
-    /* 2. 机匣 */
-    outline(c,[-Ln*0.12,-h*1.0, Ln*0.34,-h*0.96, Ln*0.34,h*0.96, -Ln*0.12,h*1.0]);
-    var rg3=c.createLinearGradient(0,-h,0,h);
-    rg3.addColorStop(0,"#fff"); rg3.addColorStop(0.12,pal.hi);
-    rg3.addColorStop(0.34,pal.main); rg3.addColorStop(0.72,pal.sub);
-    rg3.addColorStop(0.92,pal.dark); rg3.addColorStop(1,"#000");
-    c.fillStyle=rg3; c.fill();
-    /* 3. 上双管 */
-    tube(Ln*0.34, Ln*0.95, h*0.36, 0);
-    /* 4. 下弹仓管 */
-    outline(c,[Ln*0.34,h*0.42, Ln*0.9,h*0.42, Ln*0.9,h*0.86, Ln*0.34,h*0.86]);
-    var tg2=c.createLinearGradient(0,h*0.42,0,h*0.86);
-    tg2.addColorStop(0,pal.hi); tg2.addColorStop(0.4,pal.main);
-    tg2.addColorStop(1,pal.dark);
-    c.fillStyle=tg2; c.fill();
-    /* 5. 泵动护木（带 7 道防滑槽） */
-    outline(c,[Ln*0.36,-h*1.04, Ln*0.58,-h*1.0, Ln*0.58,h*1.0, Ln*0.36,h*1.04]);
-    var pg2=c.createLinearGradient(0,-h*1.0,0,h*1.0);
-    pg2.addColorStop(0,pal.hi); pg2.addColorStop(0.3,pal.main);
-    pg2.addColorStop(0.75,pal.sub); pg2.addColorStop(1,pal.dark);
-    c.fillStyle=pg2; c.fill();
-    c.strokeStyle="rgba(0,0,0,0.4)"; c.lineWidth=0.6;
+    emboss(c,[-Ln*0.28,-h*1.24, -Ln*0.14,-h*0.96, -Ln*0.12,h*0.86, -Ln*0.28,h*1.36],
+      TOP, BODY, DARK, RIM, 0.7);
+    emboss(c,[-Ln*0.3,-h*1.3, -Ln*0.28,-h*1.24, -Ln*0.28,h*1.36, -Ln*0.3,h*1.42],
+      "#3a3f4a","#22262e","#0a0c10",null,0);
+    emboss(c,[-Ln*0.12,-h*1.02, Ln*0.34,-h*0.98, Ln*0.34,h*0.98, -Ln*0.12,h*1.02],
+      TOP, BODY, DARK, RIM, 0.8);
+    emboss(c,[-Ln*0.12,-h*1.02, Ln*0.34,-h*0.98, Ln*0.34,-h*0.76, -Ln*0.12,-h*0.82],
+      "#ffffff", TOP, BODY, null, 0);
+    /* 上管 */
+    cyl(c, Ln*0.34, Ln*0.96, -h*0.06, h*0.42, pal);
+    /* 下弹仓管 */
+    cyl(c, Ln*0.34, Ln*0.9, h*0.66, h*0.2, pal);
+    /* 泵动护木（7 道防滑） */
+    emboss(c,[Ln*0.36,-h*1.08, Ln*0.6,-h*1.02, Ln*0.6,h*1.02, Ln*0.36,h*1.08],
+      TOP, BODY, DARK, RIM, 0.7);
+    c.strokeStyle="rgba(0,0,0,0.44)"; c.lineWidth=0.7;
     for(var i=0;i<7;i++){
-      var xx=Ln*(0.38+i*0.028);
-      c.beginPath(); c.moveTo(xx,-h*1.0); c.lineTo(xx+Ln*0.008,h*1.0); c.stroke();
+      var xx=Ln*(0.385+i*0.03);
+      c.beginPath(); c.moveTo(xx,-h*1.04); c.lineTo(xx+Ln*0.009,h*1.04); c.stroke();
     }
-    /* 6. 握把 */
-    c.save(); c.translate(Ln*0.02,h*0.72); c.rotate(0.3);
-    outline(c,[-h*0.44,0, h*0.44,0, h*0.36,h*1.85, -h*0.4,h*1.85]);
-    c.fillStyle=pal.sub; c.fill();
+    /* 握把 */
+    c.save(); c.translate(Ln*0.01,h*0.7); c.rotate(0.31);
+    emboss(c,[-h*0.46,0, h*0.46,0, h*0.36,h*1.9, -h*0.42,h*1.9], TOP, SUB, DARK, RIM, 0.6);
     c.restore();
-    /* 7. 扳机护圈 */
-    c.strokeStyle=pal.sub; c.lineWidth=1.3; c.lineCap="round";
-    c.beginPath(); c.moveTo(Ln*0.04,h*0.72);
-    c.quadraticCurveTo(Ln*0.06,h*1.4,Ln*0.24,h*1.18); c.stroke(); c.lineCap="butt";
-    /* 8. 收束器（喇叭口） */
-    outline(c,[Ln*0.95,-h*0.42, Ln*1.02,-h*0.56, Ln*1.02,h*0.56, Ln*0.95,h*0.42]);
-    var cug=c.createLinearGradient(0,-h*0.56,0,h*0.56);
-    cug.addColorStop(0,"#fff"); cug.addColorStop(0.2,pal.hi);
-    cug.addColorStop(0.5,pal.main); cug.addColorStop(1,pal.dark);
-    c.fillStyle=cug; c.fill();
-    c.strokeStyle="rgba(255,255,255,0.3)"; c.lineWidth=0.5; c.stroke();
-    c.beginPath(); c.ellipse(Ln*1.015,0,h*0.09,h*0.44,0,0,6.2832);
+    /* 扳机护圈 */
+    c.strokeStyle=SUB; c.lineWidth=1.6; c.lineCap="round";
+    c.beginPath(); c.moveTo(Ln*0.03,h*0.72);
+    c.quadraticCurveTo(Ln*0.06,h*1.46,Ln*0.28,h*1.22); c.stroke(); c.lineCap="butt";
+    /* 收束器（喇叭口） */
+    emboss(c,[Ln*0.96,-h*0.46, Ln*1.04,-h*0.62, Ln*1.04,h*0.62, Ln*0.96,h*0.46],
+      TOP, BODY, DARK, RIM, 0.7);
+    c.beginPath(); c.ellipse(Ln*1.03,0,h*0.1,h*0.5,0,0,6.2832);
     c.fillStyle="#04060a"; c.fill();
-    /* 9. 管口高光 */
-    c.strokeStyle=pal.ene; c.globalAlpha=0.45; c.lineWidth=0.7;
-    c.beginPath(); c.ellipse(Ln*1.015,0,h*0.11,h*0.48,0,0,6.2832); c.stroke(); c.globalAlpha=1;
-    return {len:Ln*1.03, hh:h, mz:Ln*1.03, mzy:0};
+    c.strokeStyle=RIM; c.globalAlpha=0.6; c.lineWidth=0.7; c.stroke(); c.globalAlpha=1;
+    return {len:Ln*1.05, hh:h, mz:Ln*1.05, mzy:0};
   }
 
   if(type==="gatling"){
     var Ln=len, h=hh;
-    /* 1. 后部电机壳 */
-    outline(c,[-Ln*0.3,-h*0.96, Ln*0.16,-h*1.12, Ln*0.16,h*1.12, -Ln*0.3,h*0.96]);
-    var mg3=c.createLinearGradient(0,-h*1.1,0,h*1.1);
-    mg3.addColorStop(0,"#fff"); mg3.addColorStop(0.12,pal.hi);
-    mg3.addColorStop(0.34,pal.main); mg3.addColorStop(0.72,pal.sub);
-    mg3.addColorStop(0.94,pal.dark); mg3.addColorStop(1,"#000");
-    c.fillStyle=mg3; c.fill();
-    /* 2. 散热栅（后部 5 道） */
-    c.fillStyle="#06090f";
-    for(var i=0;i<5;i++){
-      var xx=-Ln*0.24+i*Ln*0.07;
-      outline(c,[xx,-h*0.7, xx+Ln*0.04,-h*0.7, xx+Ln*0.04,h*0.7, xx,h*0.7]); c.fill();
+    /* 后部电机壳 */
+    emboss(c,[-Ln*0.32,-h*1.0, Ln*0.16,-h*1.14, Ln*0.16,h*1.14, -Ln*0.32,h*1.0],
+      TOP, BODY, DARK, RIM, 0.8);
+    emboss(c,[-Ln*0.32,-h*1.0, Ln*0.16,-h*1.14, Ln*0.16,-h*0.86, -Ln*0.32,-h*0.74],
+      "#ffffff", TOP, BODY, null, 0);
+    /* 散热栅 6 道 */
+    for(var i=0;i<6;i++){
+      var xx=-Ln*0.26+i*Ln*0.068;
+      c.fillStyle="#06090f";
+      c.beginPath(); c.moveTo(xx,-h*0.7); c.lineTo(xx+Ln*0.04,-h*0.7);
+      c.lineTo(xx+Ln*0.04,h*0.7); c.lineTo(xx,h*0.7); c.closePath(); c.fill();
+      c.strokeStyle="rgba(255,255,255,0.24)"; c.lineWidth=0.45; c.stroke();
     }
-    /* 3. 弹链箱 */
-    outline(c,[-Ln*0.14,h*0.9, Ln*0.1,h*0.86, Ln*0.1,h*2.0, -Ln*0.14,h*2.1]);
-    c.fillStyle=pal.dark; c.fill();
-    c.strokeStyle="rgba(255,255,255,0.2)"; c.lineWidth=0.5; c.stroke();
-    /* 4. 握把（后） */
-    c.save(); c.translate(Ln*0.02,h*0.9); c.rotate(0.26);
-    outline(c,[-h*0.36,0, h*0.36,0, h*0.3,h*1.5, -h*0.32,h*1.5]);
-    c.fillStyle=pal.sub; c.fill(); c.restore();
-    /* 5. 前握把 */
-    c.save(); c.translate(Ln*0.3,h*0.85); c.rotate(0.16);
-    outline(c,[-h*0.3,0, h*0.3,0, h*0.26,h*1.25, -h*0.26,h*1.25]);
-    c.fillStyle=pal.sub; c.fill(); c.restore();
-    /* 6. 旋转枪管组（6 管，前后双环） */
+    /* 弹链箱 */
+    emboss(c,[-Ln*0.16,h*0.92, Ln*0.1,h*0.88, Ln*0.1,h*2.06, -Ln*0.16,h*2.16],
+      TOP, SUB, DARK, RIM, 0.7);
+    /* 后握把 */
+    c.save(); c.translate(Ln*0.0,h*0.9); c.rotate(0.26);
+    emboss(c,[-h*0.38,0, h*0.38,0, h*0.32,h*1.6, -h*0.34,h*1.6], TOP, SUB, DARK, RIM, 0.5);
+    c.restore();
+    /* 前握把 */
+    c.save(); c.translate(Ln*0.3,h*0.86); c.rotate(0.16);
+    emboss(c,[-h*0.32,0, h*0.32,0, h*0.28,h*1.35, -h*0.28,h*1.35], TOP, SUB, DARK, RIM, 0.5);
+    c.restore();
+    /* 旋转枪管 6 根（真有远近层次） */
     var r0=Ln*0.16, r1=Ln*0.9;
+    var order=[];
     for(var i=0;i<6;i++){
       var aa=T*2.2+i*1.0472;
-      var ry=Math.sin(aa)*h*0.56;
-      var depth=0.55+0.45*Math.cos(aa);   // 远近层次
-      var rh=h*0.26*depth;
-      outline(c,[r0,ry-rh*0.5, r1,ry-rh*0.5, r1,ry+rh*0.5, r0,ry+rh*0.5]);
-      var bg2=c.createLinearGradient(0,ry-rh*0.5,0,ry+rh*0.5);
-      bg2.addColorStop(0,"#fff"); bg2.addColorStop(0.2,pal.hi);
-      bg2.addColorStop(0.5,pal.main); bg2.addColorStop(1,pal.dark);
-      c.fillStyle=bg2; c.globalAlpha=0.55+0.45*depth; c.fill(); c.globalAlpha=1;
-      c.strokeStyle="rgba(0,0,0,0.35)"; c.lineWidth=0.35; c.stroke();
+      order.push({i:i, aa:aa, depth:Math.cos(aa)});
     }
-    /* 7. 前固定环 */
-    outline(c,[r1,-h*0.86, r1+Ln*0.07,-h*0.94, r1+Ln*0.07,h*0.94, r1,h*0.86]);
-    c.fillStyle=pal.sub; c.fill();
-    c.strokeStyle=pal.hi; c.globalAlpha=0.4; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
-    /* 8. 环内芯 */
-    c.beginPath(); c.arc(r1+Ln*0.035,0,h*0.46,0,6.2832);
-    c.fillStyle=pal.dark; c.fill();
-    c.beginPath(); c.arc(r1+Ln*0.035,0,h*0.3,0,6.2832);
+    order.sort(function(A,B){ return A.depth-B.depth; });   // 先画远的
+    for(var o=0;o<6;o++){
+      var it=order[o];
+      var ry=Math.sin(it.aa)*h*0.58;
+      var dep=0.55+0.45*it.depth;
+      var rh=h*0.27*dep;
+      cyl(c, r0, r1, ry, rh, pal);
+      c.globalAlpha=0.5+0.5*dep;
+      c.fillStyle="rgba(0,0,0,"+(1-dep)*0.5+")";
+      c.beginPath(); c.moveTo(r0,ry-rh); c.lineTo(r1,ry-rh*0.94);
+      c.lineTo(r1,ry+rh*0.94); c.lineTo(r0,ry+rh); c.closePath(); c.fill();
+      c.globalAlpha=1;
+    }
+    /* 前固定环 */
+    emboss(c,[r1,-h*0.9, r1+Ln*0.075,-h*0.98, r1+Ln*0.075,h*0.98, r1,h*0.9],
+      TOP, BODY, DARK, RIM, 0.8);
+    c.beginPath(); c.arc(r1+Ln*0.038,0,h*0.5,0,6.2832);
+    c.fillStyle=DARK; c.fill();
+    c.beginPath(); c.arc(r1+Ln*0.038,0,h*0.34,0,6.2832);
     c.fillStyle="#04060a"; c.fill();
-    /* 9. 中段支撑环 */
-    outline(c,[r0+Ln*0.3,-h*0.74, r0+Ln*0.35,-h*0.78, r0+Ln*0.35,h*0.78, r0+Ln*0.3,h*0.74]);
-    c.fillStyle=pal.dark; c.fill();
-    return {len:r1+Ln*0.075, hh:h, mz:r1+Ln*0.075, mzy:0};
+    c.strokeStyle="rgba(255,255,255,0.2)"; c.lineWidth=0.6; c.stroke();
+    /* 中段支撑环 */
+    emboss(c,[r0+Ln*0.3,-h*0.78, r0+Ln*0.35,-h*0.82, r0+Ln*0.35,h*0.82, r0+Ln*0.3,h*0.78],
+      TOP, SUB, DARK, RIM, 0.6);
+    return {len:r1+Ln*0.08, hh:h, mz:r1+Ln*0.08, mzy:0};
   }
 
   if(type==="staff"){
     var Ln=len, h=hh;
-    /* 1. 杖杆（长锥形，带握把缠带） */
-    outline(c,[-Ln*0.06,-h*0.86, Ln*0.8,-h*0.6, Ln*0.8,h*0.6, -Ln*0.06,h*0.86]);
-    var sg5=c.createLinearGradient(0,-h*0.86,0,h*0.86);
-    sg5.addColorStop(0,"#fff"); sg5.addColorStop(0.16,pal.hi);
-    sg5.addColorStop(0.4,pal.main); sg5.addColorStop(0.76,pal.sub);
-    sg5.addColorStop(1,pal.dark);
-    c.fillStyle=sg5; c.fill();
-    c.fillStyle="rgba(255,255,255,0.28)";
-    outline(c,[-Ln*0.06,-h*0.8, Ln*0.8,-h*0.56, Ln*0.8,-h*0.34, -Ln*0.06,-h*0.56]); c.fill();
-    /* 2. 缠带（螺旋 7 段） */
-    c.strokeStyle=pal.dark; c.lineWidth=1.5; c.lineCap="round";
-    for(var i=0;i<7;i++){
-      var xa=-Ln*0.02+i*Ln*0.068;
-      c.beginPath(); c.moveTo(xa,-h*0.78+i*0.02); c.lineTo(xa+Ln*0.03,h*0.78-i*0.02); c.stroke();
+    /* 杖杆 */
+    emboss(c,[-Ln*0.06,-h*0.9, Ln*0.78,-h*0.62, Ln*0.78,h*0.62, -Ln*0.06,h*0.9],
+      TOP, BODY, DARK, RIM, 0.8);
+    emboss(c,[-Ln*0.06,-h*0.9, Ln*0.78,-h*0.62, Ln*0.78,-h*0.36, -Ln*0.06,-h*0.58],
+      "#ffffff", TOP, BODY, null, 0);
+    /* 缠带 8 道 */
+    c.strokeStyle=DARK; c.lineWidth=1.7; c.lineCap="round";
+    for(var i=0;i<8;i++){
+      var xa=-Ln*0.02+i*Ln*0.062;
+      c.beginPath(); c.moveTo(xa,-h*0.82+i*0.02); c.lineTo(xa+Ln*0.028,h*0.82-i*0.02); c.stroke();
     }
     c.lineCap="butt";
-    /* 3. 尾配重 */
-    outline(c,[-Ln*0.12,-h*0.66, -Ln*0.06,-h*0.86, -Ln*0.06,h*0.86, -Ln*0.12,h*0.66]);
-    c.fillStyle=pal.dark; c.fill();
-    /* 4. 顶端托架（4 爪爪型） */
-    var hx=Ln*0.86, hr=h*3.0;
-    c.strokeStyle=pal.sub; c.lineWidth=1.8; c.lineCap="round";
+    /* 尾配重 */
+    emboss(c,[-Ln*0.14,-h*0.7, -Ln*0.06,-h*0.9, -Ln*0.06,h*0.9, -Ln*0.14,h*0.7],
+      TOP, SUB, DARK, RIM, 0.6);
+    /* 顶端 4 爪托架 */
+    var hx=Ln*0.86, hr=h*3.1;
+    c.strokeStyle=SUB; c.lineWidth=2.0; c.lineCap="round";
     for(var i=0;i<4;i++){
       var a4=-1.5708+i*1.5708+0.785;
-      c.beginPath();
-      c.moveTo(Ln*0.78,0);
+      c.beginPath(); c.moveTo(Ln*0.76,0);
       c.quadraticCurveTo(hx+Math.cos(a4)*hr*0.5, Math.sin(a4)*hr*0.5,
-                         hx+Math.cos(a4)*hr*0.82, Math.sin(a4)*hr*0.82);
-      c.stroke();
+                         hx+Math.cos(a4)*hr*0.84, Math.sin(a4)*hr*0.84); c.stroke();
+    }
+    c.strokeStyle=RIM; c.lineWidth=0.7;
+    for(var i=0;i<4;i++){
+      var a4=-1.5708+i*1.5708+0.785;
+      c.beginPath(); c.moveTo(Ln*0.76,0);
+      c.quadraticCurveTo(hx+Math.cos(a4)*hr*0.5, Math.sin(a4)*hr*0.5,
+                         hx+Math.cos(a4)*hr*0.84, Math.sin(a4)*hr*0.84); c.stroke();
     }
     c.lineCap="butt";
-    /* 5. 爪尖发光点 */
     for(var i=0;i<4;i++){
       var a5=-1.5708+i*1.5708+0.785;
-      skinGlowAt(c,hx+Math.cos(a5)*hr*0.82, Math.sin(a5)*hr*0.82, h*0.8, pal.ene, 0.7, true);
+      skinGlowAt(c,hx+Math.cos(a5)*hr*0.84, Math.sin(a5)*hr*0.84, h*0.85, pal.ene, 0.7, true);
     }
-    /* 6. 悬浮主晶（菱形） */
-    skinGlowAt(c,hx,0,h*2.6,pal.ene,0.55);
+    /* 主晶（菱形多刻面） */
+    skinGlowAt(c,hx,0,h*2.8,pal.ene,0.5);
     c.beginPath();
-    c.moveTo(hx, -hr*0.66); c.lineTo(hx+hr*0.42, 0);
-    c.lineTo(hx, hr*0.66); c.lineTo(hx-hr*0.42, 0); c.closePath();
-    var cg2=c.createLinearGradient(hx-hr*0.4,-hr*0.6,hx+hr*0.4,hr*0.6);
-    cg2.addColorStop(0,"#ffffff"); cg2.addColorStop(0.35,pal.hi);
-    cg2.addColorStop(0.7,pal.ene); cg2.addColorStop(1,pal.sub);
+    c.moveTo(hx,-hr*0.68); c.lineTo(hx+hr*0.44,-hr*0.16);
+    c.lineTo(hx+hr*0.36,hr*0.3); c.lineTo(hx-hr*0.36,hr*0.3);
+    c.lineTo(hx-hr*0.44,-hr*0.16); c.closePath();
+    var cg2=c.createLinearGradient(hx-hr*0.4,-hr*0.6,hx+hr*0.4,hr*0.3);
+    cg2.addColorStop(0,"#ffffff"); cg2.addColorStop(0.3,TOP);
+    cg2.addColorStop(0.62,pal.ene); cg2.addColorStop(1,SUB);
     c.fillStyle=cg2; c.fill();
-    c.strokeStyle="#ffffff"; c.globalAlpha=0.8; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
-    // 晶体内刻面
-    c.strokeStyle="rgba(255,255,255,0.5)"; c.lineWidth=0.5;
-    c.beginPath(); c.moveTo(hx,-hr*0.66); c.lineTo(hx,hr*0.66); c.stroke();
-    c.beginPath(); c.moveTo(hx-hr*0.42,0); c.lineTo(hx+hr*0.42,0); c.stroke();
+    c.strokeStyle="#ffffff"; c.globalAlpha=0.85; c.lineWidth=0.75; c.stroke(); c.globalAlpha=1;
+    c.strokeStyle="rgba(255,255,255,0.55)"; c.lineWidth=0.6;
+    c.beginPath(); c.moveTo(hx,-hr*0.68); c.lineTo(hx,hr*0.3); c.stroke();
+    c.beginPath(); c.moveTo(hx-hr*0.44,-hr*0.16); c.lineTo(hx+hr*0.44,-hr*0.16); c.stroke();
+    c.beginPath(); c.moveTo(hx+hr*0.44,-hr*0.16); c.lineTo(hx+hr*0.36,hr*0.3); c.stroke();
+    c.beginPath(); c.moveTo(hx-hr*0.44,-hr*0.16); c.lineTo(hx-hr*0.36,hr*0.3); c.stroke();
     return {len:hx+hr*0.5, hh:h, mz:hx+hr*0.5, mzy:0};
   }
 
   if(type==="cannon"){
     var Ln=len, h=hh;
-    /* 1. 炮身后座 */
-    outline(c,[-Ln*0.16,-h*0.94, Ln*0.12,-h*1.0, Ln*0.12,h*1.0, -Ln*0.16,h*0.94]);
-    var bg3=c.createLinearGradient(0,-h*1.0,0,h*1.0);
-    bg3.addColorStop(0,"#fff"); bg3.addColorStop(0.12,pal.hi);
-    bg3.addColorStop(0.34,pal.main); bg3.addColorStop(0.74,pal.sub);
-    bg3.addColorStop(0.94,pal.dark); bg3.addColorStop(1,"#000");
-    c.fillStyle=bg3; c.fill();
-    /* 2. 炮管（粗，四段箍） */
-    outline(c,[Ln*0.12,-h*0.82, Ln*0.94,-h*0.94, Ln*0.94,h*0.94, Ln*0.12,h*0.82]);
-    var btg=c.createLinearGradient(0,-h*0.94,0,h*0.94);
-    btg.addColorStop(0,"#fff"); btg.addColorStop(0.1,pal.hi);
-    btg.addColorStop(0.32,pal.main); btg.addColorStop(0.7,pal.sub);
-    btg.addColorStop(0.92,pal.dark); btg.addColorStop(1,"#000");
-    c.fillStyle=btg; c.fill();
-    // 炮管箍（4 道）
+    /* 后座 */
+    emboss(c,[-Ln*0.18,-h*0.98, Ln*0.1,-h*1.04, Ln*0.1,h*1.04, -Ln*0.18,h*0.98],
+      TOP, BODY, DARK, RIM, 0.8);
+    emboss(c,[-Ln*0.18,-h*0.98, Ln*0.1,-h*1.04, Ln*0.1,-h*0.76, -Ln*0.18,-h*0.68],
+      "#ffffff", TOP, BODY, null, 0);
+    /* 炮管 */
+    emboss(c,[Ln*0.1,-h*0.86, Ln*0.94,-h*0.98, Ln*0.94,h*0.98, Ln*0.1,h*0.86],
+      TOP, BODY, DARK, RIM, 0.8);
+    emboss(c,[Ln*0.1,-h*0.86, Ln*0.94,-h*0.98, Ln*0.94,-h*0.7, Ln*0.1,-h*0.6],
+      "#ffffff", TOP, BODY, null, 0);
+    /* 炮管箍 4 道 */
     for(var i=0;i<4;i++){
-      var xx=Ln*(0.2+i*0.19);
-      outline(c,[xx,-h*0.98, xx+Ln*0.045,-h*0.96, xx+Ln*0.045,h*0.96, xx,h*0.98]);
-      var hgg=c.createLinearGradient(0,-h*0.98,0,h*0.98);
-      hgg.addColorStop(0,"#fff"); hgg.addColorStop(0.25,pal.hi);
-      hgg.addColorStop(0.6,pal.sub); hgg.addColorStop(1,pal.dark);
-      c.fillStyle=hgg; c.fill();
-      c.strokeStyle="rgba(0,0,0,0.4)"; c.lineWidth=0.5; c.stroke();
+      var xx=Ln*(0.18+i*0.19);
+      emboss(c,[xx,-h*1.02, xx+Ln*0.05,-h*1.0, xx+Ln*0.05,h*1.0, xx,h*1.02],
+        "#ffffff", TOP, SUB, RIM, 0.6);
     }
-    /* 3. 炮口（厚壁 + 深膛） */
-    outline(c,[Ln*0.94,-h*1.06, Ln*1.04,-h*1.12, Ln*1.04,h*1.12, Ln*0.94,h*1.06]);
-    var mzg=c.createLinearGradient(0,-h*1.12,0,h*1.12);
-    mzg.addColorStop(0,"#fff"); mzg.addColorStop(0.2,pal.hi);
-    mzg.addColorStop(0.5,pal.main); mzg.addColorStop(1,pal.dark);
-    c.fillStyle=mzg; c.fill();
-    c.strokeStyle=pal.hi; c.globalAlpha=0.45; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
-    c.beginPath(); c.ellipse(Ln*1.032,0,h*0.11,h*0.76,0,0,6.2832);
+    /* 炮口厚壁 */
+    emboss(c,[Ln*0.94,-h*1.1, Ln*1.05,-h*1.16, Ln*1.05,h*1.16, Ln*0.94,h*1.1],
+      TOP, BODY, DARK, RIM, 0.8);
+    c.beginPath(); c.ellipse(Ln*1.038,0,h*0.12,h*0.8,0,0,6.2832);
     c.fillStyle="#03050a"; c.fill();
-    c.strokeStyle="rgba(255,255,255,0.14)"; c.lineWidth=0.7; c.stroke();
-    /* 4. 液压双支撑腿 */
-    c.strokeStyle=pal.sub; c.lineWidth=3.0; c.lineCap="round";
-    c.beginPath(); c.moveTo(Ln*0.02,h*0.8); c.lineTo(-Ln*0.3,h*2.5); c.stroke();
-    c.beginPath(); c.moveTo(Ln*0.02,-h*0.8); c.lineTo(-Ln*0.3,-h*2.5); c.stroke();
-    c.lineWidth=1.4; c.strokeStyle=pal.hi; c.globalAlpha=0.5;
-    c.beginPath(); c.moveTo(Ln*0.02,h*0.8); c.lineTo(-Ln*0.3,h*2.5); c.stroke();
-    c.beginPath(); c.moveTo(Ln*0.02,-h*0.8); c.lineTo(-Ln*0.3,-h*2.5); c.stroke();
+    c.strokeStyle="rgba(255,255,255,0.18)"; c.lineWidth=0.8; c.stroke();
+    /* 液压双支撑腿 */
+    c.strokeStyle=SUB; c.lineWidth=3.4; c.lineCap="round";
+    c.beginPath(); c.moveTo(Ln*0.0,h*0.84); c.lineTo(-Ln*0.32,h*2.6); c.stroke();
+    c.beginPath(); c.moveTo(Ln*0.0,-h*0.84); c.lineTo(-Ln*0.32,-h*2.6); c.stroke();
+    c.strokeStyle=RIM; c.lineWidth=1.5; c.globalAlpha=0.6;
+    c.beginPath(); c.moveTo(Ln*0.0,h*0.84); c.lineTo(-Ln*0.32,h*2.6); c.stroke();
+    c.beginPath(); c.moveTo(Ln*0.0,-h*0.84); c.lineTo(-Ln*0.32,-h*2.6); c.stroke();
     c.globalAlpha=1; c.lineCap="butt";
-    /* 5. 液压缸 */
-    outline(c,[Ln*0.02,-h*1.2, Ln*0.14,-h*1.2, Ln*0.14,-h*0.94, Ln*0.02,-h*0.94]);
-    c.fillStyle=pal.dark; c.fill();
-    outline(c,[Ln*0.02,h*0.94, Ln*0.14,h*0.94, Ln*0.14,h*1.2, Ln*0.02,h*1.2]);
-    c.fillStyle=pal.dark; c.fill();
-    /* 6. 后握把 */
-    c.save(); c.translate(-Ln*0.06,h*0.9); c.rotate(0.24);
-    outline(c,[-h*0.3,0, h*0.3,0, h*0.26,h*1.2, -h*0.26,h*1.2]);
-    c.fillStyle=pal.sub; c.fill(); c.restore();
-    return {len:Ln*1.04, hh:h, mz:Ln*1.04, mzy:0};
+    /* 液压缸 */
+    emboss(c,[Ln*0.0,-h*1.24, Ln*0.13,-h*1.24, Ln*0.13,-h*0.96, Ln*0.0,-h*0.96], TOP, SUB, DARK, RIM, 0.5);
+    emboss(c,[Ln*0.0,h*0.96, Ln*0.13,h*0.96, Ln*0.13,h*1.24, Ln*0.0,h*1.24], TOP, SUB, DARK, RIM, 0.5);
+    /* 后握把 */
+    c.save(); c.translate(-Ln*0.08,h*0.92); c.rotate(0.24);
+    emboss(c,[-h*0.32,0, h*0.32,0, h*0.28,h*1.3, -h*0.28,h*1.3], TOP, SUB, DARK, RIM, 0.5);
+    c.restore();
+    return {len:Ln*1.06, hh:h, mz:Ln*1.06, mzy:0};
   }
 
   /* drone */
   var Ln=len, h=hh;
-  /* 1. 主机体（六边流线） */
-  outline(c,[-Ln*0.02,-h*0.9, Ln*0.22,-h*1.0, Ln*0.36,-h*0.62, Ln*0.36,h*0.62, Ln*0.22,h*1.0, -Ln*0.02,h*0.9]);
-  var dg=c.createLinearGradient(0,-h*1.0,0,h*1.0);
-  dg.addColorStop(0,"#fff"); dg.addColorStop(0.12,pal.hi);
-  dg.addColorStop(0.34,pal.main); dg.addColorStop(0.74,pal.sub);
-  dg.addColorStop(0.94,pal.dark); dg.addColorStop(1,"#000");
-  c.fillStyle=dg; c.fill();
-  /* 2. 前段发射器 */
-  outline(c,[Ln*0.36,-h*0.56, Ln*0.9,-h*0.34, Ln*0.9,h*0.34, Ln*0.36,h*0.56]);
-  c.fillStyle=pal.sub; c.fill();
-  c.strokeStyle="rgba(255,255,255,0.24)"; c.lineWidth=0.5; c.stroke();
-  /* 3. 双发射口 */
+  emboss(c,[-Ln*0.02,-h*0.94, Ln*0.22,-h*1.04, Ln*0.36,-h*0.64,
+            Ln*0.36,h*0.64, Ln*0.22,h*1.04, -Ln*0.02,h*0.94],
+    TOP, BODY, DARK, RIM, 0.8);
+  emboss(c,[-Ln*0.02,-h*0.94, Ln*0.22,-h*1.04, Ln*0.22,-h*0.76, -Ln*0.02,-h*0.66],
+    "#ffffff", TOP, BODY, null, 0);
+  /* 前段发射器 */
+  emboss(c,[Ln*0.36,-h*0.58, Ln*0.9,-h*0.36, Ln*0.9,h*0.36, Ln*0.36,h*0.58],
+    TOP, SUB, DARK, RIM, 0.7);
+  /* 双发射口 */
   c.fillStyle="#04060a";
-  outline(c,[Ln*0.88,-h*0.3, Ln*0.98,-h*0.26, Ln*0.98,-h*0.02, Ln*0.88,-h*0.06]); c.fill();
-  outline(c,[Ln*0.88,h*0.06, Ln*0.98,h*0.02, Ln*0.98,h*0.26, Ln*0.88,h*0.3]); c.fill();
-  /* 4. 四旋翼臂 */
+  c.beginPath(); c.moveTo(Ln*0.87,-h*0.32); c.lineTo(Ln*0.99,-h*0.27);
+  c.lineTo(Ln*0.99,-h*0.02); c.lineTo(Ln*0.87,-h*0.07); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(Ln*0.87,h*0.07); c.lineTo(Ln*0.99,h*0.02);
+  c.lineTo(Ln*0.99,h*0.27); c.lineTo(Ln*0.87,h*0.32); c.closePath(); c.fill();
+  c.strokeStyle="rgba(255,255,255,0.3)"; c.lineWidth=0.5;
+  c.beginPath(); c.moveTo(Ln*0.87,-h*0.32); c.lineTo(Ln*0.99,-h*0.27); c.stroke();
+  c.beginPath(); c.moveTo(Ln*0.87,h*0.07); c.lineTo(Ln*0.99,h*0.02); c.stroke();
+  /* 四旋翼臂 */
   for(var i=0;i<4;i++){
-    var sa=(i<2)?-1:1, sx=(i%2)?0.5:0.12;
-    var armX=Ln*sx, armY=sa*h*1.5;
-    c.strokeStyle=pal.main; c.lineWidth=1.9; c.lineCap="round";
-    c.beginPath(); c.moveTo(Ln*0.16, sa*h*0.7);
-    c.quadraticCurveTo(armX*0.7, sa*h*1.1, armX, armY); c.stroke();
-    c.lineCap="butt";
-    // 旋翼环
-    c.beginPath(); c.ellipse(armX,armY,h*0.62,h*0.24,0,0,6.2832);
-    c.strokeStyle=pal.sub; c.lineWidth=1.1; c.stroke();
-    // 旋翼叶片（旋转模糊）
+    var sa=(i<2)?-1:1, sx=(i%2)?0.52:0.12;
+    var armX=Ln*sx, armY=sa*h*1.56;
+    c.strokeStyle=SUB; c.lineWidth=2.2; c.lineCap="round";
+    c.beginPath(); c.moveTo(Ln*0.16, sa*h*0.8);
+    c.quadraticCurveTo(armX*0.7, sa*h*1.15, armX, armY); c.stroke();
+    c.strokeStyle=RIM; c.lineWidth=0.7; c.globalAlpha=0.55;
+    c.beginPath(); c.moveTo(Ln*0.16, sa*h*0.8);
+    c.quadraticCurveTo(armX*0.7, sa*h*1.15, armX, armY); c.stroke();
+    c.globalAlpha=1; c.lineCap="butt";
+    /* 旋翼护环 */
+    c.beginPath(); c.ellipse(armX,armY,h*0.66,h*0.26,0,0,6.2832);
+    c.strokeStyle=SUB; c.lineWidth=1.3; c.stroke();
+    c.beginPath(); c.ellipse(armX,armY,h*0.66,h*0.26,0,0,6.2832);
+    c.strokeStyle=RIM; c.lineWidth=0.6; c.globalAlpha=0.6; c.stroke(); c.globalAlpha=1;
+    /* 桨盘 */
     c.save(); c.translate(armX,armY); c.scale(1,0.42);
-    c.beginPath(); c.arc(0,0,h*0.56,0,6.2832);
-    c.fillStyle=pal.hi; c.globalAlpha=0.24; c.fill(); c.globalAlpha=1;
+    c.beginPath(); c.arc(0,0,h*0.6,0,6.2832);
+    c.fillStyle=TOP; c.globalAlpha=0.22; c.fill(); c.globalAlpha=1;
     c.restore();
-    // 桨叶
+    /* 桨叶 2 片 */
     for(var k=0;k<2;k++){
-      var aa2=T*16+k*3.14159;
-      c.strokeStyle="rgba(255,255,255,0.55)"; c.lineWidth=0.8;
+      var aa2=T*17+k*3.14159;
+      c.strokeStyle="rgba(255,255,255,0.6)"; c.lineWidth=0.9;
       c.beginPath(); c.moveTo(armX,armY);
-      c.lineTo(armX+Math.cos(aa2)*h*0.52, armY+Math.sin(aa2)*h*0.2); c.stroke();
+      c.lineTo(armX+Math.cos(aa2)*h*0.56, armY+Math.sin(aa2)*h*0.22); c.stroke();
     }
   }
-  /* 5. 底部传感器球 */
-  c.beginPath(); c.arc(Ln*0.16,h*1.06,h*0.24,0,6.2832);
-  c.fillStyle=pal.dark; c.fill();
-  c.beginPath(); c.arc(Ln*0.16,h*1.06,h*0.14,0,6.2832);
-  c.fillStyle=pal.ene; c.globalAlpha=0.9; c.fill(); c.globalAlpha=1;
-  skinGlowAt(c,Ln*0.16,h*1.06,h*0.7,pal.ene,0.6,true);
-  /* 6. 尾翼 */
-  outline(c,[-Ln*0.02,-h*0.9, -Ln*0.2,-h*1.24, -Ln*0.06,-h*0.4]);
-  c.fillStyle=pal.sub; c.fill();
-  outline(c,[-Ln*0.02,h*0.9, -Ln*0.2,h*1.24, -Ln*0.06,h*0.4]);
-  c.fillStyle=pal.sub; c.fill();
+  /* 底部传感器球 */
+  c.beginPath(); c.arc(Ln*0.16,h*1.1,h*0.26,0,6.2832);
+  c.fillStyle=DARK; c.fill();
+  c.strokeStyle=SUB; c.lineWidth=0.6; c.stroke();
+  c.beginPath(); c.arc(Ln*0.16,h*1.1,h*0.15,0,6.2832);
+  c.fillStyle=pal.ene; c.globalAlpha=0.92; c.fill(); c.globalAlpha=1;
+  skinGlowAt(c,Ln*0.16,h*1.1,h*0.76,pal.ene,0.62,true);
+  /* 尾鳍 */
+  emboss(c,[-Ln*0.02,-h*0.94, -Ln*0.22,-h*1.3, -Ln*0.06,-h*0.42], TOP, SUB, DARK, RIM, 0.5);
+  emboss(c,[-Ln*0.02,h*0.94, -Ln*0.22,h*1.3, -Ln*0.06,h*0.42], TOP, SUB, DARK, RIM, 0.5);
   return {len:Ln*0.98, hh:h, mz:Ln*0.98, mzy:0};
 }
 
@@ -4462,6 +4550,82 @@ function skinShell(c, kind, len, hh, pal, T, glow){
       c.strokeStyle="rgba(184,255,106,0.45)"; c.lineWidth=0.5; c.stroke();
     }
   }
+  else if(kind==="scaledragon"){
+    /* 龙鳞：沿机匣走的重叠鳞片阵列（每片独立浮雕） */
+    for(var row=0;row<2;row++){
+      var sd=row?1:-1;
+      for(var i=0;i<9;i++){
+        var bx=len*(0.06+i*0.105);
+        var by=sd*hh*(0.78+ (i%2)*0.22);
+        var sw=hh*0.62, sh=hh*0.78;
+        c.beginPath();
+        c.moveTo(bx-sw*0.7, by);
+        c.quadraticCurveTo(bx, by-sd*sh*0.9, bx+sw*0.7, by);
+        c.quadraticCurveTo(bx, by+sd*sh*0.5, bx-sw*0.7, by);
+        c.closePath();
+        var sg2=c.createLinearGradient(bx, by-sd*sh, bx, by+sd*sh*0.5);
+        sg2.addColorStop(0,"#ffffff"); sg2.addColorStop(0.28,pal.hi);
+        sg2.addColorStop(0.62,pal.main); sg2.addColorStop(1,pal.dark);
+        c.fillStyle=sg2; c.globalAlpha=0.94; c.fill(); c.globalAlpha=1;
+        // 鳞片金边
+        c.strokeStyle=pal.hi; c.globalAlpha=0.85; c.lineWidth=0.65; c.stroke(); c.globalAlpha=1;
+        // 鳞片中心脊线
+        c.strokeStyle="rgba(255,255,255,0.6)"; c.lineWidth=0.5;
+        c.beginPath(); c.moveTo(bx, by-sd*sh*0.72); c.lineTo(bx, by); c.stroke();
+        // 缝隙发光
+        if(i%2===0){
+          c.strokeStyle=pal.ene; c.globalAlpha=0.4+0.2*Math.sin(T*2.4+i);
+          c.lineWidth=0.6;
+          c.beginPath(); c.moveTo(bx+sw*0.7, by); c.lineTo(bx+sw*0.7, by+sd*hh*0.4); c.stroke();
+          c.globalAlpha=1;
+        }
+      }
+    }
+  }
+  else if(kind==="petal"){
+    /* 花瓣：从机匣两侧伸出，每片独立 */
+    for(var sd=-1;sd<=1;sd+=2){
+      for(var i=0;i<5;i++){
+        var bx=len*(0.12+i*0.14);
+        var pr=hh*(1.1+i*0.26);
+        c.save(); c.translate(bx, sd*hh*0.72); c.rotate(sd*(0.4+i*0.16));
+        c.beginPath();
+        c.moveTo(0,0);
+        c.bezierCurveTo(pr*0.42,-sd*pr*0.62, pr*0.94,-sd*pr*0.42, pr,-sd*pr*0.02);
+        c.bezierCurveTo(pr*0.94, sd*pr*0.36, pr*0.42, sd*pr*0.56, 0,0);
+        c.closePath();
+        var pg3=c.createLinearGradient(0,0,pr,-sd*pr*0.4);
+        pg3.addColorStop(0,"#ffffff"); pg3.addColorStop(0.3,pal.main);
+        pg3.addColorStop(0.72,pal.sub); pg3.addColorStop(1,"rgba(224,112,255,0.55)");
+        c.fillStyle=pg3; c.globalAlpha=0.88; c.fill(); c.globalAlpha=1;
+        c.strokeStyle=pal.hi; c.globalAlpha=0.72; c.lineWidth=0.55; c.stroke(); c.globalAlpha=1;
+        c.strokeStyle="rgba(255,255,255,0.5)"; c.lineWidth=0.45;
+        c.beginPath(); c.moveTo(pr*0.1,0); c.lineTo(pr*0.9,-sd*pr*0.04); c.stroke();
+        c.restore();
+      }
+    }
+  }
+  else if(kind==="runeplate"){
+    /* 符文金属片：矩形带刻纹 */
+    for(var i=0;i<5;i++){
+      var bx=len*(0.04+i*0.13);
+      outline(c,[bx,-hh*1.12, bx+len*0.1,-hh*1.18, bx+len*0.105,-hh*0.6, bx+len*0.004,-hh*0.56]);
+      var rg4=c.createLinearGradient(0,-hh*1.18,0,-hh*0.56);
+      rg4.addColorStop(0,"#ffffff"); rg4.addColorStop(0.3,pal.main);
+      rg4.addColorStop(0.72,pal.sub); rg4.addColorStop(1,pal.dark);
+      c.fillStyle=rg4; c.fill();
+      c.strokeStyle=pal.hi; c.globalAlpha=0.8; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
+      /* 符文刻纹（3 道短线 + 1 圆点） */
+      c.strokeStyle=pal.ene; c.globalAlpha=0.7+0.25*Math.sin(T*3+i);
+      c.lineWidth=0.7;
+      c.beginPath(); c.moveTo(bx+len*0.024,-hh*1.0); c.lineTo(bx+len*0.078,-hh*1.0); c.stroke();
+      c.beginPath(); c.moveTo(bx+len*0.051,-hh*0.98); c.lineTo(bx+len*0.051,-hh*0.78); c.stroke();
+      c.beginPath(); c.moveTo(bx+len*0.028,-hh*0.72); c.lineTo(bx+len*0.078,-hh*0.74); c.stroke();
+      c.globalAlpha=1;
+      c.beginPath(); c.arc(bx+len*0.052,-hh*0.88,hh*0.07,0,6.2832);
+      c.fillStyle=pal.ene; c.globalAlpha=0.85; c.fill(); c.globalAlpha=1;
+    }
+  }
   else if(kind==="plate"||kind==="mechplate"){
     // 轻金属贴片
     for(var i=0;i<3;i++){
@@ -4511,96 +4675,498 @@ function skinCore(c, len, hh, pal, T, glow, dyn){
    ================================================================== */
 function skinExtend(c, kind, len, hh, pal, T, glow){
   if(!kind) return;
+  var RIM=pal.hi, BODY=pal.main, SUB=pal.sub, DARK=pal.dark;
+
+  /* ============ 炎羽天启：双翼沿枪身向后掠（不是横向张开） ============ */
   if(kind==="wings"){
-    // 双侧火焰羽翼：大，溢出 1.5-2 倍
-    for(var s=-1;s<=1;s+=2){
-      var flap=Math.sin(T*1.8)*0.06;
+    for(var sdir=-1;sdir<=1;sdir+=2){
+      /* 主翼：从护木根部起，向后斜掠，翼尖朝后上方 */
       c.save();
-      c.translate(len*0.3, 0);
-      // 翼根
       c.beginPath();
-      c.moveTo(0, s*hh*0.5);
-      // 主翼外沿
-      c.bezierCurveTo(-len*0.2, s*(hh*2.4+flap*40),
-                      len*0.28, s*(hh*4.2+flap*60),
-                      len*0.62, s*(hh*3.2+flap*50));
-      // 翼尖回勾
-      c.quadraticCurveTo(len*0.5, s*hh*2.2, len*0.42, s*hh*1.4);
-      c.quadraticCurveTo(len*0.3, s*hh*0.9, 0, s*hh*0.5);
-      var wg=c.createLinearGradient(len*0.1, s*hh*3.4, len*0.5, s*hh*0.6);
-      wg.addColorStop(0,"rgba(255,255,255,0.95)");
-      wg.addColorStop(0.28,pal.main);
-      wg.addColorStop(0.62,pal.sub);
-      wg.addColorStop(0.88,pal.ene);
-      wg.addColorStop(1,"rgba(255,180,32,0.7)");
+      // 翼根在护木后端
+      c.moveTo(len*0.42, sdir*hh*0.85);
+      // 前缘：向上后方掠出（关键——纵向不是横向）
+      c.bezierCurveTo(len*0.30, sdir*hh*2.0,
+                      len*0.05, sdir*hh*3.6,
+                      -len*0.30, sdir*hh*4.0);
+      // 翼尖
+      c.quadraticCurveTo(len*0.02, sdir*hh*3.2, len*0.16, sdir*hh*2.6);
+      // 后缘收回到机匣
+      c.quadraticCurveTo(len*0.30, sdir*hh*1.8, len*0.42, sdir*hh*0.85);
+      c.closePath();
+      var wg=c.createLinearGradient(len*0.4, sdir*hh*0.8, -len*0.2, sdir*hh*3.8);
+      wg.addColorStop(0,BODY); wg.addColorStop(0.24,"#ffffff");
+      wg.addColorStop(0.5,BODY); wg.addColorStop(0.76,SUB);
+      wg.addColorStop(1,pal.ene);
       c.fillStyle=wg; c.fill();
-      c.strokeStyle=pal.hi; c.globalAlpha=0.75; c.lineWidth=0.7; c.stroke(); c.globalAlpha=1;
-      // 羽骨（3 道）
-      for(var k=0;k<3;k++){
-        var fa=0.34+k*0.24;
+      // 金边勾轮廓
+      c.strokeStyle=RIM; c.globalAlpha=0.9; c.lineWidth=0.9; c.stroke(); c.globalAlpha=1;
+
+      /* 羽片：7 片沿翼展排布，每片独立浮雕 */
+      for(var i=0;i<7;i++){
+        var t=i/6;
+        var bx=len*(0.38-t*0.62);              // 从翼根向后
+        var by=sdir*hh*(0.9+t*2.9);
+        var fLen=hh*(1.0-t*0.52)*1.7;           // 越往后越短
+        var fAng=sdir*(0.5+t*0.5);              // 逐渐向后倾
+        c.save();
+        c.translate(bx,by); c.rotate(fAng);
         c.beginPath();
-        c.moveTo(len*0.24, s*hh*0.7);
-        c.quadraticCurveTo(len*(0.18+k*0.1), s*hh*(2.0+fa*2), len*(0.4+k*0.09), s*hh*(2.6+fa));
-        c.strokeStyle="rgba(255,255,255,0.45)"; c.lineWidth=0.55; c.stroke();
+        c.moveTo(0,0);
+        c.quadraticCurveTo(fLen*0.34,-fLen*0.4, fLen,0);
+        c.quadraticCurveTo(fLen*0.34, fLen*0.34, 0,0);
+        var fg=c.createLinearGradient(0,0,fLen,0);
+        fg.addColorStop(0,"#ffffff"); fg.addColorStop(0.3,BODY);
+        fg.addColorStop(0.7,SUB); fg.addColorStop(1,pal.ene);
+        c.fillStyle=fg; c.fill();
+        c.strokeStyle=RIM; c.globalAlpha=0.8; c.lineWidth=0.55; c.stroke(); c.globalAlpha=1;
+        // 羽轴
+        c.strokeStyle="rgba(255,255,255,0.7)"; c.lineWidth=0.5;
+        c.beginPath(); c.moveTo(fLen*0.1,0); c.lineTo(fLen*0.94,0); c.stroke();
+        c.restore();
       }
-      // 焰尖发光
-      skinGlowAt(c, len*0.58, s*hh*3.0, hh*1.4, pal.ene, 0.42);
+      /* 翼骨：3 道从翼根放射 */
+      for(var k=0;k<3;k++){
+        var ka=0.32+k*0.3;
+        c.beginPath();
+        c.moveTo(len*0.4, sdir*hh*0.85);
+        c.quadraticCurveTo(len*0.14, sdir*hh*(1.4+k*0.8),
+                           len*(-0.14-k*0.06), sdir*hh*(2.4+k*0.9));
+        c.strokeStyle="rgba(255,255,255,0.5)"; c.lineWidth=0.75; c.stroke();
+        c.strokeStyle=RIM; c.globalAlpha=0.45; c.lineWidth=0.4; c.stroke(); c.globalAlpha=1;
+      }
+      /* 焰尖发光点（翼尖） */
+      skinGlowAt(c, -len*0.26, sdir*hh*3.9, hh*1.5, pal.ene, 0.5);
+      skinGlowAt(c, len*0.0, sdir*hh*3.2, hh*1.0, "#ffffff", 0.32);
       c.restore();
     }
   }
+
+  /* ============ 冰晶神谕：冰凤凰翼（向后掠 + 冰棱从枪身长出） ============ */
   else if(kind==="icewing"){
-    // 冰凤凰翼：更大更锐利，7 根冰羽
-    for(var s=-1;s<=1;s+=2){
-      for(var i=0;i<7;i++){
-        var baseX=len*(0.18+i*0.055);
-        var blen=hh*(2.4+i*0.42+Math.sin(T*1.1+i*0.6)*0.2);
-        var spread=0.34+i*0.1;
+    for(var sdir=-1;sdir<=1;sdir+=2){
+      /* 翼膜：向后掠的整片半透冰面 */
+      c.beginPath();
+      c.moveTo(len*0.44, sdir*hh*0.8);
+      c.bezierCurveTo(len*0.24, sdir*hh*2.2,
+                      len*(-0.02), sdir*hh*4.2,
+                      -len*0.34, sdir*hh*4.6);
+      c.quadraticCurveTo(len*0.0, sdir*hh*3.4, len*0.18, sdir*hh*2.4);
+      c.quadraticCurveTo(len*0.34, sdir*hh*1.5, len*0.44, sdir*hh*0.8);
+      c.closePath();
+      var ig=c.createLinearGradient(len*0.4, sdir*hh*0.8, -len*0.2, sdir*hh*4.2);
+      ig.addColorStop(0,"rgba(255,255,255,0.92)");
+      ig.addColorStop(0.3,"rgba(223,244,255,0.66)");
+      ig.addColorStop(0.68,"rgba(95,191,232,0.46)");
+      ig.addColorStop(1,"rgba(56,208,255,0.24)");
+      c.fillStyle=ig; c.fill();
+      c.strokeStyle="#ffffff"; c.globalAlpha=0.75; c.lineWidth=0.7; c.stroke(); c.globalAlpha=1;
+
+      /* 冰羽 8 根：沿翼展向后，尖锐三角 */
+      for(var i=0;i<8;i++){
+        var t=i/7;
+        var bx=len*(0.40-t*0.66);
+        var by=sdir*hh*(0.85+t*3.3);
+        var fLen=hh*(1.5-t*0.7)*1.8;
         c.save();
-        c.translate(baseX, s*hh*0.6);
-        c.rotate(s*spread*0.5);
+        c.translate(bx,by);
+        c.rotate(sdir*(0.62+t*0.5));
         c.beginPath();
         c.moveTo(0,0);
-        c.quadraticCurveTo(-blen*0.16, s*blen*0.62, blen*0.16, s*blen);
-        c.quadraticCurveTo(blen*0.3, s*blen*0.5, blen*0.24, 0);
-        var ig2=c.createLinearGradient(0,0,0,s*blen);
-        ig2.addColorStop(0,"rgba(255,255,255,0.98)");
-        ig2.addColorStop(0.3,"rgba(223,244,255,0.92)");
-        ig2.addColorStop(0.68,"rgba(95,191,232,0.82)");
-        ig2.addColorStop(1,"rgba(56,208,255,0.50)");
+        c.lineTo(fLen*0.18, -fLen*0.24);
+        c.lineTo(fLen, 0);
+        c.lineTo(fLen*0.18, fLen*0.24);
+        c.closePath();
+        var ig2=c.createLinearGradient(0,0,fLen,0);
+        ig2.addColorStop(0,"#ffffff");
+        ig2.addColorStop(0.34,"rgba(223,244,255,0.94)");
+        ig2.addColorStop(0.72,"rgba(95,191,232,0.8)");
+        ig2.addColorStop(1,"rgba(56,208,255,0.42)");
         c.fillStyle=ig2; c.fill();
-        c.strokeStyle="#ffffff"; c.globalAlpha=0.8; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
-        skinGlowAt(c, blen*0.16, s*blen*0.92, hh*0.9, pal.ene, 0.34);
+        c.strokeStyle="#ffffff"; c.globalAlpha=0.85; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+        // 冰棱中心光核
+        skinGlowAt(c, fLen*0.62, 0, hh*0.6, pal.ene, 0.3);
         c.restore();
       }
-      // 翼膜（半透连片）
-      c.beginPath();
-      c.moveTo(len*0.16, s*hh*0.6);
-      c.quadraticCurveTo(len*0.2, s*hh*3.4, len*0.52, s*hh*3.8);
-      c.quadraticCurveTo(len*0.4, s*hh*1.6, len*0.16, s*hh*0.6);
-      c.fillStyle="rgba(160,220,255,0.22)"; c.fill();
+      /* 冰翼尖发光 */
+      skinGlowAt(c, -len*0.3, sdir*hh*4.5, hh*1.8, pal.ene, 0.55);
+    }
+    /* 冰棱从枪身各部长出（沿机身，不是翅膀） */
+    for(var sdir2=-1;sdir2<=1;sdir2+=2){
+      for(var i=0;i<5;i++){
+        var bx2=len*(0.14+i*0.16);
+        var bl=hh*(1.1+i*0.16+Math.sin(T*1.3+i)*0.1);
+        c.beginPath();
+        c.moveTo(bx2, sdir2*hh*1.0);
+        c.lineTo(bx2+bl*0.16, sdir2*(hh*1.0+bl));
+        c.lineTo(bx2+bl*0.26, sdir2*hh*1.0);
+        c.closePath();
+        var ig3=c.createLinearGradient(bx2,sdir2*hh*1.0,bx2,sdir2*(hh*1.0+bl));
+        ig3.addColorStop(0,"rgba(255,255,255,0.96)");
+        ig3.addColorStop(0.45,"rgba(200,240,255,0.86)");
+        ig3.addColorStop(1,"rgba(56,208,255,0.5)");
+        c.fillStyle=ig3; c.fill();
+        c.strokeStyle="#ffffff"; c.globalAlpha=0.8; c.lineWidth=0.45; c.stroke(); c.globalAlpha=1;
+      }
     }
   }
+
+  /* ============ 幽焰骑士：焰状披风从枪托向后下拖 ============ */
   else if(kind==="cape"){
-    // 焰状披风：从枪托向后下方拖
     c.beginPath();
-    c.moveTo(0, -hh*1.1);
-    c.bezierCurveTo(-len*0.4, -hh*2.0, -len*0.7, -hh*1.0, -len*0.92, hh*0.4);
-    c.quadraticCurveTo(-len*0.6, hh*0.2, -len*0.5, -hh*0.2);
-    c.quadraticCurveTo(-len*0.35, hh*0.9, -len*0.18, hh*0.7);
-    c.quadraticCurveTo(-len*0.1, hh*0.4, 0, hh*0.9);
+    c.moveTo(-len*0.02,-hh*1.0);
+    c.bezierCurveTo(-len*0.42,-hh*1.8, -len*0.78,-hh*0.6, -len*1.18,hh*0.7);
+    c.quadraticCurveTo(-len*0.86,hh*0.32, -len*0.66,-hh*0.3);
+    c.quadraticCurveTo(-len*0.52,hh*1.0, -len*0.3,hh*0.72);
+    c.quadraticCurveTo(-len*0.16,hh*0.36, -len*0.02,hh*1.0);
     c.closePath();
-    var cg=c.createLinearGradient(0,-hh*1.5,-len*0.8,hh*0.8);
-    cg.addColorStop(0,pal.hi); cg.addColorStop(0.3,pal.sub);
-    cg.addColorStop(0.7,pal.main); cg.addColorStop(1,"rgba(8,12,6,0.9)");
-    c.fillStyle=cg; c.globalAlpha=0.94; c.fill(); c.globalAlpha=1;
-    c.strokeStyle=pal.ene; c.globalAlpha=0.55; c.lineWidth=0.7; c.stroke(); c.globalAlpha=1;
-    // 焰爪（三道）
-    for(var i=0;i<3;i++){
-      var fx=-len*(0.3+i*0.2), fy=-hh*(0.6-i*0.4);
+    var cg=c.createLinearGradient(-len*0.02,-hh*1.0,-len*1.1,hh*0.6);
+    cg.addColorStop(0,"#ffffff"); cg.addColorStop(0.16,pal.hi);
+    cg.addColorStop(0.4,SUB); cg.addColorStop(0.74,BODY);
+    cg.addColorStop(1,"rgba(8,12,6,0.94)");
+    c.fillStyle=cg; c.globalAlpha=0.95; c.fill(); c.globalAlpha=1;
+    c.strokeStyle=pal.ene; c.globalAlpha=0.7; c.lineWidth=0.9; c.stroke(); c.globalAlpha=1;
+    /* 焰爪 4 道 */
+    for(var i=0;i<4;i++){
+      var fx=-len*(0.22+i*0.24), fy=-hh*(0.75-i*0.5);
       c.beginPath();
       c.moveTo(fx, fy);
-      c.quadraticCurveTo(fx-len*0.14, fy-hh*0.5, fx-len*0.3, fy+hh*0.2);
-      c.strokeStyle=pal.ene; c.globalAlpha=0.7; c.lineWidth=1.0; c.stroke(); c.globalAlpha=1;
+      c.quadraticCurveTo(fx-len*0.16, fy-hh*0.6, fx-len*0.34, fy+hh*0.26);
+      c.strokeStyle=pal.ene; c.globalAlpha=0.75; c.lineWidth=1.2; c.stroke(); c.globalAlpha=1;
+      c.strokeStyle="rgba(255,255,255,0.45)"; c.lineWidth=0.5;
+      c.beginPath();
+      c.moveTo(fx, fy);
+      c.quadraticCurveTo(fx-len*0.16, fy-hh*0.6, fx-len*0.34, fy+hh*0.26);
+      c.stroke();
+    }
+    /* 肩部焰状装饰（枪身上方，向后掠） */
+    for(var sdir3=-1;sdir3<=1;sdir3+=2){
+      for(var i=0;i<3;i++){
+        var bx3=len*(0.34-i*0.16);
+        c.beginPath();
+        c.moveTo(bx3, sdir3*hh*1.1);
+        c.quadraticCurveTo(bx3-len*0.1, sdir3*hh*1.9,
+                           bx3-len*0.24, sdir3*hh*1.5);
+        c.quadraticCurveTo(bx3-len*0.12, sdir3*hh*1.3, bx3, sdir3*hh*1.1);
+        c.closePath();
+        var fg3=c.createLinearGradient(bx3,sdir3*hh*1.1,bx3-len*0.2,sdir3*hh*1.8);
+        fg3.addColorStop(0,"#ffffff"); fg3.addColorStop(0.35,pal.ene);
+        fg3.addColorStop(1,"rgba(124,255,58,0.2)");
+        c.fillStyle=fg3; c.globalAlpha=0.85; c.fill(); c.globalAlpha=1;
+        c.strokeStyle=pal.ene; c.globalAlpha=0.6; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+      }
+    }
+  }
+
+  /* ============ 神兽吞兵：龙身盘绕枪身（沿纵向） ============ */
+  else if(kind==="dragon"){
+    var bodyPts=[];
+    for(var i=0;i<=16;i++){
+      var t=i/16;
+      var dx=len*(0.96-t*1.28);
+      var dy=Math.sin(t*9.4)*hh*0.9;
+      bodyPts.push([dx,dy]);
+    }
+    /* 龙身：粗管沿枪身盘绕 */
+    c.beginPath();
+    c.moveTo(bodyPts[0][0], bodyPts[0][1]-hh*0.5);
+    for(var i=1;i<bodyPts.length;i++) c.lineTo(bodyPts[i][0], bodyPts[i][1]-hh*0.5);
+    for(var i=bodyPts.length-1;i>=0;i--) c.lineTo(bodyPts[i][0], bodyPts[i][1]+hh*0.5);
+    c.closePath();
+    var dg=c.createLinearGradient(0,-hh*1.4,0,hh*1.4);
+    dg.addColorStop(0,"#ffffff"); dg.addColorStop(0.2,pal.hi);
+    dg.addColorStop(0.5,pal.main); dg.addColorStop(0.82,pal.sub);
+    dg.addColorStop(1,pal.dark);
+    c.fillStyle=dg; c.fill();
+    c.strokeStyle=pal.hi; c.globalAlpha=0.8; c.lineWidth=0.8; c.stroke(); c.globalAlpha=1;
+    /* 龙鳞：沿龙身分段 */
+    for(var i=1;i<bodyPts.length-1;i+=1){
+      var p0=bodyPts[i-1], p1=bodyPts[i], p2=bodyPts[i+1];
+      var ang=Math.atan2(p2[1]-p0[1], p2[0]-p0[0]);
+      c.save(); c.translate(p1[0],p1[1]); c.rotate(ang);
+      for(var sd=-1;sd<=1;sd+=2){
+        c.beginPath();
+        c.moveTo(0, sd*hh*0.44);
+        c.quadraticCurveTo(-hh*0.38, sd*hh*1.0, -hh*0.7, sd*hh*0.5);
+        c.quadraticCurveTo(-hh*0.3, sd*hh*0.42, 0, sd*hh*0.44);
+        c.closePath();
+        c.fillStyle=sd<0?"#ffffff":pal.sub;
+        c.globalAlpha=sd<0?0.86:0.94; c.fill(); c.globalAlpha=1;
+        c.strokeStyle=pal.hi; c.globalAlpha=0.55; c.lineWidth=0.4; c.stroke(); c.globalAlpha=1;
+      }
+      c.restore();
+    }
+    /* 龙首：包住枪口 */
+    var hx=len*0.98;
+    c.beginPath();
+    c.moveTo(hx-len*0.06, -hh*1.0);
+    c.bezierCurveTo(hx+len*0.14, -hh*1.5, hx+len*0.22, -hh*0.6, hx+len*0.2, 0);
+    c.bezierCurveTo(hx+len*0.22, hh*0.6, hx+len*0.14, hh*1.5, hx-len*0.06, hh*1.0);
+    c.closePath();
+    var hg2=c.createLinearGradient(0,-hh*1.4,0,hh*1.4);
+    hg2.addColorStop(0,"#ffffff"); hg2.addColorStop(0.22,pal.hi);
+    hg2.addColorStop(0.5,pal.main); hg2.addColorStop(1,pal.dark);
+    c.fillStyle=hg2; c.fill();
+    c.strokeStyle=pal.hi; c.globalAlpha=0.9; c.lineWidth=0.9; c.stroke(); c.globalAlpha=1;
+    /* 龙眼 2 个 */
+    for(var sd2=-1;sd2<=1;sd2+=2){
+      c.beginPath(); c.arc(hx+len*0.06, sd2*hh*0.5, hh*0.22, 0, 6.2832);
+      c.fillStyle=pal.ene; c.fill();
+      c.strokeStyle="#ffffff"; c.lineWidth=0.4; c.stroke();
+      skinGlowAt(c, hx+len*0.06, sd2*hh*0.5, hh*0.7, pal.ene, 0.75, true);
+    }
+    /* 龙角 2 支（向后） */
+    for(var sd3=-1;sd3<=1;sd3+=2){
+      c.beginPath();
+      c.moveTo(hx-len*0.02, sd3*hh*0.9);
+      c.quadraticCurveTo(hx-len*0.18, sd3*hh*1.7, hx-len*0.34, sd3*hh*1.2);
+      c.strokeStyle=pal.hi; c.lineWidth=1.6; c.lineCap="round"; c.stroke();
+      c.strokeStyle="#ffffff"; c.lineWidth=0.6; c.stroke();
+      c.lineCap="butt";
+    }
+    /* 龙须 */
+    for(var sd4=-1;sd4<=1;sd4+=2){
+      c.beginPath();
+      c.moveTo(hx+len*0.16, sd4*hh*0.28);
+      c.quadraticCurveTo(hx+len*0.3, sd4*hh*0.9, hx+len*0.16, sd4*hh*1.4);
+      c.strokeStyle=pal.ene; c.globalAlpha=0.8; c.lineWidth=0.8; c.stroke(); c.globalAlpha=1;
+    }
+    /* 龙尾：从枪托向后拖 */
+    c.beginPath();
+    c.moveTo(-len*0.3, -hh*0.5);
+    c.bezierCurveTo(-len*0.56, -hh*1.1, -len*0.86, hh*0.4, -len*1.14, -hh*0.6);
+    c.strokeStyle=pal.main; c.lineWidth=hh*0.7; c.lineCap="round"; c.stroke();
+    c.strokeStyle=pal.hi; c.globalAlpha=0.7; c.lineWidth=0.8; c.stroke(); c.globalAlpha=1;
+    c.lineCap="butt";
+  }
+
+  /* ============ 珍珠幻梦：蝶翼式（向后上掠） ============ */
+  else if(kind==="butterfly"){
+    for(var sdir=-1;sdir<=1;sdir+=2){
+      for(var i=0;i<3;i++){
+        var bx=len*(0.32-i*0.18);
+        var bl=hh*(2.4+i*0.5);
+        c.save(); c.translate(bx, sdir*hh*0.7);
+        c.rotate(sdir*(0.3+i*0.22));
+        c.beginPath();
+        c.moveTo(0,0);
+        c.bezierCurveTo(-bl*0.3, sdir*bl*0.7, -bl*0.5, sdir*bl*1.3,
+                        -bl*0.9, sdir*bl*1.1);
+        c.quadraticCurveTo(-bl*0.4, sdir*bl*0.4, 0,0);
+        c.closePath();
+        var bg=c.createRadialGradient(0,0,0,-bl*0.5,sdir*bl*0.9,bl*1.2);
+        bg.addColorStop(0,"#ffffff");
+        bg.addColorStop(0.35,pal.main);
+        bg.addColorStop(0.72,pal.sub);
+        bg.addColorStop(1,"rgba(0,0,0,0)");
+        c.fillStyle=bg; c.globalAlpha=0.82; c.fill(); c.globalAlpha=1;
+        c.strokeStyle=pal.hi; c.globalAlpha=0.7; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
+        // 星点
+        for(var k=0;k<4;k++){
+          var sa=0.4+k*0.6;
+          skinGlowAt(c, -bl*0.5*Math.cos(sa), sdir*bl*0.6*Math.sin(sa),
+                     hh*0.3, "#ffffff", 0.6, true);
+        }
+        c.restore();
+      }
+    }
+  }
+
+  /* ============ 星舰幻游：机械翼 / 天线 / 悬浮环 ============ */
+  else if(kind==="mechwing"){
+    for(var sdir=-1;sdir<=1;sdir+=2){
+      /* 机械翼：分段板片向后掠 */
+      for(var i=0;i<4;i++){
+        var bx=len*(0.36-i*0.14);
+        var bl=hh*(1.5+i*0.42);
+        emboss(c,[bx, sdir*hh*0.9,
+                  bx-len*0.1, sdir*(hh*0.9+bl*0.7),
+                  bx-len*0.2, sdir*(hh*0.9+bl),
+                  bx-len*0.14, sdir*hh*1.0],
+          "#ffffff", pal.main, pal.dark, pal.hi, 0.55);
+      }
+      /* 天线 */
+      c.strokeStyle=pal.sub; c.lineWidth=1.2;
+      c.beginPath(); c.moveTo(len*0.2, sdir*hh*1.1);
+      c.lineTo(len*0.06, sdir*hh*2.6); c.stroke();
+      c.strokeStyle="#ffffff"; c.lineWidth=0.4;
+      c.beginPath(); c.moveTo(len*0.2, sdir*hh*1.1);
+      c.lineTo(len*0.06, sdir*hh*2.6); c.stroke();
+      skinGlowAt(c, len*0.06, sdir*hh*2.6, hh*0.5, pal.ene, 0.7, true);
+    }
+    /* 悬浮环（不接触枪身） */
+    for(var i=0;i<3;i++){
+      var rr=hh*(2.8+i*0.6);
+      var ea=T*0.7+i*0.9;
+      c.save();
+      c.translate(len*0.42, 0);
+      c.scale(1, 0.26);
+      c.beginPath(); c.arc(0,0,rr, ea, ea+4.6);
+      c.strokeStyle=pal.ene; c.globalAlpha=0.42-i*0.09; c.lineWidth=1.4; c.stroke();
+      c.globalAlpha=1;
+      c.restore();
+    }
+  }
+
+  /* ============ 圣魔法阵：法阵环绕 + 符文 ============ */
+  else if(kind==="magiccircle"){
+    /* 背后法阵（多重同心 + 六芒星） */
+    for(var i=0;i<5;i++){
+      var rr=hh*(2.0+i*0.62);
+      c.save();
+      c.translate(len*0.42, 0);
+      c.scale(1, 0.5);
+      c.beginPath(); c.arc(0,0,rr,T*0.5+i, T*0.5+i+5.6);
+      c.strokeStyle=i%2?pal.ene:pal.hi;
+      c.globalAlpha=(0.34-i*0.05)*(0.7+0.3*Math.sin(T*2+i));
+      c.lineWidth=i===0?1.6:0.9; c.stroke();
+      c.globalAlpha=1;
+      c.restore();
+    }
+    /* 六芒星 */
+    c.save(); c.translate(len*0.42,0); c.scale(1,0.5);
+    for(var t2=0;t2<2;t2++){
+      c.beginPath();
+      for(var i=0;i<3;i++){
+        var a6=T*0.4+t2*1.0472+i*2.0944;
+        var rr2=hh*3.2;
+        if(i===0) c.moveTo(Math.cos(a6)*rr2, Math.sin(a6)*rr2);
+        else c.lineTo(Math.cos(a6)*rr2, Math.sin(a6)*rr2);
+      }
+      c.closePath();
+      c.strokeStyle=pal.hi; c.globalAlpha=0.4; c.lineWidth=0.8; c.stroke(); c.globalAlpha=1;
+    }
+    c.restore();
+    /* 漂浮符文（沿枪身纵向排列） */
+    for(var i=0;i<6;i++){
+      var rx=len*(0.1+i*0.16);
+      var ry=Math.sin(T*1.4+i*1.1)*hh*1.8;
+      c.save(); c.translate(rx,ry); c.rotate(T*0.6+i);
+      c.strokeStyle=pal.hi; c.globalAlpha=0.72; c.lineWidth=0.7;
+      c.beginPath();
+      c.moveTo(-hh*0.24,-hh*0.3); c.lineTo(hh*0.24,-hh*0.3);
+      c.lineTo(0,hh*0.34); c.closePath(); c.stroke();
+      c.globalAlpha=1; c.restore();
+      skinGlowAt(c, rx,ry, hh*0.5, pal.ene, 0.4);
+    }
+  }
+
+  /* ============ 战甲英雄：披风式装甲 + 夸张肩甲 ============ */
+  else if(kind==="heroarmor"){
+    /* 披风（从枪托向后） */
+    c.beginPath();
+    c.moveTo(-len*0.04,-hh*1.1);
+    c.bezierCurveTo(-len*0.4,-hh*1.9, -len*0.76,-hh*0.4, -len*1.0,hh*0.9);
+    c.quadraticCurveTo(-len*0.7,hh*0.4, -len*0.5,-hh*0.2);
+    c.quadraticCurveTo(-len*0.3,hh*0.9, -len*0.04,hh*1.1);
+    c.closePath();
+    var hc=c.createLinearGradient(0,-hh*1.5,-len*0.9,hh*0.8);
+    hc.addColorStop(0,"#ffffff"); hc.addColorStop(0.3,pal.hi);
+    hc.addColorStop(0.66,pal.main); hc.addColorStop(1,pal.dark);
+    c.fillStyle=hc; c.fill();
+    c.strokeStyle=pal.hi; c.globalAlpha=0.8; c.lineWidth=0.8; c.stroke(); c.globalAlpha=1;
+    /* 夸张肩甲 2 个 */
+    for(var sdir=-1;sdir<=1;sdir+=2){
+      emboss(c,[len*0.26, sdir*hh*1.0,
+                len*0.1, sdir*hh*2.1,
+                len*0.0, sdir*hh*1.9,
+                len*0.14, sdir*hh*1.0],
+        "#ffffff", pal.hi, pal.main, pal.dark, 0.7);
+      /* 徽章 */
+      c.beginPath(); c.arc(len*0.14, sdir*hh*1.5, hh*0.24, 0, 6.2832);
+      c.fillStyle=pal.ene; c.fill();
+      c.strokeStyle="#ffffff"; c.lineWidth=0.5; c.stroke();
+    }
+  }
+
+  /* ============ 粉心甜梦：蝴蝶结 + 爱心挂坠 ============ */
+  else if(kind==="ribbon"){
+    /* 蝴蝶结（枪托上方） */
+    var bx4=-len*0.2, by4=-hh*1.53;
+    for(var sd=-1;sd<=1;sd+=2){
+      c.beginPath();
+      c.moveTo(bx4, by4);
+      c.bezierCurveTo(bx4-hh*1.3, by4-sd*hh*1.4, bx4-hh*2.4, by4-sd*hh*0.3,
+                      bx4-hh*0.9, by4+sd*hh*0.16);
+      c.quadraticCurveTo(bx4-hh*1.0, by4+sd*hh*0.7, bx4, by4);
+      c.closePath();
+      c.fillStyle=pal.main; c.fill();
+      c.strokeStyle=pal.hi; c.globalAlpha=0.85; c.lineWidth=0.6; c.stroke(); c.globalAlpha=1;
+      // 褶皱高光
+      c.strokeStyle="rgba(255,255,255,0.75)"; c.lineWidth=0.55;
+      c.beginPath(); c.moveTo(bx4,by4); c.lineTo(bx4-hh*1.0, by4-sd*hh*0.55); c.stroke();
+    }
+    c.beginPath(); c.arc(bx4,by4,hh*0.3,0,6.2832);
+    c.fillStyle=pal.hi; c.fill();
+    c.strokeStyle="#ffffff"; c.lineWidth=0.5; c.stroke();
+    /* 爱心挂坠（悬浮） */
+    for(var i=0;i<3;i++){
+      var hxp=len*(0.2+i*0.24);
+      var hyp=hh*(1.9+Math.sin(T*2+i)*0.3);
+      var hs=hh*0.5;
+      c.beginPath();
+      c.moveTo(hxp, hyp+hs*0.6);
+      c.bezierCurveTo(hxp-hs*1.1, hyp-hs*0.3, hxp-hs*0.42, hyp-hs*1.1, hxp, hyp-hs*0.32);
+      c.bezierCurveTo(hxp+hs*0.42, hyp-hs*1.1, hxp+hs*1.1, hyp-hs*0.3, hxp, hyp+hs*0.6);
+      c.closePath();
+      c.fillStyle=pal.main; c.fill();
+      c.strokeStyle="#ffffff"; c.globalAlpha=0.8; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+      skinGlowAt(c, hxp, hyp, hs*2.4, pal.ene, 0.4);
+    }
+  }
+
+  /* ============ 深渊王权：悬浮王冠 + 霓虹骨架 + 能量链条 ============ */
+  else if(kind==="crown"){
+    /* 霓虹骨架：沿枪身纵向的发光管路 */
+    for(var sdir=-1;sdir<=1;sdir+=2){
+      c.beginPath();
+      c.moveTo(len*0.8, sdir*hh*1.0);
+      c.bezierCurveTo(len*0.5, sdir*hh*1.5, len*0.2, sdir*hh*1.2, -len*0.16, sdir*hh*1.6);
+      c.strokeStyle=pal.ene; c.globalAlpha=0.85; c.lineWidth=1.6; c.stroke();
+      c.strokeStyle="#ffffff"; c.globalAlpha=0.5; c.lineWidth=0.6; c.stroke();
+      c.globalAlpha=1;
+      // 节点光珠
+      for(var i=0;i<5;i++){
+        var t3=i/4;
+        var nx=len*(0.8-t3*0.96);
+        var ny=sdir*hh*(1.0+Math.sin(t3*3.2)*0.5);
+        c.beginPath(); c.arc(nx,ny,hh*0.16,0,6.2832);
+        c.fillStyle=pal.ene; c.fill();
+        c.strokeStyle="#ffffff"; c.lineWidth=0.4; c.stroke();
+      }
+    }
+    /* 悬浮王冠（枪身上方，不接触） */
+    var cx5=len*0.3, cy5=-hh*2.6;
+    c.beginPath();
+    c.moveTo(cx5-hh*1.4, cy5+hh*0.5);
+    c.lineTo(cx5-hh*1.05, cy5-hh*0.9);
+    c.lineTo(cx5-hh*0.52, cy5+hh*0.1);
+    c.lineTo(cx5, cy5-hh*1.5);
+    c.lineTo(cx5+hh*0.52, cy5+hh*0.1);
+    c.lineTo(cx5+hh*1.05, cy5-hh*0.9);
+    c.lineTo(cx5+hh*1.4, cy5+hh*0.5);
+    c.closePath();
+    var krg=c.createLinearGradient(cx5-hh*1.4,cy5-hh*1.5,cx5+hh*1.4,cy5+hh*0.5);
+    krg.addColorStop(0,"#ffffff"); krg.addColorStop(0.3,pal.hi);
+    krg.addColorStop(0.65,pal.main); krg.addColorStop(1,pal.dark);
+    c.fillStyle=krg; c.fill();
+    c.strokeStyle=pal.ene; c.globalAlpha=0.85; c.lineWidth=0.9; c.stroke(); c.globalAlpha=1;
+    /* 冠顶宝石 */
+    for(var i=0;i<3;i++){
+      var gx=cx5+(i-1)*hh*0.85;
+      c.beginPath(); c.arc(gx, cy5+(i===1?-hh*1.0:-hh*0.5), hh*0.2, 0, 6.2832);
+      c.fillStyle=pal.ene; c.fill();
+      c.strokeStyle="#ffffff"; c.lineWidth=0.4; c.stroke();
+      skinGlowAt(c, gx, cy5+(i===1?-hh*1.0:-hh*0.5), hh*0.8, pal.ene, 0.7, true);
+    }
+    /* 能量链条（向后拖） */
+    for(var i=0;i<6;i++){
+      var lx=-len*0.2-i*len*0.14;
+      var ly=Math.sin(T*1.6+i*0.9)*hh*1.1;
+      c.save(); c.translate(lx,ly); c.rotate(i*0.5);
+      c.beginPath(); c.ellipse(0,0,hh*0.3,hh*0.14,0,0,6.2832);
+      c.strokeStyle=pal.ene; c.globalAlpha=0.6-i*0.07; c.lineWidth=1.0; c.stroke();
+      c.globalAlpha=1; c.restore();
     }
   }
 }
@@ -5658,13 +6224,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v7.0");
+    localStorage.setItem("njs_patch","v7.1");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v7.0"){
+    if(seen!=="v7.1"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -10267,7 +10833,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v7.0</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v7.1</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -10298,6 +10864,16 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 18:48:42",items:[
+      "🎨 枪皮系统 v3：对标和平精英天花板，10 风格族 + 12 套皮肤",
+      "🐉 五爪金龙 / 墨龙九天 / 魔童闹海：龙身沿枪身盘绕，龙首包住枪口",
+      "🔥 至情至圣：双翼沿枪身向后掠（不是横向张开）",
+      "❄ 星梦奇缘 / 女娲灵识：冰凤凰翼向后掠 + 冰棱从枪身长出",
+      "💜 超新星：珍珠贝母虹彩材质 + 蝶翼式花瓣",
+      "✨ 灵猫魔法师：法阵环绕 + 六芒星 + 漂浮符文",
+      "🔮 深渊王权：悬浮王冠 + 霓虹骨架 + 能量链条",
+      "💎 全新浮雕基元：每块部件有顶面高光 + 侧面暗部 + 金边勾轮廓"
+    ]},
     {time:"2026-10-24 18:44:48",items:[
       "🔫 枪本体按真实枪械部件重画：枪管圆度/抛壳口/皮卡汀尼导轨/弹匣/握把角度",
       "🎯 8 类武器各自部件清单独立，不再是几何块拼装",
@@ -10515,7 +11091,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 18:44:48";
+    pd.textContent="更新于 2026 年 10 月 24 日 18:48:42";
   }
 })();
 </script>
