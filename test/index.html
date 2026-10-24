@@ -22,6 +22,43 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 #startScreen::-webkit-scrollbar{display:none}
 #startScreen::before{content:"";margin:auto;flex-shrink:0}
 #startScreen::after{content:"";margin:auto;flex-shrink:0}
+
+/* ===== 结算/复活页霓虹大标题 ===== */
+.neon-title{
+  font-size:clamp(36px,11vw,68px)!important;
+  font-weight:900;letter-spacing:2px;line-height:1.16;
+  margin:2px 0 10px;padding:2px 6px;
+  width:100%;max-width:min(92vw,560px);box-sizing:border-box;
+  word-break:break-word;overflow-wrap:break-word;white-space:normal;
+  text-align:center;transform-origin:50% 50%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  background-size:200% 100%;
+  animation:titleFlow 3.2s linear infinite;
+  will-change:transform,background-position;
+}
+.neon-title.tPop{animation:titleFlow 3.2s linear infinite, titlePop .34s cubic-bezier(.18,1.6,.42,1) both}
+@keyframes titlePop{
+  0%{transform:scale(.42);opacity:0}
+  60%{transform:scale(1.12);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+@keyframes titleFlow{
+  0%{background-position:0% 50%}
+  100%{background-position:200% 50%}
+}
+/* 三组配色：红橙 / 青紫 / 金红 */
+.neon-title.c1{
+  background-image:linear-gradient(100deg,#ff2a6d,#ff8a00,#ffe600,#ff2a6d);
+  filter:drop-shadow(0 0 6px rgba(255,90,40,.95)) drop-shadow(0 0 18px rgba(255,42,109,.85)) drop-shadow(0 0 36px rgba(255,42,109,.55));
+}
+.neon-title.c2{
+  background-image:linear-gradient(100deg,#00f2ff,#8b5cff,#ff00aa,#00f2ff);
+  filter:drop-shadow(0 0 6px rgba(0,242,255,.95)) drop-shadow(0 0 18px rgba(176,38,255,.85)) drop-shadow(0 0 36px rgba(0,242,255,.55));
+}
+.neon-title.c3{
+  background-image:linear-gradient(100deg,#ffe600,#ff2a6d,#ffd700,#ffe600);
+  filter:drop-shadow(0 0 6px rgba(255,215,0,.95)) drop-shadow(0 0 18px rgba(255,42,109,.8)) drop-shadow(0 0 36px rgba(255,215,0,.5));
+}
 .logo{
   font-size:clamp(34px,11vw,64px);font-weight:900;letter-spacing:6px;
   background:linear-gradient(100deg,#00f2ff 0%,#ff00aa 50%,#ffe600 100%);
@@ -134,7 +171,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.7</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.8</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -160,7 +197,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 </div>
 
 <div id="overScreen" class="panel hidden">
-  <div class="logo" style="font-size:clamp(26px,8vw,42px)">游戏结束</div>
+  <div class="logo neon-title" id="overTitle"></div>
   <div id="finalScore" style="color:#a0a8ff;margin-top:12px;font-size:14px">得分 0</div>
   <div id="board" style="display:none"></div>
     <div id="lbTabs" style="display:flex;gap:5px;justify-content:center;margin:8px 0 5px;flex-wrap:nowrap">
@@ -182,7 +219,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 </div>
 
 <div id="reviveScreen" class="panel hidden">
-  <div class="logo" style="font-size:clamp(26px,8vw,42px)">你倒下了</div>
+  <div class="logo neon-title" id="reviveTitle"></div>
   <div id="reviveInfo" style="color:#a0a8ff;margin-top:12px;font-size:15px">剩余复活 3 次</div>
   <button class="btn btn-revive" onclick="doRevive()">复活继续</button>
   <button class="btn btn-ghost" onclick="doGiveUp()">放弃</button>
@@ -611,6 +648,27 @@ function tauntPick(arr, used){
   used.push(idx);
   return arr[idx];
 }
+/* 结算/复活页大标题：随机嘲讽 + 换配色 + 弹入 + 轻震屏 */
+var _titleColor=0;
+function setPanelTitle(elId, pool, used){
+  var el=document.getElementById(elId);
+  if(!el)return;
+  var txt="";
+  try{ txt=tauntPick(pool,used); }catch(e){ txt=""; }
+  if(!txt)return;
+  el.textContent=txt;
+  // 每次换一组配色（不连续重复）
+  var next=_titleColor;
+  while(next===_titleColor)next=1+Math.floor(Math.random()*3);
+  _titleColor=next;
+  el.className="logo neon-title c"+next;
+  // 重放弹入动画
+  void el.offsetWidth;
+  el.classList.add("tPop");
+  // 轻微震屏
+  try{ cam.shake=Math.max(cam.shake||0,9); }catch(e){}
+}
+
 function showTaunt(text){
   var el=document.getElementById("taunt");
   if(!el)return;
@@ -3134,7 +3192,7 @@ if(smartMode)updateSmartTraps(dt,rdt);
 world._dark=Math.max(0,(world._dark||0)-rdt*2);
 world._blind=Math.max(0,(world._blind||0)-rdt*2);
 // 死亡
-if(p.hp<=0&&!p.dead){p.dead=true;if(revives>0){gameState="revive";var ri=document.getElementById("reviveInfo");if(ri)ri.textContent="剩余复活 "+revives+"次 得分"+score+" 距离"+distance+"m"+(smartMode?" · 🧠聪明人模式":"");var rs=document.getElementById("reviveScreen");if(rs)rs.classList.remove("hidden");ui.hud.classList.add("hidden");sfx(80,"sawtooth",0.5,0.1,40)}else{doGiveUp()}}
+if(p.hp<=0&&!p.dead){p.dead=true;if(revives>0){gameState="revive";try{setPanelTitle("reviveTitle",TAUNT_DEAD,_tauntUsedDead);}catch(e){}var ri=document.getElementById("reviveInfo");if(ri)ri.textContent="剩余复活 "+revives+"次 得分"+score+" 距离"+distance+"m"+(smartMode?" · 🧠聪明人模式":"");var rs=document.getElementById("reviveScreen");if(rs)rs.classList.remove("hidden");ui.hud.classList.add("hidden");sfx(80,"sawtooth",0.5,0.1,40)}else{doGiveUp()}}
 ensureWorld();spawnEnemies()}
 
 /* 头像 */
@@ -3203,13 +3261,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v5.7");
+    localStorage.setItem("njs_patch","v5.8");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v5.7"){
+    if(seen!=="v5.8"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7111,11 +7169,13 @@ function doRevive(){
   world.texts.push({x:player.x,y:player.y-70,text:"复活!",life:1.2,vy:-40});
   sfx(700,"sine",0.4,0.1,1600);
   try{ showTaunt(tauntPick(TAUNT_REVIVE,_tauntUsedRevive)); }catch(e){}
+  try{ setPanelTitle("reviveTitle",TAUNT_REVIVE,_tauntUsedRevive); }catch(e){}
 }
 function doGiveUp(){
   gameState="over";stopBgm();
   settleCoins();
   try{ showTaunt(tauntPick(TAUNT_DEAD,_tauntUsedDead)); }catch(e){}
+  try{ setPanelTitle("overTitle",TAUNT_DEAD,_tauntUsedDead); }catch(e){}
   try{localStorage.removeItem("njs_save")}catch(e){}
   sfx(110,"sawtooth",1,0.12,40);
   var rs=document.getElementById("reviveScreen");if(rs)rs.classList.add("hidden");
@@ -7810,7 +7870,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.7</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.8</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7841,6 +7901,11 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 12:11:36",items:[
+      "😂 结算大标题改为随机嘲讽（30+30 句不重复）",
+      "✨ 标题炸裂升级：字号更大 + 三重霓虹光晕 + 0.34 秒弹入 + 轻震屏",
+      "🎨 每死一次随机换配色（红橙 / 青紫 / 金红）"
+    ]},
     {time:"2026-10-24 11:44:33",items:[
       "⏱ 修复榜单时间不对：更新成绩时同步刷新为本次打出的真实时间"
     ]},
@@ -8002,7 +8067,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 11:44:33";
+    pd.textContent="更新于 2026 年 10 月 24 日 12:11:36";
   }
 })();
 </script>
