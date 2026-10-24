@@ -131,7 +131,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.3</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3200,13 +3200,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v5.2");
+    localStorage.setItem("njs_patch","v5.3");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v5.2"){
+    if(seen!=="v5.3"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7052,6 +7052,8 @@ function settleCoins(){
     var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
     if(typeof _c.gold!=="number")_c.gold=0;
     if(typeof _c.lifetime!=="number")_c.lifetime=0;
+    // 对账迁移：终身累计必须 ≥ 当前持有（老存档 lifetime 从0起步，把已有金币并入）
+    if(_c.lifetime<_c.gold)_c.lifetime=_c.gold;
     _c.gold+=coinCount;
     _c.lifetime+=coinCount; // 终身累计：只增不减，买武器不扣
     localStorage.setItem("njs_codex",JSON.stringify(_c));
@@ -7281,6 +7283,10 @@ function lbRenderRichTo(box){
     var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
     if(typeof _c.lifetime==="number")myLifetime=_c.lifetime;
     if(typeof _c.gold==="number")gold=_c.gold;
+    if(myLifetime<gold){ // 对账兜底：终身 < 持有时把差的补进终身（并写回存档）
+      myLifetime=gold;
+      try{ _c.lifetime=gold; localStorage.setItem("njs_codex",JSON.stringify(_c)); }catch(_){}
+    }
   }catch(_){}
   var nm="";
   try{ nm=localStorage.getItem("njs_name")||lbGetName(); }catch(e){ nm=lbGetName(); }
@@ -7342,7 +7348,7 @@ function lbRenderRichTo(box){
   // 底部：本机终身累计 + 当前持有
   var sub=document.createElement("div");
   sub.style.cssText="color:#7c86c8;text-align:center;padding:6px;font-size:11px;border-top:1px dashed rgba(255,200,0,.25);margin-top:4px";
-  sub.textContent="本机终身 "+myLifetime+" · 当前持有 🪙 "+gold+" · 历史已花 "+(myLifetime-gold);
+  sub.textContent="本机终身 "+Math.max(myLifetime,gold)+" · 当前持有 🪙 "+gold+" · 历史已花 "+Math.max(0,myLifetime-gold);
   box.appendChild(sub);
 }
 function lbRenderRich(){ lbRenderRichTo(document.getElementById("overBoard")); }
@@ -7716,7 +7722,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.2</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.3</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7747,6 +7753,9 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 10:14:17",items:[
+      "🐛 修复终身累计金币对账：老存档金币自动并入终身累计，终身=持有+已花 永远成立"
+    ]},
     {time:"2026-10-24 10:09:01",items:[
       "😂 新增嘲讽文案库：失败/复活各30句，随机抽取不重复",
       "💰 确认富豪榜按终身累计金币排序（持有+已花，只增不减）"
@@ -7891,7 +7900,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 10:09:01";
+    pd.textContent="更新于 2026 年 10 月 24 日 10:14:17";
   }
 })();
 </script>
@@ -8380,6 +8389,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     o.gold-=wd.price;
     if(o.weapons.indexOf(lv)<0)o.weapons.push(lv);cxSave(o);
     if(typeof coinCount!=="undefined"){coinCount=Math.max(0,coinCount-wd.price);}
+    try{ var _ck=JSON.parse(localStorage.getItem("njs_codex")||"{}"); if(typeof _ck.gold==="number"&&typeof _ck.lifetime==="number"&&_ck.lifetime<_ck.gold)_ck.lifetime=_ck.gold,localStorage.setItem("njs_codex",JSON.stringify(_ck)); }catch(_){}
     showToast("解锁 "+wd.name+"!");
     var _gd=document.getElementById("codexGold");
     if(_gd){var _oo=cxState();_gd.textContent="🪙 "+_oo.gold;}
