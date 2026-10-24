@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v8.0</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v8.1</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -517,7 +517,10 @@ document.addEventListener("touchend",function(e){for(var i=0;i<e.changedTouches.
 document.addEventListener("touchcancel",function(e){for(var i=0;i<e.changedTouches.length;i++){pUp(e.changedTouches[i].identifier)}},{passive:false});
 }else{var mD=false;document.addEventListener("mousedown",function(e){mD=true;pDown(999,e.clientX,e.clientY)});document.addEventListener("mousemove",function(e){if(mD)pMove(999,e.clientX,e.clientY)});document.addEventListener("mouseup",function(){mD=false;pUp(999)})}
 var keys={};addEventListener("keydown",function(e){keys[e.code]=true;if(e.code==="KeyP")togglePause();if(e.code==="KeyJ")castSkill()});
-addEventListener("keyup",function(e){keys[e.code]=false});
+addEventListener("keyup",function(e){
+  keys[e.code]=false;
+  if(e.code==="Space"||e.code==="KeyW"||e.code==="ArrowUp"){ try{jumpRelease()}catch(_){} }
+});
 
 /* 状态 */
 var gameState="start",lastTime=0,timeScale=1,slowTimer=0;
@@ -3462,41 +3465,68 @@ function spawnParticles(x,y,n,c,sp){for(var i=0;i<n;i++){var a=Math.random()*6.2
 /* 跳跃 */
 /* 跳跃：一段跳干脆，二段跳轻盈（更小更快、带残影光圈），
    长按可延长上升，松手立刻截断（短按小跳 / 长按大跳） */
-var _jumpHold=0;      // 长按跳跃键延长上升
-var _jumpHoldMax=0.22;
+var _jumpHold=0;          /* 长按跳跃键延长上升（可变跳跃高度） */
+var _jumpHoldMax=0.24;
+var _coyoteT=0;           /* 土狼时间：离地后仍可跳的宽限 */
+var _coyoteMax=0.10;
+var _jumpBufT=0;          /* 跳跃缓冲：落地前按跳，落地瞬间自动起跳 */
+var _jumpBufMax=0.14;
+var _landSquash=0;        /* 落地压扁动画 */
+var _jumpStretch=0;       /* 起跳拉长动画 */
+/* 落地统一处理：压扁动画 + 跳跃缓冲自动起跳 */
+function onLand(){
+  var p=player;
+  if(!p) return;
+  _landSquash=1;
+  p.jumps=0;
+  _coyoteT=0;
+  /* 跳跃缓冲：落地前按过跳键 → 立即起跳 */
+  if(_jumpBufT>0){ _jumpBufT=0; tryJump(); }
+  else if(p.vy>600){
+    /* 从高处摔落：尘土 + 轻微震屏 */
+    spawnParticles(p.x, p.y+p.h/2, 6, "#8a94a8", 40);
+    spawnShockRing(p.x, p.y+p.h/2, "#a0b0c8", 26);
+  }
+}
 function tryJump(){
   var p=player;
-  if(p.jumps>=2) return;
+  /* 空中且无土狼宽限 → 记入跳跃缓冲（松开后落地自动起跳） */
+  if(p.jumps>=2 || (!p.onGround && _coyoteT<=0 && p.jumps>0)){
+    _jumpBufT=_jumpBufMax;
+    return;
+  }
   if(p.jumps===0){
-    /* 一段跳：干脆，力度足 */
-    p.vy=-455; p.jumps=1; p.onGround=false;
+    /* 一段跳：初速 78%，按住补满（短按小跳 / 长按大跳） */
+    p.vy=-390; p.jumps=1; p.onGround=false;
+    _jumpStretch=1; _coyoteT=0;
     sJump();
-    spawnParticles(p.x,p.y+p.h/2,7,"#00f2ff",55);
-    spawnShockRing(p.x,p.y+p.h/2,"#00f2ff",30);
+    spawnParticles(p.x,p.y+p.h/2,8,"#00f2ff",58);
+    spawnShockRing(p.x,p.y+p.h/2,"#00f2ff",32);
   }else{
-    /* 二段跳：更轻更快，脚下留环 + 拖影 + 上扬粒子 */
-    /* 二段跳：初速比一段低（轻盈），但有 0.18 秒的"上浮"补偿 */
-    p.vy=-330; p.jumps=2; p.onGround=false; p.dblT=0.18;
-    /* 脚下双层冲击环（品红 + 白） */
+    /* 二段跳：轻盈 + 0.16 秒上浮补偿 */
+    p.vy=-300; p.jumps=2; p.onGround=false; p.dblT=0.16;
+    _jumpStretch=1;
     spawnShockRing(p.x,p.y+p.h/2,"#ff00aa",46);
     spawnShockRing(p.x,p.y+p.h/2,"#ffffff",24);
-    /* 粒子：向上锥形散开（12 颗） */
     for(var i=0;i<12;i++){
-      var a=-Math.PI/2+(Math.random()-0.5)*1.4;
+      var a2=-Math.PI/2+(Math.random()-0.5)*1.4;
       var sp=45+Math.random()*95;
-      spawnParticles(p.x+Math.cos(a)*8, p.y+p.h/2+Math.sin(a)*6, 1, i%2?"#ff00aa":"#00f2ff", sp);
+      spawnParticles(p.x+Math.cos(a2)*8, p.y+p.h/2+Math.sin(a2)*6, 1, i%2?"#ff00aa":"#00f2ff", sp);
     }
     sfx(680,"sine",0.16,0.05,1500);
-    /* 残影（2 帧，拉开距离） */
     if(!world.trails) world.trails=[];
     world.trails.push({x:p.x,y:p.y,f:p.facing||1,life:0.26,max:0.26});
-    /* 空中转向加成：二段跳后短时间能更灵活调整方向 */
     p.airT=0.35;
   }
   _jumpHold=_jumpHoldMax;
+  _jumpBufT=0;
 }
-/* 松键时截断上升（让短按=小跳，长按=大跳） */
-function jumpRelease(){ _jumpHold=0; }
+/* 松键：截断上升速度（短按=小跳） */
+function jumpRelease(){
+  _jumpHold=0;
+  var p=player;
+  if(p && p.vy<-170) p.vy=-170;
+}
 
 /* 射击 */
 function shoot(){var p=player;
@@ -6543,10 +6573,93 @@ var ROLE_PAL={
   rk_abyss :{body:"#1a2a3a", trim:"#4080c0", accent:"#0a1420", glow:"#40c0ff", eye:"#00ffff"},
   rk_levi  :{body:"#0a1a2a", trim:"#60e0ff", accent:"#04101a", glow:"#40d0ff", eye:"#ffffff"}
 };
+/* ==================================================================
+   角色皮肤绘制 v2 —— 分段骨架 + 立体服装 + 材质分层
+   每个部件是独立函数，有高光/中间色/暗面三层
+   ================================================================== */
+
+/* 圆角矩形路径 */
+function rkRRect(c,x,y,w,h,r){
+  r=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
+  c.beginPath();
+  c.moveTo(x+r,y);
+  c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y);
+  c.closePath();
+}
+/* 立体块：底色 + 上高光 + 下暗面 + 描边 */
+function rkBlock(c,x,y,w,h,r,colTop,colMid,colDark,colRim){
+  rkRRect(c,x,y,w,h,r||2);
+  var g=c.createLinearGradient(0,y,0,y+h);
+  g.addColorStop(0,colTop); g.addColorStop(0.42,colMid);
+  g.addColorStop(1,colDark);
+  c.fillStyle=g; c.fill();
+  /* 顶部高光 */
+  c.fillStyle="rgba(255,255,255,0.30)";
+  rkRRect(c,x+1,y+1,w-2,Math.max(1.5,h*0.22),r||2);
+  c.fill();
+  /* 底部反光 */
+  c.fillStyle="rgba(0,0,0,0.22)";
+  rkRRect(c,x+1,y+h-Math.max(1.5,h*0.16)-1,w-2,Math.max(1.5,h*0.16),0);
+  c.fill();
+  /* 描边 */
+  if(colRim){
+    rkRRect(c,x,y,w,h,r||2);
+    c.strokeStyle=colRim; c.lineWidth=0.7; c.stroke();
+  }
+}
+/* 关节球（带高光） */
+function rkJoint(c,x,y,r,col,hi){
+  c.beginPath(); c.arc(x,y,r,0,6.2832);
+  var g=c.createRadialGradient(x-r*0.35,y-r*0.35,r*0.1,x,y,r*1.15);
+  g.addColorStop(0,hi||"#ffffff");
+  g.addColorStop(0.42,col);
+  g.addColorStop(1,"rgba(0,0,0,0.55)");
+  c.fillStyle=g; c.fill();
+}
+/* 披风/飘带（贝塞尔 + 渐变） */
+function rkCape(c,x,y,len,wid,dir,col1,col2,wave){
+  c.beginPath();
+  c.moveTo(x,y-wid*0.5);
+  c.bezierCurveTo(x-dir*len*0.3, y-wid*0.9+wave,
+                  x-dir*len*0.7, y+wid*0.4+wave*1.6,
+                  x-dir*len, y+wid*0.1+wave*2.2);
+  c.quadraticCurveTo(x-dir*len*0.72, y+wid*0.9+wave*1.3, x-dir*len*0.34, y+wid*0.62);
+  c.quadraticCurveTo(x-dir*len*0.14, y+wid*0.5, x, y+wid*0.5);
+  c.closePath();
+  var g=c.createLinearGradient(x-dir*len*0.2,y-wid*0.4,x-dir*len,y+wid*0.6);
+  g.addColorStop(0,col1); g.addColorStop(0.65,col2);
+  g.addColorStop(1,"rgba(0,0,0,0.75)");
+  c.fillStyle=g; c.fill();
+  c.strokeStyle="rgba(255,255,255,0.22)"; c.lineWidth=0.7; c.stroke();
+}
+/* 头发束（贝塞尔锥形） */
+function rkHairStrand(c,x,y,len,wid,ang,curl,col,hi){
+  var ca=Math.cos(ang),sa=Math.sin(ang);
+  var px=-sa,py=ca;
+  c.beginPath();
+  c.moveTo(x+px*wid, y+py*wid);
+  c.bezierCurveTo(
+    x+ca*len*0.3+px*wid*0.9+curl, y+sa*len*0.3+py*wid*0.9+curl,
+    x+ca*len*0.82+px*wid*0.3+curl*1.7, y+sa*len*0.82+py*wid*0.3+curl*1.7,
+    x+ca*len, y+sa*len);
+  c.bezierCurveTo(
+    x+ca*len*0.82-px*wid*0.4+curl*1.7, y+sa*len*0.82-py*wid*0.4+curl*1.7,
+    x+ca*len*0.3-px*wid*0.7+curl, y+sa*len*0.3-py*wid*0.7+curl,
+    x-px*wid, y-py*wid);
+  c.closePath();
+  var g=c.createLinearGradient(x,y,x+ca*len,y+sa*len);
+  g.addColorStop(0,hi); g.addColorStop(0.4,col);
+  g.addColorStop(1,"rgba(0,0,0,0.6)");
+  c.fillStyle=g; c.fill();
+}
+
 function drawRoleSkin(c, heroIdx, skinId, x, y, scale, T){
   var pal=ROLE_PAL[skinId]||ROLE_PAL.rk_steel;
-  var sk=null;
   var list=ROLE_SKIN_DEF[heroIdx]||[];
+  var sk=null;
   for(var i=0;i<list.length;i++) if(list[i].id===skinId) sk=list[i];
   var rar=sk?(SKIN_RAR[sk.rar]||SKIN_RAR.white):SKIN_RAR.white;
 
@@ -6554,222 +6667,327 @@ function drawRoleSkin(c, heroIdx, skinId, x, y, scale, T){
   c.translate(x,y);
   c.scale(scale,scale);
 
-  var breathe=Math.sin(T*2.2)*0.04;
-  var bob=Math.sin(T*2.2)*1.2;
+  var bob=Math.sin(T*2.2)*1.1;
+  var breath=0.018*Math.sin(T*2.6);
 
-  /* 光环（传说/神话才有） */
+  /* ===== 体型参数（按角色差异）===== */
+  var BW,BH,HR,LL;   /* 体宽 体高 头半径 腿长 */
+  if(heroIdx===0){ BW=21;BH=32;HR=10.5;LL=21; }        /* 机甲战士：壮 */
+  else if(heroIdx===1){ BW=16;BH=28;HR=11.5;LL=23; }    /* 二次元少女：纤细 */
+  else if(heroIdx===2){ BW=23;BH=33;HR=9.5;LL=21; }     /* 写实格斗家：宽肩 */
+  else if(heroIdx===3){ BW=19;BH=32;HR=10;LL=22; }      /* 赛博武士 */
+  else { BW=18;BH=30;HR=10.5;LL=22; }                   /* 女仆鲸娘 */
+
+  /* ===== 稀有度光环（传说/神话）===== */
   if(sk && (sk.rar==="gold"||sk.rar==="red")){
-    skinGlowAt(c,0,0,58,pal.glow,0.20);
-    skinGlowAt(c,0,0,34,pal.glow,0.28);
-    // 光柱
-    var beam=c.createLinearGradient(0,-140,0,60);
-    beam.addColorStop(0,"rgba(0,0,0,0)");
-    beam.addColorStop(0.4,pal.glow.replace("#","rgba(").length? "rgba(255,255,255,0.12)":"rgba(255,255,255,0.12)");
-    beam.addColorStop(0.6,"rgba(255,255,255,0.20)");
-    beam.addColorStop(1,"rgba(0,0,0,0)");
+    skinGlowAt(c,0,0,52,pal.glow,0.16);
+    skinGlowAt(c,0,0,30,pal.glow,0.24);
+    var beam=c.createLinearGradient(0,-135,0,55);
+    beam.addColorStop(0,"rgba(255,255,255,0)");
+    beam.addColorStop(0.38,"rgba(255,255,255,0.10)");
+    beam.addColorStop(0.5,"rgba(255,255,255,0.18)");
+    beam.addColorStop(0.62,"rgba(255,255,255,0.10)");
+    beam.addColorStop(1,"rgba(255,255,255,0)");
     c.fillStyle=beam;
-    c.fillRect(-22,-140,44,200);
+    c.fillRect(-24,-135,48,190);
   }
 
-  /* 各英雄体型差异 */
-  var bodyW,bodyH,headR,legLen;
-  if(heroIdx===0){ bodyW=22;bodyH=34;headR=11;legLen=22; }      // 机甲战士
-  else if(heroIdx===1){ bodyW=18;bodyH=30;headR=12;legLen=24; }  // 二次元少女
-  else if(heroIdx===2){ bodyW=24;bodyH=34;headR=10;legLen=22; }  // 写实格斗家
-  else if(heroIdx===3){ bodyW=20;bodyH=34;headR=10;legLen=23; }  // 赛博武士
-  else { bodyW=20;bodyH=32;headR=11;legLen=23; }                 // 女仆鲸娘
+  var hipY=8;
 
-  /* ===== 腿 ===== */
-  c.fillStyle=pal.accent;
-  c.fillRect(-bodyW*0.34, 10+bodyH*0.5, bodyW*0.28, legLen);
-  c.fillRect(bodyW*0.06, 10+bodyH*0.5, bodyW*0.28, legLen);
-  // 腿高光
-  c.fillStyle="rgba(255,255,255,0.24)";
-  c.fillRect(-bodyW*0.32, 10+bodyH*0.5, 2, legLen*0.9);
-  c.fillRect(bodyW*0.08, 10+bodyH*0.5, 2, legLen*0.9);
-  // 靴
-  c.fillStyle=pal.trim;
-  c.fillRect(-bodyW*0.38, 10+bodyH*0.5+legLen, bodyW*0.36, 5);
-  c.fillRect(bodyW*0.02, 10+bodyH*0.5+legLen, bodyW*0.36, 5);
-
-  /* ===== 躯干（带渐变+高光） ===== */
-  var ty=-bodyH*0.5+bob;
-  var bg=c.createLinearGradient(-bodyW,ty,bodyW,ty+bodyH);
-  bg.addColorStop(0,pal.accent);
-  bg.addColorStop(0.22,pal.body);
-  bg.addColorStop(0.52,pal.trim);
-  bg.addColorStop(0.78,pal.body);
-  bg.addColorStop(1,pal.accent);
-  c.fillStyle=bg;
-  // 梯形躯干（肩宽腰窄）
-  c.beginPath();
-  c.moveTo(-bodyW*0.5-4, ty);
-  c.lineTo(bodyW*0.5+4, ty);
-  c.lineTo(bodyW*0.5-2, ty+bodyH);
-  c.lineTo(-bodyW*0.5+2, ty+bodyH);
-  c.closePath(); c.fill();
-  // 躯干描边
-  c.strokeStyle="rgba(0,0,0,0.4)"; c.lineWidth=0.8; c.stroke();
-  // 胸甲高光
-  c.fillStyle="rgba(255,255,255,0.28)";
-  c.beginPath();
-  c.moveTo(-bodyW*0.42+2, ty+3);
-  c.lineTo(-bodyW*0.05, ty+3);
-  c.lineTo(-bodyW*0.1, ty+bodyH*0.36);
-  c.lineTo(-bodyW*0.42+3, ty+bodyH*0.32);
-  c.closePath(); c.fill();
-  // 腰部色带
-  c.fillStyle=pal.accent;
-  c.fillRect(-bodyW*0.48, ty+bodyH*0.72, bodyW*0.96, bodyH*0.16);
-  // 腰带扣发光
-  c.fillStyle=pal.glow; c.globalAlpha=0.9;
-  c.fillRect(-3, ty+bodyH*0.74, 6, 6);
-  c.globalAlpha=1;
-  skinGlowAt(c,0,ty+bodyH*0.78,10,pal.glow,0.5,true);
-  // 胸口能量核（呼吸）
-  c.globalAlpha=0.55+0.35*Math.sin(T*3);
-  skinGlowAt(c,0,ty+bodyH*0.28,14,pal.glow,0.8,true);
-  c.globalAlpha=1;
-  c.fillStyle="#ffffff"; c.globalAlpha=0.85;
-  c.beginPath(); c.arc(0,ty+bodyH*0.28,3.2,0,6.2832); c.fill();
-  c.globalAlpha=1;
-
-  /* ===== 手臂 ===== */
+  /* ===== 腿（分段：大腿+小腿+靴）===== */
   for(var sd=-1;sd<=1;sd+=2){
-    c.save();
-    c.translate(sd*(bodyW*0.5+3), ty+bodyH*0.1);
-    c.rotate(sd*0.12);
-    var ag=c.createLinearGradient(0,0,sd*8,0);
-    ag.addColorStop(0,pal.body); ag.addColorStop(0.5,pal.trim); ag.addColorStop(1,pal.accent);
-    c.fillStyle=ag;
-    c.beginPath();
-    c.moveTo(0,0); c.lineTo(sd*8,2); c.lineTo(sd*7,bodyH*0.62); c.lineTo(-sd*1,bodyH*0.6);
-    c.closePath(); c.fill();
-    c.strokeStyle="rgba(0,0,0,0.34)"; c.lineWidth=0.6; c.stroke();
-    // 肩甲
-    c.fillStyle=pal.trim;
-    c.beginPath(); c.ellipse(sd*3, 0, 8, 6, 0, 0, 6.2832); c.fill();
-    c.strokeStyle="rgba(255,255,255,0.34)"; c.lineWidth=0.6; c.stroke();
-    // 手
-    c.fillStyle=pal.accent;
-    c.beginPath(); c.arc(sd*4, bodyH*0.62, 4.2, 0, 6.2832); c.fill();
-    c.restore();
+    var lx=sd*BW*0.24;
+    /* 大腿 */
+    rkBlock(c, lx-BW*0.15, hipY, BW*0.30, LL*0.55, BW*0.11,
+      pal.trim, pal.body, pal.accent, null);
+    /* 膝盖关节 */
+    rkJoint(c, lx, hipY+LL*0.55, BW*0.13, pal.accent, pal.trim);
+    /* 小腿 */
+    rkBlock(c, lx-BW*0.13, hipY+LL*0.58, BW*0.26, LL*0.40, BW*0.10,
+      pal.trim, pal.accent, "rgba(0,0,0,0.8)", null);
+    /* 靴 */
+    rkBlock(c, lx-BW*0.17, hipY+LL*0.94, BW*0.37, 5.2, 2.2,
+      pal.hi||pal.trim, pal.trim, pal.accent, pal.rim||null);
   }
+
+  /* ===== 躯干（胸甲 + 腰腹 + 护腰）===== */
+  var ty=-BH*0.5+bob;
+  /* 腰腹（窄） */
+  rkBlock(c, -BW*0.36, ty+BH*0.62, BW*0.72, BH*0.26, BW*0.14,
+    pal.trim, pal.body, pal.accent, null);
+  /* 胸甲（宽，带梯形感） */
+  var chestTop=ty;
+  var chestH=BH*0.66;
+  c.beginPath();
+  c.moveTo(-BW*0.52-BW*breath, chestTop);
+  c.lineTo(BW*0.52+BW*breath, chestTop);
+  c.lineTo(BW*0.40, chestTop+chestH);
+  c.lineTo(-BW*0.40, chestTop+chestH);
+  c.closePath();
+  var cg=c.createLinearGradient(0,chestTop,0,chestTop+chestH);
+  cg.addColorStop(0,pal.trim);
+  cg.addColorStop(0.35,pal.body);
+  cg.addColorStop(0.82,pal.accent);
+  cg.addColorStop(1,"rgba(0,0,0,0.85)");
+  c.fillStyle=cg; c.fill();
+  /* 胸甲中缝高光 */
+  c.strokeStyle="rgba(255,255,255,0.30)"; c.lineWidth=0.9;
+  c.beginPath(); c.moveTo(0,chestTop+2); c.lineTo(0,chestTop+chestH*0.86); c.stroke();
+  /* 胸甲边缘描线 */
+  c.strokeStyle="rgba(255,255,255,0.18)"; c.lineWidth=0.7;
+  c.beginPath();
+  c.moveTo(-BW*0.52,chestTop); c.lineTo(BW*0.52,chestTop);
+  c.stroke();
+  /* 肩甲（左右各一块，立体） */
+  for(var sd2=-1;sd2<=1;sd2+=2){
+    c.beginPath();
+    c.moveTo(sd2*BW*0.46, chestTop+2);
+    c.quadraticCurveTo(sd2*BW*0.82, chestTop+4, sd2*BW*0.76, chestTop+chestH*0.34);
+    c.quadraticCurveTo(sd2*BW*0.60, chestTop+chestH*0.30, sd2*BW*0.46, chestTop+chestH*0.22);
+    c.closePath();
+    var sg=c.createLinearGradient(sd2*BW*0.46,chestTop,sd2*BW*0.78,chestTop+chestH*0.34);
+    sg.addColorStop(0,pal.hi||"#ffffff");
+    sg.addColorStop(0.42,pal.trim);
+    sg.addColorStop(1,pal.accent);
+    c.fillStyle=sg; c.fill();
+    c.strokeStyle="rgba(255,255,255,0.32)"; c.lineWidth=0.7; c.stroke();
+  }
+  /* 腰带 */
+  rkBlock(c, -BW*0.42, ty+BH*0.60, BW*0.84, BH*0.13, 2,
+    pal.hi||pal.trim, pal.trim, pal.accent, null);
+  /* 腰带扣（发光） */
+  c.globalAlpha=0.85+0.15*Math.sin(T*3.2);
+  c.fillStyle=pal.glow;
+  rkRRect(c,-BW*0.10, ty+BH*0.615, BW*0.20, BH*0.10, 1.6);
+  c.fill();
+  c.globalAlpha=1;
+  skinGlowAt(c, 0, ty+BH*0.665, 8, pal.glow, 0.55, true);
+
+  /* ===== 胸口能量核（呼吸）===== */
+  c.globalAlpha=0.5+0.4*Math.sin(T*3);
+  skinGlowAt(c, 0, ty+chestH*0.42, 13, pal.glow, 0.8, true);
+  c.globalAlpha=1;
+  c.fillStyle="#ffffff"; c.globalAlpha=0.88;
+  c.beginPath(); c.arc(0, ty+chestH*0.42, 2.9, 0, 6.2832); c.fill();
+  c.globalAlpha=1;
+  /* 核外环 */
+  c.strokeStyle=pal.glow; c.globalAlpha=0.5;
+  c.lineWidth=0.8;
+  c.beginPath(); c.arc(0, ty+chestH*0.42, 5.4, 0, 6.2832); c.stroke();
+  c.globalAlpha=1;
+
+  /* ===== 手臂（分段：上臂 + 肘 + 前臂 + 手）===== */
+  for(var sd3=-1;sd3<=1;sd3+=2){
+    var shX=sd3*BW*0.56, shY2=chestTop+chestH*0.16;
+    var sw=Math.sin(T*2.2+sd3)*0.6;
+    /* 上臂 */
+    c.save();
+    c.translate(shX, shY2);
+    c.rotate(sd3*0.14);
+    rkBlock(c, -BW*0.11, 0, BW*0.22, BH*0.34, BW*0.08,
+      pal.hi||pal.trim, pal.body, pal.accent, null);
+    c.restore();
+    /* 肘 */
+    var elX=shX+sd3*3.2, elY=shY2+BH*0.36;
+    rkJoint(c, elX, elY, BW*0.10, pal.accent, pal.trim);
+    /* 前臂 */
+    c.save();
+    c.translate(elX, elY);
+    c.rotate(sd3*0.10+sw*0.01);
+    rkBlock(c, -BW*0.095, 0, BW*0.19, BH*0.30, BW*0.07,
+      pal.trim, pal.accent, "rgba(0,0,0,0.85)", null);
+    c.restore();
+    /* 手 */
+    rkJoint(c, elX+sd3*1.4, elY+BH*0.31, BW*0.105, pal.body, pal.trim);
+  }
+
+  /* ===== 颈部 ===== */
+  rkBlock(c, -3.4, ty-HR*0.62, 6.8, HR*0.7, 1.8,
+    pal.trim, pal.accent, "rgba(0,0,0,0.8)", null);
 
   /* ===== 头 ===== */
-  var hy=ty-headR*1.5;
-  // 颈
-  c.fillStyle=pal.accent;
-  c.fillRect(-3.6, ty-headR*0.5, 7.2, headR*0.6);
-  // 头（带渐变）
-  var hg=c.createRadialGradient(-headR*0.32, hy-headR*0.32, headR*0.1, 0, hy, headR*1.2);
-  hg.addColorStop(0,"#ffffff");
-  hg.addColorStop(0.32,pal.trim);
-  hg.addColorStop(0.72,pal.body);
-  hg.addColorStop(1,pal.accent);
-  c.fillStyle=hg;
-  c.beginPath(); c.ellipse(0, hy, headR*0.92, headR, 0, 0, 6.2832); c.fill();
-  c.strokeStyle="rgba(0,0,0,0.36)"; c.lineWidth=0.7; c.stroke();
-  // 面部暗区（让眼睛有底）
-  c.fillStyle="rgba(0,0,0,0.3)";
-  c.beginPath(); c.ellipse(0, hy+headR*0.18, headR*0.66, headR*0.5, 0, 0, 6.2832); c.fill();
-  // 眼睛（发光）
-  for(var sd2=-1;sd2<=1;sd2+=2){
+  var hy=ty-HR*1.52;
+  rkJoint(c, 0, hy, HR, pal.body, pal.trim);
+  /* 面部暗区 */
+  c.fillStyle="rgba(0,0,0,0.28)";
+  c.beginPath();
+  c.ellipse(0, hy+HR*0.20, HR*0.66, HR*0.52, 0, 0, 6.2832);
+  c.fill();
+  /* 眼睛（双层发光） */
+  for(var sd4=-1;sd4<=1;sd4+=2){
     c.fillStyle=pal.eye;
-    c.beginPath(); c.ellipse(sd2*headR*0.36, hy+headR*0.1, headR*0.18, headR*0.1, 0, 0, 6.2832); c.fill();
+    c.beginPath();
+    c.ellipse(sd4*HR*0.34, hy+HR*0.10, HR*0.19, HR*0.105, 0, 0, 6.2832);
+    c.fill();
+    c.fillStyle="rgba(255,255,255,0.85)";
+    c.beginPath();
+    c.ellipse(sd4*HR*0.34-HR*0.04, hy+HR*0.06, HR*0.07, HR*0.045, 0, 0, 6.2832);
+    c.fill();
   }
-  // 眼发光
-  skinGlowAt(c,0,hy+headR*0.1,headR*0.9,pal.eye,0.55,true);
+  skinGlowAt(c, 0, hy+HR*0.10, HR*0.85, pal.eye, 0.45, true);
 
-  /* ===== 各角色专属头饰/装饰 ===== */
+  /* ===== 各角色专属头部 ===== */
   if(heroIdx===0){
-    // 机甲：头盔天线 + 面罩
-    c.strokeStyle=pal.trim; c.lineWidth=1.8; c.lineCap="round";
-    c.beginPath(); c.moveTo(-headR*0.5,hy-headR*0.7); c.lineTo(-headR*1.1,hy-headR*2.0); c.stroke();
-    c.strokeStyle="#ffffff"; c.lineWidth=0.6;
-    c.beginPath(); c.moveTo(-headR*0.5,hy-headR*0.7); c.lineTo(-headR*1.1,hy-headR*2.0); c.stroke();
-    c.lineCap="butt";
-    skinGlowAt(c,-headR*1.1,hy-headR*2.0,headR*0.5,pal.glow,0.8,true);
-    // 面罩
-    c.fillStyle="rgba(0,0,0,0.55)";
-    c.beginPath(); c.ellipse(0,hy+headR*0.5,headR*0.8,headR*0.4,0,0,6.2832); c.fill();
-    c.strokeStyle=pal.trim; c.lineWidth=0.7; c.stroke();
-  }else if(heroIdx===1){
-    // 少女：双马尾 + 蝴蝶结
-    for(var sd3=-1;sd3<=1;sd3+=2){
-      c.fillStyle=pal.trim;
-      c.beginPath();
-      c.moveTo(sd3*headR*0.75, hy-headR*0.4);
-      c.quadraticCurveTo(sd3*headR*1.9, hy+headR*0.2, sd3*headR*1.7, hy+headR*1.5);
-      c.quadraticCurveTo(sd3*headR*1.2, hy+headR*0.7, sd3*headR*0.75, hy+headR*0.3);
-      c.closePath(); c.fill();
-      c.strokeStyle="rgba(255,255,255,0.4)"; c.lineWidth=0.5; c.stroke();
-    }
-    // 蝴蝶结
-    c.fillStyle=pal.eye;
-    for(var sd4=-1;sd4<=1;sd4+=2){
-      c.beginPath();
-      c.moveTo(0,hy-headR*0.85);
-      c.quadraticCurveTo(sd4*headR*0.9, hy-headR*1.5, sd4*headR*0.7, hy-headR*0.6);
-      c.quadraticCurveTo(sd4*headR*0.3, hy-headR*0.75, 0, hy-headR*0.85);
-      c.closePath(); c.fill();
-    }
-    c.fillStyle="#ffffff";
-    c.beginPath(); c.arc(0,hy-headR*0.85,headR*0.2,0,6.2832); c.fill();
-  }else if(heroIdx===2){
-    // 格斗家：头带
-    c.fillStyle=pal.trim;
-    c.fillRect(-headR*0.95, hy-headR*0.5, headR*1.9, headR*0.34);
-    c.strokeStyle="rgba(255,255,255,0.4)"; c.lineWidth=0.5; c.stroke();
-    // 带头飘尾
+    /* 机甲：头盔罩 + 天线 + 面甲 */
     c.beginPath();
-    c.moveTo(-headR*0.95, hy-headR*0.42);
-    c.quadraticCurveTo(-headR*2.0, hy-headR*0.2+Math.sin(T*4)*3, -headR*2.4, hy+headR*0.5);
-    c.strokeStyle=pal.trim; c.lineWidth=2; c.stroke();
-  }else if(heroIdx===3){
-    // 赛博武士：头盔角 + 发光面甲
-    for(var sd5=-1;sd5<=1;sd5+=2){
-      c.beginPath();
-      c.moveTo(sd5*headR*0.4, hy-headR*0.7);
-      c.quadraticCurveTo(sd5*headR*1.5, hy-headR*1.5, sd5*headR*1.1, hy-headR*2.3);
-      c.strokeStyle=pal.trim; c.lineWidth=2.2; c.lineCap="round"; c.stroke();
-      c.strokeStyle="#ffffff"; c.lineWidth=0.7; c.stroke();
-      c.lineCap="butt";
-    }
-    // 面甲光带
-    c.strokeStyle=pal.glow; c.globalAlpha=0.9; c.lineWidth=1.4;
-    c.beginPath(); c.moveTo(-headR*0.7,hy+headR*0.14); c.lineTo(headR*0.7,hy+headR*0.14); c.stroke();
+    c.moveTo(-HR*0.92, hy-HR*0.34);
+    c.quadraticCurveTo(0, hy-HR*1.34, HR*0.92, hy-HR*0.34);
+    c.quadraticCurveTo(HR*0.86, hy+HR*0.16, HR*0.6, hy+HR*0.22);
+    c.lineTo(-HR*0.6, hy+HR*0.22);
+    c.quadraticCurveTo(-HR*0.86, hy+HR*0.16, -HR*0.92, hy-HR*0.34);
+    c.closePath();
+    var hg=c.createLinearGradient(0,hy-HR*1.3,0,hy+HR*0.2);
+    hg.addColorStop(0,pal.hi||"#fff"); hg.addColorStop(0.4,pal.trim);
+    hg.addColorStop(1,pal.accent);
+    c.fillStyle=hg; c.fill();
+    c.strokeStyle="rgba(255,255,255,0.4)"; c.lineWidth=0.8; c.stroke();
+    /* 面甲光带 */
+    c.strokeStyle=pal.glow; c.globalAlpha=0.9; c.lineWidth=1.8;
+    c.beginPath(); c.moveTo(-HR*0.7,hy+HR*0.12); c.lineTo(HR*0.7,hy+HR*0.12); c.stroke();
     c.globalAlpha=1;
-    skinGlowAt(c,0,hy+headR*0.14,headR*1.1,pal.glow,0.5);
-  }else{
-    // 鲸娘：女仆头饰 + 鲸尾
-    c.fillStyle="#ffffff";
+    /* 天线 */
+    c.strokeStyle=pal.trim; c.lineWidth=1.9; c.lineCap="round";
+    c.beginPath(); c.moveTo(-HR*0.55,hy-HR*0.9);
+    c.quadraticCurveTo(-HR*1.0,hy-HR*1.7,-HR*1.25,hy-HR*2.1); c.stroke();
+    c.strokeStyle="#ffffff"; c.lineWidth=0.6; c.stroke();
+    c.lineCap="butt";
+    skinGlowAt(c,-HR*1.25,hy-HR*2.1,HR*0.6,pal.glow,0.8,true);
+  }
+  else if(heroIdx===1){
+    /* 少女：双马尾（贝塞尔束）+ 蝴蝶结 + 刘海 */
+    for(var sd5=-1;sd5<=1;sd5+=2){
+      for(var k=0;k<3;k++){
+        rkHairStrand(c, sd5*HR*0.78, hy-HR*0.3, HR*(1.5+k*0.30), HR*0.34,
+          sd5*(1.15+k*0.16), sd5*HR*0.22,
+          k===0?pal.hi||pal.trim:(k===1?pal.trim:pal.accent),
+          pal.hi||"#ffffff");
+      }
+    }
+    /* 刘海 */
     c.beginPath();
-    c.moveTo(-headR*0.85, hy-headR*0.6);
-    c.quadraticCurveTo(0, hy-headR*1.25, headR*0.85, hy-headR*0.6);
-    c.quadraticCurveTo(0, hy-headR*0.85, -headR*0.85, hy-headR*0.6);
-    c.closePath(); c.fill();
-    c.strokeStyle=pal.trim; c.lineWidth=0.6; c.stroke();
-    // 鲸尾
+    c.moveTo(-HR*0.95, hy-HR*0.42);
+    c.quadraticCurveTo(-HR*0.4, hy-HR*1.18, HR*0.2, hy-HR*1.1);
+    c.quadraticCurveTo(HR*0.8, hy-HR*0.98, HR*0.95, hy-HR*0.40);
+    c.quadraticCurveTo(HR*0.55, hy-HR*0.72, 0, hy-HR*0.66);
+    c.quadraticCurveTo(-HR*0.55, hy-HR*0.74, -HR*0.95, hy-HR*0.42);
+    c.closePath();
+    var fg=c.createLinearGradient(0,hy-HR*1.2,0,hy-HR*0.4);
+    fg.addColorStop(0,pal.hi||"#fff"); fg.addColorStop(1,pal.trim);
+    c.fillStyle=fg; c.fill();
+    c.strokeStyle="rgba(255,255,255,0.3)"; c.lineWidth=0.6; c.stroke();
+    /* 蝴蝶结 */
+    for(var sd6=-1;sd6<=1;sd6+=2){
+      c.beginPath();
+      c.moveTo(HR*0.55, hy-HR*0.92);
+      c.bezierCurveTo(HR*0.55+sd6*HR*0.75, hy-HR*1.5,
+                      HR*0.55+sd6*HR*1.05, hy-HR*0.72,
+                      HR*0.55, hy-HR*0.80);
+      c.closePath();
+      c.fillStyle=pal.eye; c.fill();
+      c.strokeStyle="rgba(255,255,255,0.6)"; c.lineWidth=0.6; c.stroke();
+    }
+    c.fillStyle="#ffffff";
+    c.beginPath(); c.arc(HR*0.55, hy-HR*0.86, HR*0.20, 0, 6.2832); c.fill();
+  }
+  else if(heroIdx===2){
+    /* 格斗家：头带（双带 + 飘尾）*/
+    rkBlock(c, -HR*0.98, hy-HR*0.56, HR*1.96, HR*0.36, 1.6,
+      pal.hi||pal.trim, pal.trim, pal.accent, null);
+    for(var sd7=-1;sd7<=1;sd7+=2){
+      rkCape(c, -HR*0.86, hy-HR*0.40, HR*1.5, HR*0.30, 1,
+        pal.trim, pal.accent, Math.sin(T*5+sd7)*2);
+    }
+    /* 短发 */
+    c.beginPath();
+    c.moveTo(-HR*0.92, hy-HR*0.5);
+    c.quadraticCurveTo(-HR*0.5, hy-HR*1.2, HR*0.3, hy-HR*1.14);
+    c.quadraticCurveTo(HR*0.85, hy-HR*1.02, HR*0.92, hy-HR*0.48);
+    c.quadraticCurveTo(HR*0.4, hy-HR*0.86, -HR*0.3, hy-HR*0.82);
+    c.quadraticCurveTo(-HR*0.7, hy-HR*0.78, -HR*0.92, hy-HR*0.5);
+    c.closePath();
+    c.fillStyle=pal.accent; c.fill();
+  }
+  else if(heroIdx===3){
+    /* 赛博武士：头盔双角 + 面甲 */
+    for(var sd8=-1;sd8<=1;sd8+=2){
+      c.beginPath();
+      c.moveTo(sd8*HR*0.42, hy-HR*0.7);
+      c.quadraticCurveTo(sd8*HR*1.5, hy-HR*1.5, sd8*HR*1.15, hy-HR*2.3);
+      c.quadraticCurveTo(sd8*HR*0.95, hy-HR*1.35, sd8*HR*0.42, hy-HR*0.7);
+      c.closePath();
+      var kg=c.createLinearGradient(sd8*HR*0.4,hy-HR*0.7,sd8*HR*1.2,hy-HR*2.3);
+      kg.addColorStop(0,pal.hi||"#fff"); kg.addColorStop(0.5,pal.trim);
+      kg.addColorStop(1,pal.accent);
+      c.fillStyle=kg; c.fill();
+      c.strokeStyle="rgba(255,255,255,0.35)"; c.lineWidth=0.7; c.stroke();
+    }
+    /* 面甲 */
+    c.beginPath();
+    c.moveTo(-HR*0.85, hy+HR*0.05);
+    c.lineTo(HR*0.85, hy+HR*0.05);
+    c.lineTo(HR*0.62, hy+HR*0.62);
+    c.lineTo(-HR*0.62, hy+HR*0.62);
+    c.closePath();
+    var mg=c.createLinearGradient(0,hy,0,hy+HR*0.62);
+    mg.addColorStop(0,pal.trim); mg.addColorStop(1,pal.accent);
+    c.fillStyle=mg; c.globalAlpha=0.92; c.fill(); c.globalAlpha=1;
+    c.strokeStyle=pal.glow; c.lineWidth=1.4; c.stroke();
+    skinGlowAt(c,0,hy+HR*0.3,HR*1.0,pal.glow,0.45);
+  }
+  else {
+    /* 鲸娘：女仆头饰 + 鲸尾 + 长发 */
+    for(var sd9=-1;sd9<=1;sd9+=2){
+      rkHairStrand(c, sd9*HR*0.82, hy+HR*0.1, HR*1.15, HR*0.36,
+        sd9*1.35, sd9*HR*0.16, pal.trim, pal.hi||"#ffffff");
+    }
+    /* 女仆头饰（白色荷叶边）*/
+    for(var k2=0;k2<5;k2++){
+      var a2=-0.9+k2*0.45;
+      c.beginPath();
+      c.arc(Math.sin(a2)*HR*0.75, hy-HR*0.72-Math.cos(a2)*HR*0.22, HR*0.26, 0, 6.2832);
+      c.fillStyle=k2%2?"#ffffff":pal.hi||"#ffffff";
+      c.fill();
+      c.strokeStyle=pal.trim; c.lineWidth=0.5; c.stroke();
+    }
+    /* 鲸尾 */
     c.save();
-    c.translate(headR*1.3, hy-headR*1.0);
-    c.rotate(Math.sin(T*2.4)*0.2);
-    c.fillStyle=pal.trim;
+    c.translate(HR*1.15, hy-HR*1.05);
+    c.rotate(Math.sin(T*2.4)*0.18);
     c.beginPath();
     c.moveTo(0,0);
-    c.quadraticCurveTo(headR*0.7,-headR*0.7, headR*1.1,-headR*0.4);
-    c.quadraticCurveTo(headR*0.6,-headR*0.1, headR*1.1,headR*0.4);
-    c.quadraticCurveTo(headR*0.6,headR*0.2, 0,0);
-    c.closePath(); c.fill();
+    c.bezierCurveTo(HR*0.5,-HR*0.6, HR*0.95,-HR*0.5, HR*1.1,-HR*0.28);
+    c.bezierCurveTo(HR*0.75,-HR*0.05, HR*0.95,HR*0.4, HR*1.05,HR*0.5);
+    c.bezierCurveTo(HR*0.6,HR*0.28, HR*0.28,HR*0.12, 0,0);
+    c.closePath();
+    var tg=c.createLinearGradient(0,0,HR*1.1,0);
+    tg.addColorStop(0,pal.trim); tg.addColorStop(1,pal.accent);
+    c.fillStyle=tg; c.fill();
+    c.strokeStyle="rgba(255,255,255,0.35)"; c.lineWidth=0.6; c.stroke();
     c.restore();
   }
 
-  /* ===== 稀有度外框光 ===== */
+  /* ===== 披风/飘带（传说以上）===== */
+  if(sk && (sk.rar==="gold"||sk.rar==="red")){
+    rkCape(c, -BW*0.30, ty+BH*0.18, BW*1.5, BH*0.85, 1,
+      pal.trim, pal.accent, Math.sin(T*2.6)*3);
+  }
+
+  /* ===== 神话：环绕碎晶 ===== */
   if(sk && sk.rar==="red"){
-    for(var i=0;i<6;i++){
-      var a6=T*0.8+i*1.0472;
-      var rr=44+Math.sin(T*2+i)*4;
-      skinGlowAt(c,Math.cos(a6)*rr,Math.sin(a6)*rr*0.8,7,"#ffffff",0.55,true);
+    for(var i2=0;i2<6;i2++){
+      var ang2=T*0.85+i2*1.0472;
+      var rr2=52+Math.sin(T*2.2+i2)*5;
+      var ox2=Math.cos(ang2)*rr2, oy2=Math.sin(ang2)*rr2*0.78;
+      c.save();
+      c.translate(ox2,oy2);
+      c.rotate(ang2*1.6);
+      c.beginPath();
+      c.moveTo(0,-4.2); c.lineTo(2.4,0); c.lineTo(0,4.2); c.lineTo(-2.4,0);
+      c.closePath();
+      c.fillStyle="#ffffff"; c.globalAlpha=0.85; c.fill(); c.globalAlpha=1;
+      c.strokeStyle=pal.glow; c.lineWidth=0.5; c.stroke();
+      c.restore();
+      skinGlowAt(c, ox2, oy2, 8, pal.glow, 0.5, true);
     }
   }
 
@@ -7113,17 +7331,50 @@ if(world._rev||world._revCtrl)move=-move;
 if((keys.Space||keys.KeyW||keys.ArrowUp)&&!keys._jh)tryJump();
 keys._jh=keys.Space||keys.KeyW||keys.ArrowUp;
 var speed=240*attrMul("spd"),fr=12;
+
+/* ---- 跳跃相关计时器 ---- */
+if(_coyoteT>0) _coyoteT-=dt;
+if(_jumpBufT>0) _jumpBufT-=dt;
+if(_jumpStretch>0) _jumpStretch=Math.max(0,_jumpStretch-dt*6.5);
+if(_landSquash>0) _landSquash=Math.max(0,_landSquash-dt*5.5);
 if(p.airT>0){ p.airT-=dt; }
-  var _accel=(!p.onGround&&p.airT>0)?18:10;
-  if(Math.abs(move)>0.1){p.vx+=(move*speed-p.vx)*_accel*dt;p.facing=move>0?1:-1}else{p.vx*=Math.max(0,1-fr*dt)}
+
+/* ---- 水平移动 ---- */
+var _accel=(!p.onGround&&p.airT>0)?18:11;
+if(Math.abs(move)>0.1){
+  p.vx+=(move*speed-p.vx)*_accel*dt;
+  p.facing=move>0?1:-1;
+}else{
+  p.vx*=Math.max(0,1-fr*dt);
+}
+
 p.dashCd=Math.max(0,p.dashCd-rdt);
 if(p.shield>0)p.shield-=rdt;
-/* 二段跳上浮补偿（0.18 秒内轻微反重力，做出"弹一下"的手感） */
+
+/* ---- 可变跳跃高度：按住继续抵消重力 ---- */
+if(_jumpHold>0 && p.vy<0){
+  _jumpHold-=dt;
+  p.vy-=1650*dt;          /* 抵消重力 1150 并额外上升 */
+}else{
+  _jumpHold=0;
+}
+
+/* ---- 二段跳上浮补偿 ---- */
 if(p.dblT>0){ p.dblT-=dt; p.vy-=980*dt; }
-/* 下落更快：下落时重力加大，手不飘 */
-p.vy+=(p.vy<0?1150:1720)*dt;
-p.x+=p.vx*dt;p.y+=p.vy*dt;p.anim+=dt;
+
+/* ---- 重力：上升轻、下落重（经典跳跃手感曲线） ---- */
+var _gravUp=1180, _gravDown=1780, _gravApex=620;
+if(p.vy<-90)      p.vy+=_gravUp*dt;
+else if(p.vy<90)  p.vy+=_gravApex*dt;   /* 顶点滞空：重力减半，有"悬停感" */
+else              p.vy+=_gravDown*dt;
+
+/* ---- 终端速度 ---- */
+if(p.vy>1450) p.vy=1450;
+
+p.x+=p.vx*dt; p.y+=p.vy*dt; p.anim+=dt;
 for(var i=0;i<world.platforms.length;i++){if(world.platforms[i].moving){var pl=world.platforms[i];pl.mvPhase+=dt*1.2;pl.y=pl.origY+Math.sin(pl.mvPhase)*pl.mvRange}}
+/* 土狼时间：本帧之前在地上、现在要判定离地 → 给宽限 */
+if(p.onGround && p.vy>0){ _coyoteT=_coyoteMax; }
 p.onGround=false;
 for(var i=0;i<world.platforms.length;i++){
   var plat=world.platforms[i];
@@ -7131,7 +7382,7 @@ for(var i=0;i<world.platforms.length;i++){
     var top=plat.y-plat.h/2;
     if(p.y+p.h/2>=top&&p.y+p.h/2<=top+34){
       if(plat.bounce){p.y=top-p.h/2;p.vy=-680;p.jumps=0;sBounce();spawnShockRing(p.x,top,"#ffe600",90);world.texts.push({x:p.x,y:top-40,text:"弹射!",life:0.5,vy:-40})}
-      else{p.y=top-p.h/2;p.vy=0;p.onGround=true;p.jumps=0}
+      else{p.y=top-p.h/2;p.vy=0;p.onGround=true;onLand()}
     }
   }
 }
@@ -7223,7 +7474,7 @@ for(var i=0;i<world.wells.length;i++){var wl=world.wells[i];wl.t+=dt;if(Math.abs
 // 时间结晶
 for(var i=world.tcrystals.length-1;i>=0;i--){var tc=world.tcrystals[i];tc.t+=dt;if(Math.abs(p.x-tc.x)<35&&Math.abs(p.y-tc.y)<40){world.tcrystals.splice(i,1);skillCd=Math.max(0,skillCd-3);world.flash=0.25;sfx(500,"sine",0.4,0.1,2000);world.texts.push({x:p.x,y:p.y-70,text:"时间结晶! 技能CD-3s",life:1.2,vy:-40});spawnShockRing(p.x,p.y-30,"#7fdcff",100)}}
 // 幽灵平台
-for(var i=0;i<world.ghosts.length;i++){var gh=world.ghosts[i];gh.t+=dt;if(p.x>gh.x&&p.x<gh.x+gh.w&&Math.abs(p.y+p.h/2-gh.y)<30&&p.vy>=0){p.y=gh.y-p.h/2;p.vy=0;p.onGround=true;p.jumps=0;gh.touched=true}}
+for(var i=0;i<world.ghosts.length;i++){var gh=world.ghosts[i];gh.t+=dt;if(p.x>gh.x&&p.x<gh.x+gh.w&&Math.abs(p.y+p.h/2-gh.y)<30&&p.vy>=0){p.y=gh.y-p.h/2;p.vy=0;p.onGround=true;onLand();gh.touched=true}}
 // 磁力/双倍
 if(world.magnetT>0){world.magnetT-=rdt;for(var i=0;i<world.coins.length;i++){var mc=world.coins[i];if(!mc.got){var mdx=p.x-mc.x,mdy=p.y-mc.y,md2=Math.sqrt(mdx*mdx+mdy*mdy);if(md2<260){mc.x+=mdx/md2*300*dt;mc.y+=mdy/md2*300*dt}}}}
 if(world.doubleT>0){world.doubleT-=rdt}
@@ -7818,13 +8069,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v8.0");
+    localStorage.setItem("njs_patch","v8.1");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v8.0"){
+    if(seen!=="v8.1"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -11387,7 +11638,29 @@ function draw(){
       }
       ctx.globalAlpha=p.inv>0&&Math.floor(Date.now()/70)%2?0.45:1;
     }
+    /* ===== 跳跃形变（squash & stretch）：消除僵硬感 ===== */
+    var _sqx=1, _sqy=1;
+    if(_jumpStretch>0){
+      /* 起跳：纵向拉长、横向收窄 */
+      var _js=_jumpStretch*_jumpStretch;
+      _sqy=1+0.22*_js; _sqx=1-0.14*_js;
+    }else if(_landSquash>0){
+      /* 落地：纵向压扁、横向变宽 */
+      var _ls=_landSquash*_landSquash;
+      _sqy=1-0.26*_ls; _sqx=1+0.18*_ls;
+    }else if(!p.onGround){
+      /* 空中：按垂直速度轻微拉伸（上升拉长，下落收缩） */
+      var _airS=Math.max(-1,Math.min(1,-p.vy/700));
+      _sqy=1+0.10*_airS; _sqx=1-0.07*_airS;
+    }
+    ctx.save();
+    /* 以脚底为锚点做形变，避免人物整体位移 */
+    var _footY=p.y+p.h/2;
+    ctx.translate(p.x,_footY);
+    ctx.scale(_sqx,_sqy);
+    ctx.translate(-p.x,-_footY);
     drawHero(p.x,p.y+p.h/2,1.1,p.facing,p.anim,p.onGround,p.vx);
+    ctx.restore();
     ctx.globalAlpha=1;
     // 护盾光罩
     if(p.shield>0){
@@ -12484,7 +12757,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v8.0</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v8.1</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -12515,6 +12788,16 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 22:42:55",items:[
+      "🦘 跳跃手感全面重做：可变跳跃高度（短按小跳/长按大跳）",
+      "⏱ 新增土狼时间 100ms + 跳跃缓冲 140ms（落地前按跳会自动起跳）",
+      "🎯 重力三段曲线：上升 1180 / 顶点 620（滞空感）/ 下落 1780",
+      "📐 跳跃形变 squash&stretch：起跳拉长、落地压扁、空中随速度变形",
+      "👤 角色皮肤模型重构：分段骨架（大腿/膝/小腿/靴 × 上臂/肘/前臂/手）",
+      "🎨 每个部件三层材质（顶部高光 + 中间色 + 底部暗面 + 描边）",
+      "💇 头部细节重做：机甲头盔面甲/少女双马尾贝塞尔束/格斗家头带飘尾/武士双角面甲/鲸娘女仆头饰鲸尾",
+      "🧥 传说以上带贝塞尔披风 + 神话环绕碎晶"
+    ]},
     {time:"2026-10-24 22:21:53",items:[
       "🎆 特效系统彻底重做：从『1套特效+10种颜色』改为『每套皮肤独立视觉语言』",
       "🔫 枪口焰 13 种独立形状：圣十字/矛尖/花瓣/环形冲击/龙口喷息/虚空裂口/法阵/爱心/方框脉冲…",
@@ -12779,7 +13062,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 22:21:53";
+    pd.textContent="更新于 2026 年 10 月 24 日 22:42:55";
   }
 })();
 </script>
