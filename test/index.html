@@ -171,7 +171,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v6.5</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v7.0</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -2917,7 +2917,7 @@ function lvFx(c,pal,lv,seg,len,hh,T){
    ① 手枪 —— 军工流线
    ========================================================== */
 function famPistol(c,pal,seg,T,mk,lv){
-  var len=19+seg*1.4, hh=5.8+seg*0.5;
+  var len=26+seg*1.8, hh=4.3+seg*0.34;
   var yT=function(t){ return -hh*(0.72+0.28*Math.pow(1-t,0.6)); };
   var yB=function(t){ return  hh*(0.86-0.16*t); };
   flowShape(c, 0, len, yT, yB, 14, pal);
@@ -2973,7 +2973,7 @@ function famPistol(c,pal,seg,T,mk,lv){
    ② 步枪 —— 战术流线：长直 + 一体化护木 + 导轨
    ========================================================== */
 function famRifle(c,pal,seg,T,mk,lv){
-  var len=32+seg*3.2, hh=4.4+seg*0.38;
+  var len=40+seg*3.6, hh=3.6+seg*0.3;
   // 可调肩托（流线梯形）
   c.beginPath();
   c.moveTo(-10.5,-hh*1.05);
@@ -3055,7 +3055,7 @@ function famRifle(c,pal,seg,T,mk,lv){
    ③ 狙击 —— 精密流线：极长细身 + 大光学镜 + 膛线
    ========================================================== */
 function famSniper(c,pal,seg,T,mk,lv){
-  var len=46+seg*4.2, hh=3.0+seg*0.28;
+  var len=58+seg*4.6, hh=2.4+seg*0.22;
   // 骨架（极细流线）
   var yT=function(t){ return -hh*(1.0-0.24*Math.pow(t,2)); };
   var yB=function(t){ return  hh*(1.0-0.24*Math.pow(t,2)); };
@@ -3139,7 +3139,7 @@ function famSniper(c,pal,seg,T,mk,lv){
    ④ 霰弹 —— 重工流线：粗壮 + 双管 + 泵动护木
    ========================================================== */
 function famShotgun(c,pal,seg,T,mk,lv){
-  var len=25+seg*2.4, hh=5.8+seg*0.56;
+  var len=33+seg*2.8, hh=4.8+seg*0.44;
   // 机匣（厚实流线）
   var yT=function(t){ return -hh*(1.0-0.2*Math.pow(t,2)); };
   var yB=function(t){ return  hh*(1.0-0.2*Math.pow(t,2)); };
@@ -3231,7 +3231,7 @@ function famShotgun(c,pal,seg,T,mk,lv){
    ⑤ 加特林 —— 机械流线：多管旋转 + 齿轮 + 弹链
    ========================================================== */
 function famGatling(c,pal,seg,T,mk,lv){
-  var len=27+seg*2.8, hh=8.0+seg*0.72;
+  var len=34+seg*3.0, hh=6.4+seg*0.58;
   var tubeN=4+seg*2;
   // 后部机匣（厚重流线）
   flowShape(c, -9.5, len*0.42,
@@ -3309,7 +3309,7 @@ function famGatling(c,pal,seg,T,mk,lv){
    ⑥ 法杖 —— 神秘流线：细杆 + 悬浮水晶 + 光环
    ========================================================== */
 function famStaff(c,pal,seg,T,mk,lv){
-  var len=29+seg*2.6, th=1.7+seg*0.2;
+  var len=38+seg*3.0, th=1.5+seg*0.16;
   // 细杆（渐进收窄的流线）
   var yT=function(t){ return -th*(1.0-0.26*t); };
   var yB=function(t){ return  th*(1.0-0.26*t); };
@@ -3418,7 +3418,7 @@ function famStaff(c,pal,seg,T,mk,lv){
    ⑦ 巨炮 —— 要塞流线：超厚 + 液压腿 + 熔炉口
    ========================================================== */
 function famCannon(c,pal,seg,T,mk,lv){
-  var len=28+seg*3.0, hh=9.0+seg*0.82;
+  var len=36+seg*3.2, hh=6.6+seg*0.6;
   // 液压支撑腿（曲线杆 + 脚座）
   for(var i=-1;i<=1;i+=2){
     c.beginPath();
@@ -3530,7 +3530,7 @@ function famCannon(c,pal,seg,T,mk,lv){
    ⑧ 浮游 —— 赛博流线：分体碎片 + 环绕单元 + 数据流
    ========================================================== */
 function famDrone(c,pal,seg,T,mk,lv){
-  var len=21+seg*2.2, hh=4.4+seg*0.44;
+  var len=28+seg*2.6, hh=3.8+seg*0.36;
   // 三块碎片主体（每块独立曲面）
   var frags=[[0,0.28,1.0],[0.36,0.2,0.78],[0.62,0.34,0.62]];
   for(var k=0;k<frags.length;k++){
@@ -3639,6 +3639,775 @@ function gear(c,x,y,r,teeth,pal,T,spin){
   c.restore();
 }
 
+
+/* ==================================================================
+   枪皮系统 —— 对标和平精英天花板枪皮
+   核心：枪只是底座，皮肤是寄生在枪上的神兽/神器
+   五层结构：Base底壳 → Shell甲片 → Core核心 → Extend外延 → Aura光晕
+   九步绘制：底壳·甲片·核心·外延·悬浮·拖尾·铭纹·光晕·高光收边
+   ================================================================== */
+
+/* 稀有度 */
+var SKIN_RAR={
+  white :{n:"普通",stars:1,col:"#c8d0dc"},
+  green :{n:"精良",stars:2,col:"#4ade80"},
+  blue  :{n:"稀有",stars:3,col:"#38bdf8"},
+  purple:{n:"史诗",stars:4,col:"#a855f7"},
+  gold  :{n:"传说",stars:5,col:"#fbbf24"},
+  red   :{n:"神话",stars:6,col:"#f43f5e"}
+};
+
+/* ===== 皮肤配置表（数据驱动，禁止每套写独立绘制代码） ===== */
+var SKIN_DEF={
+  /* ---------- 示例 A：至情至圣 · 炎羽天启 · 传说 ---------- */
+  flamingo:{
+    name:"至情至圣", rar:"gold", fam:"炎羽天启",
+    pal:{main:"#f4f0e8", sub:"#ff5a2a", hi:"#ffd45e", ene:"#ffb020", dark:"#2a1410"},
+    baseMat:"porcelain",         // 白瓷半透
+    shell:"feather",             // 羽片甲片
+    extend:"wings",              // 双侧火焰羽翼
+    floaters:["feather","ember"],// 悬浮羽片 + 火星
+    trail:"flame",               // 火焰拉丝
+    glow:3, dyn:"float",
+    muzzle:"dragonbreath", bullet:"flame", hit:"starmark", kill:"phoenix"
+  },
+  /* ---------- 示例 B：幽焰骑士 · 幽焰骑士 · 传说 ---------- */
+  duskKnight:{
+    name:"幽焰骑士", rar:"gold", fam:"幽焰骑士",
+    pal:{main:"#1a2418", sub:"#2d4a2a", hi:"#b8ff6a", ene:"#7cff3a", dark:"#080c06"},
+    baseMat:"obsidian",          // 黑曜石哑光
+    shell:"armor",               // 装甲片
+    extend:"cape",               // 焰状披风
+    floaters:["shard","ember"],
+    trail:"darkflame",
+    glow:3, dyn:"pulse",
+    muzzle:"darkvortex", bullet:"darkflame", hit:"crack", kill:"knight"
+  },
+  /* ---------- 示例 C：星梦奇缘 · 冰晶神谕 · 神话 ---------- */
+  frostDream:{
+    name:"星梦奇缘", rar:"red", fam:"冰晶神谕",
+    pal:{main:"#dff4ff", sub:"#5fbfe8", hi:"#ffffff", ene:"#38d0ff", dark:"#0a1a28"},
+    baseMat:"crystal",           // 水晶半透
+    shell:"ice",                 // 冰棱甲片
+    extend:"icewing",            // 冰凤凰翼
+    floaters:["crystal","spark","rune"],
+    trail:"frost",
+    glow:3, dyn:"flow",
+    muzzle:"frostburst", bullet:"icecrystal", hit:"crack", kill:"icephoenix"
+  },
+  /* ---------- 基础档：白/绿/蓝，验证稀有度梯度 ---------- */
+  basicWhite:{
+    name:"素白涂装", rar:"white", fam:"战甲英雄",
+    pal:{main:"#c8d0dc", sub:"#8a94a8", hi:"#e8eef8", ene:"#ffffff", dark:"#2a2e38"},
+    baseMat:"matte", shell:null, extend:null, floaters:[], trail:null,
+    glow:0, dyn:"static",
+    muzzle:"plain", bullet:"plain", hit:"dot", kill:"plain"
+  },
+  basicGreen:{
+    name:"翠影精良", rar:"green", fam:"战甲英雄",
+    pal:{main:"#7ac888", sub:"#3a7a48", hi:"#c8ffd8", ene:"#4ade80", dark:"#142a1a"},
+    baseMat:"lightmetal", shell:"plate", extend:null, floaters:[], trail:null,
+    glow:1, dyn:"static",
+    muzzle:"plain", bullet:"plain", hit:"dot", kill:"plain"
+  },
+  basicBlue:{
+    name:"霜刃稀有", rar:"blue", fam:"星舰幻游",
+    pal:{main:"#8fb8d8", sub:"#3a6a9a", hi:"#dff0ff", ene:"#38bdf8", dark:"#0e1e30"},
+    baseMat:"brushed", shell:"mechplate", extend:null, floaters:["spark"], trail:null,
+    glow:1, dyn:"pulse",
+    muzzle:"pulse", bullet:"holo", hit:"dot", kill:"plain"
+  }
+};
+
+/* ===== 材质算法（每族独立，不是换色） ===== */
+/* 底壳材质：返回填充用的渐变/纯色 */
+function matFill(c, x0, x1, yTopFn, yBotFn, pal, mat, T){
+  var yt=yTopFn(0.5), yb=yBotFn(0.5);
+  var cy=(yt+yb)/2, hh=Math.max(1.5,(yb-yt)/2);
+  if(mat==="matte"){
+    // 哑光：三段明暗，无高光反射
+    var g1=c.createLinearGradient(0,cy-hh,0,cy+hh);
+    g1.addColorStop(0,"#7a8290"); g1.addColorStop(0.3,pal.main);
+    g1.addColorStop(0.75,pal.sub); g1.addColorStop(1,pal.dark);
+    return g1;
+  }
+  if(mat==="lightmetal"){
+    var g2=c.createLinearGradient(0,cy-hh,0,cy+hh);
+    g2.addColorStop(0,pal.hi); g2.addColorStop(0.14,pal.main);
+    g2.addColorStop(0.62,pal.sub); g2.addColorStop(1,pal.dark);
+    return g2;
+  }
+  if(mat==="brushed"){
+    var g3=c.createLinearGradient(0,cy-hh,0,cy+hh);
+    g3.addColorStop(0,pal.hi); g3.addColorStop(0.1,pal.main);
+    g3.addColorStop(0.5,pal.sub); g3.addColorStop(0.68,pal.main);
+    g3.addColorStop(1,pal.dark);
+    return g3;
+  }
+  if(mat==="obsidian"){
+    // 黑曜石：哑光黑 + 边缘锐利高光（高光靠后面 topSheen 补）
+    var g4=c.createLinearGradient(0,cy-hh,0,cy+hh);
+    g4.addColorStop(0,"#3a4a36"); g4.addColorStop(0.12,pal.sub);
+    g4.addColorStop(0.45,pal.main); g4.addColorStop(0.88,pal.main);
+    g4.addColorStop(1,pal.dark);
+    return g4;
+  }
+  if(mat==="porcelain"){
+    // 白瓷半透：中间最亮（模拟透光），上下略暗
+    var g5=c.createLinearGradient(0,cy-hh,0,cy+hh);
+    g5.addColorStop(0,"#e8e0d0"); g5.addColorStop(0.22,pal.main);
+    g5.addColorStop(0.5,"#ffffff"); g5.addColorStop(0.78,pal.main);
+    g5.addColorStop(1,"#8a8070");
+    return g5;
+  }
+  if(mat==="crystal"){
+    // 水晶半透：内部有光核感（中段亮、两端透明感）
+    var g6=c.createLinearGradient(0,cy-hh,0,cy+hh);
+    g6.addColorStop(0,"#a8dcf0"); g6.addColorStop(0.3,pal.main);
+    g6.addColorStop(0.52,"#ffffff"); g6.addColorStop(0.74,pal.sub);
+    g6.addColorStop(1,"#1a3a54");
+    return g6;
+  }
+  // 默认
+  var gd=c.createLinearGradient(0,cy-hh,0,cy+hh);
+  gd.addColorStop(0,pal.hi); gd.addColorStop(0.2,pal.main);
+  gd.addColorStop(0.8,pal.sub); gd.addColorStop(1,pal.dark);
+  return gd;
+}
+
+/* ===== 离屏发光缓存 ===== */
+var _skinGlow={};
+function skinGlow(color,r,hard){
+  var k=color+"|"+r+"|"+(hard?1:0);
+  if(_skinGlow[k])return _skinGlow[k];
+  var cv=document.createElement("canvas");
+  var sz=Math.ceil(r*2.6); cv.width=sz; cv.height=sz;
+  var g=cv.getContext("2d");
+  var rg=g.createRadialGradient(sz/2,sz/2,r*0.06,sz/2,sz/2,r);
+  rg.addColorStop(0,color);
+  rg.addColorStop(hard?0.55:0.28,color);
+  rg.addColorStop(hard?0.8:"0.62", hard?"rgba(255,255,255,0.12)":"rgba(0,0,0,0)");
+  rg.addColorStop(1,"rgba(0,0,0,0)");
+  g.fillStyle=rg; g.beginPath(); g.arc(sz/2,sz/2,r,0,6.2832); g.fill();
+  _skinGlow[k]=cv; return cv;
+}
+function skinGlowAt(c,cx,cy,r,color,alpha,hard){
+  var img=skinGlow(color,r,hard);
+  c.globalAlpha=(alpha===undefined?1:alpha);
+  c.drawImage(img,cx-r*1.3,cy-r*1.3,r*2.6,r*2.6);
+  c.globalAlpha=1;
+}
+
+/* ===== 通用轮廓工具 ===== */
+function outline(c, pts){
+  c.beginPath();
+  c.moveTo(pts[0],pts[1]);
+  for(var i=2;i<pts.length;i+=2) c.lineTo(pts[i],pts[i+1]);
+  c.closePath();
+}
+function curveOutline(c, pts){
+  // pts: [x,y, {cx,cy}] 二次曲线连接
+  c.beginPath();
+  c.moveTo(pts[0][0],pts[0][1]);
+  for(var i=1;i<pts.length;i++){
+    var p=pts[i];
+    if(p.length>=4) c.quadraticCurveTo(p[2],p[3],p[0],p[1]);
+    else c.lineTo(p[0],p[1]);
+  }
+  c.closePath();
+}
+
+/* ==================================================================
+   第1层：枪身底壳（几何 + 4分区材质）
+   所有武器类型共用一套"底壳几何"，用 type 切换外形
+   ================================================================== */
+function skinBase(c, type, L, pal, mat, T, W, H){
+  // W 总长 H 半高
+  var hh=H, len=W;
+  if(type==="pistol"){
+    // 套筒
+    outline(c,[-2,-hh, len*0.94,-hh, len,-hh*0.55, len,hh*0.5, len*0.94,hh, -2,hh]);
+    c.fillStyle=matFill(c,0,1,function(){return -hh;},function(){return hh;},pal,mat,T); c.fill();
+    // 分区：顶部亮带
+    c.fillStyle="rgba(255,255,255,0.16)";
+    outline(c,[-2,-hh, len*0.94,-hh, len*0.94,-hh*0.62, -2,-hh*0.62]); c.fill();
+    // 分区：底部暗带
+    c.fillStyle="rgba(0,0,0,0.32)";
+    outline(c,[-2,hh*0.55, len*0.94,hh*0.55, len*0.94,hh, -2,hh]); c.fill();
+    // 分区：中段护木色块
+    c.fillStyle=pal.sub;
+    c.globalAlpha=0.5;
+    outline(c,[len*0.3,-hh*0.5, len*0.62,-hh*0.5, len*0.62,hh*0.4, len*0.3,hh*0.4]); c.fill();
+    c.globalAlpha=1;
+    // 握把
+    outline(c,[0,hh*0.7, len*0.16,hh*0.7, len*0.1,hh*2.9, len*0.02,hh*2.9]);
+    var gg=c.createLinearGradient(0,hh,0,hh*3);
+    gg.addColorStop(0,pal.main); gg.addColorStop(0.5,pal.sub); gg.addColorStop(1,pal.dark);
+    c.fillStyle=gg; c.fill();
+    c.strokeStyle="rgba(255,255,255,0.14)"; c.lineWidth=0.6; c.stroke();
+    // 扳机护圈
+    c.beginPath();
+    c.moveTo(len*0.18,hh*0.7);
+    c.quadraticCurveTo(len*0.3,hh*1.6, len*0.16,hh*1.7);
+    c.strokeStyle=pal.sub; c.lineWidth=1.1; c.stroke();
+    return {len:len, hh:hh, mz:len, mzy:-hh*0.04};
+  }
+  if(type==="rifle"){
+    // 枪托
+    outline(c,[-len*0.26,-hh*1.0, 0,-hh*0.72, 0,hh*0.72, -len*0.26,hh*1.0]);
+    c.fillStyle=pal.sub; c.fill();
+    // 机匣
+    outline(c,[0,-hh, len*0.72,-hh*0.94, len*0.72,-hh*0.4, len*0.72,hh*0.4, len*0.72,hh*0.94, 0,hh]);
+    c.fillStyle=matFill(c,0,1,function(){return -hh;},function(){return hh;},pal,mat,T); c.fill();
+    // 顶部亮带
+    c.fillStyle="rgba(255,255,255,0.15)";
+    outline(c,[0,-hh, len*0.72,-hh*0.94, len*0.72,-hh*0.6, 0,-hh*0.66]); c.fill();
+    // 护木（前段换色）
+    c.fillStyle=pal.sub; c.globalAlpha=0.62;
+    outline(c,[len*0.38,-hh*0.94, len*0.72,-hh*0.9, len*0.72,hh*0.9, len*0.38,hh*0.94]); c.fill();
+    c.globalAlpha=1;
+    // 枪管
+    outline(c,[len*0.72,-hh*0.42, len,-hh*0.36, len,hh*0.36, len*0.72,hh*0.42]);
+    var bg=c.createLinearGradient(0,-hh*0.4,0,hh*0.4);
+    bg.addColorStop(0,pal.hi); bg.addColorStop(0.3,pal.main); bg.addColorStop(1,pal.dark);
+    c.fillStyle=bg; c.fill();
+    // 握把
+    outline(c,[len*0.2,hh*0.8, len*0.34,hh*0.8, len*0.28,hh*2.3, len*0.16,hh*2.3]);
+    c.fillStyle=pal.sub; c.fill();
+    return {len:len, hh:hh, mz:len, mzy:0};
+  }
+  if(type==="sniper"){
+    // 超长细身
+    outline(c,[-len*0.2,-hh*1.1, 0,-hh*0.8, 0,hh*0.8, -len*0.2,hh*1.1]);
+    c.fillStyle=pal.sub; c.fill();
+    outline(c,[0,-hh, len*0.62,-hh*0.88, len*0.62,-hh*0.36, len*0.62,hh*0.36, len*0.62,hh*0.88, 0,hh]);
+    c.fillStyle=matFill(c,0,1,function(){return -hh;},function(){return hh;},pal,mat,T); c.fill();
+    c.fillStyle="rgba(255,255,255,0.14)";
+    outline(c,[0,-hh, len*0.62,-hh*0.88, len*0.62,-hh*0.58, 0,-hh*0.66]); c.fill();
+    // 枪管
+    outline(c,[len*0.62,-hh*0.34, len,-hh*0.28, len,hh*0.28, len*0.62,hh*0.34]);
+    c.fillStyle=pal.main; c.fill();
+    // 瞄准镜（大口径）
+    outline(c,[len*0.16,-hh*2.6, len*0.48,-hh*2.6, len*0.48,-hh*1.5, len*0.16,-hh*1.5]);
+    var sg=c.createLinearGradient(0,-hh*2.6,0,-hh*1.5);
+    sg.addColorStop(0,pal.hi); sg.addColorStop(0.3,pal.sub); sg.addColorStop(1,pal.dark);
+    c.fillStyle=sg; c.fill();
+    // 镜片
+    c.beginPath(); c.ellipse(len*0.17,-hh*2.05,hh*0.2,hh*0.46,0,0,6.2832);
+    c.fillStyle=pal.ene; c.globalAlpha=0.85; c.fill(); c.globalAlpha=1;
+    return {len:len, hh:hh, mz:len, mzy:0};
+  }
+  if(type==="shotgun"){
+    outline(c,[-len*0.22,-hh*1.05, 0,-hh*0.8, 0,hh*0.8, -len*0.22,hh*1.05]);
+    c.fillStyle=pal.sub; c.fill();
+    outline(c,[0,-hh, len*0.5,-hh*0.95, len*0.5,hh*0.95, 0,hh]);
+    c.fillStyle=matFill(c,0,1,function(){return -hh;},function(){return hh;},pal,mat,T); c.fill();
+    // 双管
+    outline(c,[len*0.5,-hh*0.78, len,-hh*0.7, len,-hh*0.12, len*0.5,-hh*0.05]);
+    c.fillStyle=pal.main; c.fill();
+    outline(c,[len*0.5,hh*0.05, len,hh*0.12, len,hh*0.7, len*0.5,hh*0.78]);
+    c.fillStyle=pal.main; c.fill();
+    // 泵动护木
+    c.fillStyle=pal.sub;
+    outline(c,[len*0.3,-hh*1.0, len*0.5,-hh*0.96, len*0.5,hh*0.96, len*0.3,hh*1.0]); c.fill();
+    // 喇叭口
+    outline(c,[len,-hh*0.72, len+len*0.12,-hh*1.4, len+len*0.12,hh*1.4, len,hh*0.72]);
+    c.fillStyle=pal.main; c.fill();
+    return {len:len*1.12, hh:hh, mz:len*1.12, mzy:0};
+  }
+  if(type==="gatling"){
+    outline(c,[-len*0.26,-hh*1.1, len*0.34,-hh*1.05, len*0.34,hh*1.05, -len*0.26,hh*1.1]);
+    c.fillStyle=matFill(c,0,1,function(){return -hh;},function(){return hh;},pal,mat,T); c.fill();
+    // 多管（旋转）
+    for(var i=0;i<6;i++){
+      var a=T*2.6+i*1.047;
+      var ry=Math.sin(a)*hh*0.52;
+      var sc=0.62+0.38*Math.cos(a);
+      outline(c,[len*0.34,ry-1.3*sc, len*0.96,ry-1.2*sc, len*0.96,ry+1.2*sc, len*0.34,ry+1.3*sc]);
+      c.fillStyle=pal.main; c.fill();
+      c.strokeStyle="rgba(255,255,255,0.12)"; c.lineWidth=0.4; c.stroke();
+    }
+    // 前环
+    c.beginPath(); c.arc(len*0.96,0,hh*0.8,0,6.2832);
+    c.fillStyle=pal.sub; c.fill();
+    c.beginPath(); c.arc(len*0.96,0,hh*0.46,0,6.2832);
+    c.fillStyle=pal.dark; c.fill();
+    return {len:len*1.02, hh:hh, mz:len*1.02, mzy:0};
+  }
+  if(type==="staff"){
+    // 细杆
+    outline(c,[0,-hh*1.0, len*0.86,-hh*0.76, len*0.86,hh*0.76, 0,hh*1.0]);
+    c.fillStyle=matFill(c,0,1,function(){return -hh;},function(){return hh;},pal,mat,T); c.fill();
+    c.fillStyle="rgba(255,255,255,0.2)";
+    outline(c,[0,-hh*0.86, len*0.86,-hh*0.66, len*0.86,-hh*0.4, 0,-hh*0.52]); c.fill();
+    // 顶端托架 + 水晶
+    var hx=len*0.92, hr=hh*2.6;
+    c.strokeStyle=pal.sub; c.lineWidth=1.2;
+    for(var i=0;i<4;i++){
+      var a2=i*1.5708+0.785;
+      c.beginPath(); c.moveTo(len*0.84,0);
+      c.lineTo(hx+Math.cos(a2)*hr*0.7, Math.sin(a2)*hr*0.7); c.stroke();
+    }
+    return {len:hx+hr, hh:hh, mz:hx+hr, mzy:0};
+  }
+  if(type==="cannon"){
+    outline(c,[0,-hh, len*0.7,-hh*1.06, len,-hh*1.1, len,hh*1.1, len*0.7,hh*1.06, 0,hh]);
+    c.fillStyle=matFill(c,0,1,function(){return -hh;},function(){return hh;},pal,mat,T); c.fill();
+    // 分段警戒条
+    c.fillStyle=pal.ene; c.globalAlpha=0.4;
+    outline(c,[len*0.3,-hh*1.02, len*0.34,-hh*1.02, len*0.34,hh*1.02, len*0.3,hh*1.02]); c.fill();
+    c.globalAlpha=1;
+    // 双支撑腿
+    c.strokeStyle=pal.sub; c.lineWidth=2.4;
+    c.beginPath(); c.moveTo(0,hh*0.7); c.lineTo(-len*0.28,hh*2.4); c.stroke();
+    c.beginPath(); c.moveTo(0,-hh*0.7); c.lineTo(-len*0.28,-hh*2.4); c.stroke();
+    return {len:len, hh:hh, mz:len, mzy:0};
+  }
+  // drone
+  outline(c,[0,-hh, len*0.28,-hh*0.86, len*0.4,-hh*0.4, len*0.4,hh*0.4, len*0.28,hh*0.86, 0,hh]);
+  c.fillStyle=matFill(c,0,1,function(){return -hh;},function(){return hh;},pal,mat,T); c.fill();
+  outline(c,[len*0.52,-hh*0.74, len,-hh*0.5, len,hh*0.5, len*0.52,hh*0.74]);
+  c.fillStyle=pal.sub; c.fill();
+  return {len:len, hh:hh, mz:len, mzy:0};
+}
+
+/* ==================================================================
+   第2层：甲片 / 浮雕（覆盖并溢出枪身）
+   ================================================================== */
+function skinShell(c, kind, len, hh, pal, T, glow){
+  if(!kind) return;
+  if(kind==="feather"){
+    // 羽片：从护木两侧张开，每片独立高光
+    for(var s=-1;s<=1;s+=2){
+      for(var i=0;i<5;i++){
+        var bx=len*(0.16+i*0.11);
+        var blen=hh*(1.6+i*0.34);
+        var ang=s*(0.42+i*0.1);
+        c.save();
+        c.translate(bx, s*hh*0.7);
+        c.rotate(ang);
+        // 羽片轮廓（尖头）
+        c.beginPath();
+        c.moveTo(0,0);
+        c.quadraticCurveTo(blen*0.4, -hh*0.5*s, blen, 0);
+        c.quadraticCurveTo(blen*0.4, hh*0.3*s, 0, 0);
+        var fg=c.createLinearGradient(0,0,blen,0);
+        fg.addColorStop(0,pal.main); fg.addColorStop(0.55,"#ffffff");
+        fg.addColorStop(0.85,pal.sub); fg.addColorStop(1,pal.ene);
+        c.fillStyle=fg; c.fill();
+        c.strokeStyle=pal.hi; c.globalAlpha=0.7; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+        // 羽轴
+        c.strokeStyle="rgba(255,255,255,0.55)"; c.lineWidth=0.5;
+        c.beginPath(); c.moveTo(0,0); c.lineTo(blen*0.88,0); c.stroke();
+        c.restore();
+      }
+    }
+    // 机匣覆盖甲片
+    for(var i=0;i<4;i++){
+      var x=len*(0.06+i*0.09);
+      outline(c,[x,-hh*1.06, x+len*0.07,-hh*1.1, x+len*0.075,-hh*0.6, x,-hh*0.56]);
+      c.fillStyle=i%2?pal.main:"#ffffff"; c.globalAlpha=0.9; c.fill(); c.globalAlpha=1;
+      c.strokeStyle=pal.hi; c.globalAlpha=0.5; c.lineWidth=0.4; c.stroke(); c.globalAlpha=1;
+    }
+  }
+  else if(kind==="ice"){
+    // 冰棱：锐利三角形从枪身长出
+    for(var s=-1;s<=1;s+=2){
+      for(var i=0;i<6;i++){
+        var bx=len*(0.1+i*0.1);
+        var blen=hh*(1.3+i*0.28+Math.sin(T*1.2+i)*0.16);
+        c.beginPath();
+        c.moveTo(bx, s*hh*0.8);
+        c.lineTo(bx+blen*0.22, s*(hh*0.8+blen));
+        c.lineTo(bx+blen*0.34, s*hh*0.8);
+        c.closePath();
+        var ig=c.createLinearGradient(bx,s*hh*0.8,bx,s*(hh*0.8+blen));
+        ig.addColorStop(0,"rgba(255,255,255,0.95)");
+        ig.addColorStop(0.4,"rgba(200,240,255,0.85)");
+        ig.addColorStop(1,"rgba(56,208,255,0.55)");
+        c.fillStyle=ig; c.fill();
+        c.strokeStyle="#ffffff"; c.globalAlpha=0.75; c.lineWidth=0.45; c.stroke(); c.globalAlpha=1;
+      }
+    }
+    // 机身冰壳
+    outline(c,[len*0.05,-hh*1.12, len*0.68,-hh*1.02, len*0.7,-hh*0.55, len*0.05,-hh*0.62]);
+    c.fillStyle="rgba(220,245,255,0.55)"; c.fill();
+    c.strokeStyle="#ffffff"; c.globalAlpha=0.6; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+  }
+  else if(kind==="armor"){
+    // 重装甲片：棱角分明包裹
+    for(var i=0;i<5;i++){
+      var x=len*(0.02+i*0.14);
+      outline(c,[x,-hh*1.24, x+len*0.12,-hh*1.32, x+len*0.145,-hh*0.6, x+len*0.01,-hh*0.54]);
+      var ag=c.createLinearGradient(x,-hh*1.3,x,hh*-0.5);
+      ag.addColorStop(0,pal.hi); ag.addColorStop(0.35,pal.sub); ag.addColorStop(1,pal.main);
+      c.fillStyle=ag; c.fill();
+      c.strokeStyle="rgba(184,255,106,0.6)"; c.lineWidth=0.55; c.stroke();
+      // 甲片缝隙发光
+      c.strokeStyle=pal.ene; c.globalAlpha=0.4+0.25*Math.sin(T*2+i); c.lineWidth=0.7;
+      c.beginPath(); c.moveTo(x+len*0.012,-hh*0.56); c.lineTo(x+len*0.142,-hh*0.6); c.stroke();
+      c.globalAlpha=1;
+    }
+    // 下侧装甲
+    for(var i=0;i<4;i++){
+      var x2=len*(0.06+i*0.15);
+      outline(c,[x2,hh*0.56, x2+len*0.13,hh*0.6, x2+len*0.115,hh*1.26, x2,hh*1.2]);
+      c.fillStyle=pal.sub; c.globalAlpha=0.92; c.fill(); c.globalAlpha=1;
+      c.strokeStyle="rgba(184,255,106,0.45)"; c.lineWidth=0.5; c.stroke();
+    }
+  }
+  else if(kind==="plate"||kind==="mechplate"){
+    // 轻金属贴片
+    for(var i=0;i<3;i++){
+      var x=len*(0.1+i*0.22);
+      outline(c,[x,-hh*1.06, x+len*0.16,-hh*1.1, x+len*0.16,-hh*0.7, x,-hh*0.66]);
+      c.fillStyle=pal.main; c.fill();
+      c.strokeStyle=pal.hi; c.globalAlpha=0.55; c.lineWidth=0.45; c.stroke(); c.globalAlpha=1;
+    }
+  }
+}
+
+/* ==================================================================
+   第3层：能量核心（多层同心圆呼吸，透缝隙发光）
+   ================================================================== */
+function skinCore(c, len, hh, pal, T, glow, dyn){
+  if(glow<=0) return;
+  var p=(dyn==="pulse")?(0.55+0.45*Math.sin(T*4.2)):(0.72+0.28*Math.sin(T*2.4));
+  var cx=len*0.42, cy=0;
+  var r=hh*(0.5+glow*0.16);
+  // 多层同心圆（外→内）
+  skinGlowAt(c,cx,cy,r*4.6,pal.ene,0.30*p);
+  skinGlowAt(c,cx,cy,r*2.4,pal.ene,0.52*p,true);
+  skinGlowAt(c,cx,cy,r*1.2,"#ffffff",0.75*p,true);
+  // 内核
+  c.fillStyle="#ffffff"; c.globalAlpha=0.9*p;
+  c.beginPath(); c.arc(cx,cy,r*0.56,0,6.2832); c.fill(); c.globalAlpha=1;
+  // 环
+  c.strokeStyle=pal.hi; c.globalAlpha=0.55;
+  c.lineWidth=0.8;
+  c.beginPath(); c.arc(cx,cy,r*1.7,0,6.2832); c.stroke();
+  c.globalAlpha=1;
+  // 神性光柱（glow>=3）
+  if(glow>=3){
+    var beam=c.createLinearGradient(cx,cy-r*9,cx,cy+r*9);
+    beam.addColorStop(0,"rgba(0,0,0,0)");
+    beam.addColorStop(0.35,"rgba(255,255,255,0.10)");
+    beam.addColorStop(0.5,"rgba(255,255,255,0.22)");
+    beam.addColorStop(0.65,"rgba(255,255,255,0.10)");
+    beam.addColorStop(1,"rgba(0,0,0,0)");
+    c.fillStyle=beam;
+    c.fillRect(cx-r*0.5, cy-r*9, r, r*18);
+  }
+}
+
+/* ==================================================================
+   第4层：外延件（羽翼 / 冰翼 / 披风 / 龙首）
+   ================================================================== */
+function skinExtend(c, kind, len, hh, pal, T, glow){
+  if(!kind) return;
+  if(kind==="wings"){
+    // 双侧火焰羽翼：大，溢出 1.5-2 倍
+    for(var s=-1;s<=1;s+=2){
+      var flap=Math.sin(T*1.8)*0.06;
+      c.save();
+      c.translate(len*0.3, 0);
+      // 翼根
+      c.beginPath();
+      c.moveTo(0, s*hh*0.5);
+      // 主翼外沿
+      c.bezierCurveTo(-len*0.2, s*(hh*2.4+flap*40),
+                      len*0.28, s*(hh*4.2+flap*60),
+                      len*0.62, s*(hh*3.2+flap*50));
+      // 翼尖回勾
+      c.quadraticCurveTo(len*0.5, s*hh*2.2, len*0.42, s*hh*1.4);
+      c.quadraticCurveTo(len*0.3, s*hh*0.9, 0, s*hh*0.5);
+      var wg=c.createLinearGradient(len*0.1, s*hh*3.4, len*0.5, s*hh*0.6);
+      wg.addColorStop(0,"rgba(255,255,255,0.95)");
+      wg.addColorStop(0.28,pal.main);
+      wg.addColorStop(0.62,pal.sub);
+      wg.addColorStop(0.88,pal.ene);
+      wg.addColorStop(1,"rgba(255,180,32,0.7)");
+      c.fillStyle=wg; c.fill();
+      c.strokeStyle=pal.hi; c.globalAlpha=0.75; c.lineWidth=0.7; c.stroke(); c.globalAlpha=1;
+      // 羽骨（3 道）
+      for(var k=0;k<3;k++){
+        var fa=0.34+k*0.24;
+        c.beginPath();
+        c.moveTo(len*0.24, s*hh*0.7);
+        c.quadraticCurveTo(len*(0.18+k*0.1), s*hh*(2.0+fa*2), len*(0.4+k*0.09), s*hh*(2.6+fa));
+        c.strokeStyle="rgba(255,255,255,0.45)"; c.lineWidth=0.55; c.stroke();
+      }
+      // 焰尖发光
+      skinGlowAt(c, len*0.58, s*hh*3.0, hh*1.4, pal.ene, 0.42);
+      c.restore();
+    }
+  }
+  else if(kind==="icewing"){
+    // 冰凤凰翼：更大更锐利，7 根冰羽
+    for(var s=-1;s<=1;s+=2){
+      for(var i=0;i<7;i++){
+        var baseX=len*(0.18+i*0.055);
+        var blen=hh*(2.4+i*0.42+Math.sin(T*1.1+i*0.6)*0.2);
+        var spread=0.34+i*0.1;
+        c.save();
+        c.translate(baseX, s*hh*0.6);
+        c.rotate(s*spread*0.5);
+        c.beginPath();
+        c.moveTo(0,0);
+        c.quadraticCurveTo(-blen*0.16, s*blen*0.62, blen*0.16, s*blen);
+        c.quadraticCurveTo(blen*0.3, s*blen*0.5, blen*0.24, 0);
+        var ig2=c.createLinearGradient(0,0,0,s*blen);
+        ig2.addColorStop(0,"rgba(255,255,255,0.98)");
+        ig2.addColorStop(0.3,"rgba(223,244,255,0.92)");
+        ig2.addColorStop(0.68,"rgba(95,191,232,0.82)");
+        ig2.addColorStop(1,"rgba(56,208,255,0.50)");
+        c.fillStyle=ig2; c.fill();
+        c.strokeStyle="#ffffff"; c.globalAlpha=0.8; c.lineWidth=0.5; c.stroke(); c.globalAlpha=1;
+        skinGlowAt(c, blen*0.16, s*blen*0.92, hh*0.9, pal.ene, 0.34);
+        c.restore();
+      }
+      // 翼膜（半透连片）
+      c.beginPath();
+      c.moveTo(len*0.16, s*hh*0.6);
+      c.quadraticCurveTo(len*0.2, s*hh*3.4, len*0.52, s*hh*3.8);
+      c.quadraticCurveTo(len*0.4, s*hh*1.6, len*0.16, s*hh*0.6);
+      c.fillStyle="rgba(160,220,255,0.22)"; c.fill();
+    }
+  }
+  else if(kind==="cape"){
+    // 焰状披风：从枪托向后下方拖
+    c.beginPath();
+    c.moveTo(0, -hh*1.1);
+    c.bezierCurveTo(-len*0.4, -hh*2.0, -len*0.7, -hh*1.0, -len*0.92, hh*0.4);
+    c.quadraticCurveTo(-len*0.6, hh*0.2, -len*0.5, -hh*0.2);
+    c.quadraticCurveTo(-len*0.35, hh*0.9, -len*0.18, hh*0.7);
+    c.quadraticCurveTo(-len*0.1, hh*0.4, 0, hh*0.9);
+    c.closePath();
+    var cg=c.createLinearGradient(0,-hh*1.5,-len*0.8,hh*0.8);
+    cg.addColorStop(0,pal.hi); cg.addColorStop(0.3,pal.sub);
+    cg.addColorStop(0.7,pal.main); cg.addColorStop(1,"rgba(8,12,6,0.9)");
+    c.fillStyle=cg; c.globalAlpha=0.94; c.fill(); c.globalAlpha=1;
+    c.strokeStyle=pal.ene; c.globalAlpha=0.55; c.lineWidth=0.7; c.stroke(); c.globalAlpha=1;
+    // 焰爪（三道）
+    for(var i=0;i<3;i++){
+      var fx=-len*(0.3+i*0.2), fy=-hh*(0.6-i*0.4);
+      c.beginPath();
+      c.moveTo(fx, fy);
+      c.quadraticCurveTo(fx-len*0.14, fy-hh*0.5, fx-len*0.3, fy+hh*0.2);
+      c.strokeStyle=pal.ene; c.globalAlpha=0.7; c.lineWidth=1.0; c.stroke(); c.globalAlpha=1;
+    }
+  }
+}
+
+/* ==================================================================
+   第5层：悬浮件（不接触枪身）
+   ================================================================== */
+function skinFloaters(c, list, len, hh, pal, T, glow){
+  if(!list||!list.length) return;
+  for(var i=0;i<list.length;i++){
+    var kind=list[i];
+    var n=(kind==="crystal")?7:(kind==="feather")?5:6;
+    for(var k=0;k<n;k++){
+      var a=T*0.9+k*6.2832/n+i*0.7;
+      var rad=hh*(3.2+i*0.5)+ (glow>=3?hh*0.6:0);
+      var ox=len*0.4+Math.cos(a)*len*0.42;
+      var oy=Math.sin(a)*rad;
+      var sz=hh*(0.16+glow*0.05);
+      if(kind==="feather"){
+        c.save(); c.translate(ox,oy); c.rotate(a*1.4);
+        c.beginPath(); c.moveTo(-sz*2,0);
+        c.quadraticCurveTo(0,-sz*0.9, sz*2,0);
+        c.quadraticCurveTo(0,sz*0.9, -sz*2,0);
+        c.fillStyle=pal.ene; c.globalAlpha=0.85; c.fill(); c.globalAlpha=1;
+        skinGlowAt(c,ox,oy,sz*3.2,pal.ene,0.4);
+        c.restore();
+      }else if(kind==="crystal"){
+        c.save(); c.translate(ox,oy); c.rotate(a*1.2);
+        c.beginPath();
+        c.moveTo(0,-sz*1.8); c.lineTo(sz*0.8,0); c.lineTo(0,sz*1.8); c.lineTo(-sz*0.8,0);
+        c.closePath();
+        c.fillStyle="rgba(255,255,255,0.92)"; c.fill();
+        c.strokeStyle=pal.ene; c.lineWidth=0.4; c.stroke();
+        skinGlowAt(c,ox,oy,sz*3.4,pal.ene,0.42);
+        c.restore();
+      }else if(kind==="shard"){
+        c.save(); c.translate(ox,oy); c.rotate(a*1.6);
+        c.beginPath();
+        c.moveTo(-sz,-sz*0.7); c.lineTo(sz*1.4,0); c.lineTo(-sz,sz*0.7);
+        c.closePath();
+        c.fillStyle=pal.ene; c.globalAlpha=0.7; c.fill(); c.globalAlpha=1;
+        c.restore();
+      }else{
+        // spark / ember / rune / spark
+        skinGlowAt(c,ox,oy,sz*2.6,pal.ene,0.62,true);
+        c.fillStyle="#ffffff"; c.globalAlpha=0.85;
+        c.beginPath(); c.arc(ox,oy,sz*0.5,0,6.2832); c.fill(); c.globalAlpha=1;
+      }
+    }
+  }
+}
+
+/* ==================================================================
+   第6层：拖尾 / 拉丝（向后飘）
+   ================================================================== */
+function skinTrail(c, kind, len, hh, pal, T, glow){
+  if(!kind) return;
+  if(kind==="flame"){
+    for(var k=0;k<4;k++){
+      var wob=Math.sin(T*3.2+k*1.4)*hh*0.24;
+      c.beginPath();
+      c.moveTo(-len*0.02, (k-1.5)*hh*0.36);
+      c.bezierCurveTo(-len*0.3, (k-1.5)*hh*0.5+wob,
+                      -len*0.62, (k-1.5)*hh*0.9+wob*1.6,
+                      -len*0.95, (k-1.5)*hh*0.4+wob*2.2);
+      c.strokeStyle=k%2?pal.ene:pal.sub;
+      c.globalAlpha=0.5-k*0.08;
+      c.lineWidth=hh*0.24-k*0.3;
+      c.lineCap="round"; c.stroke(); c.lineCap="butt";
+      c.globalAlpha=1;
+    }
+  }else if(kind==="frost"){
+    for(var k=0;k<5;k++){
+      var wob2=Math.sin(T*2.4+k*1.1)*hh*0.3;
+      c.beginPath();
+      c.moveTo(-len*0.02, (k-2)*hh*0.32);
+      c.bezierCurveTo(-len*0.34,(k-2)*hh*0.5+wob2,
+                      -len*0.7,(k-2)*hh*0.8+wob2*1.4,
+                      -len*1.05,(k-2)*hh*0.3+wob2*2);
+      c.strokeStyle=k%2?"rgba(255,255,255,0.75)":pal.ene;
+      c.globalAlpha=0.42-k*0.05; c.lineWidth=hh*0.2-k*0.24;
+      c.lineCap="round"; c.stroke(); c.lineCap="butt";
+      c.globalAlpha=1;
+    }
+  }else if(kind==="darkflame"){
+    for(var k=0;k<3;k++){
+      var wob3=Math.sin(T*3.6+k*1.8)*hh*0.26;
+      c.beginPath();
+      c.moveTo(-len*0.02,(k-1)*hh*0.4);
+      c.bezierCurveTo(-len*0.36,(k-1)*hh*0.6+wob3,
+                      -len*0.72,(k-1)*hh*1.0+wob3*1.5,
+                      -len*1.0,(k-1)*hh*0.5+wob3*2);
+      c.strokeStyle=pal.ene; c.globalAlpha=0.38-k*0.07;
+      c.lineWidth=hh*0.22-k*0.3;
+      c.lineCap="round"; c.stroke(); c.lineCap="butt";
+      c.globalAlpha=1;
+    }
+  }
+}
+
+/* ==================================================================
+   第8层：氛围光晕（多层同心圆，禁 shadowBlur）
+   ================================================================== */
+function skinAura(c, len, hh, pal, T, glow, full){
+  if(glow<=0) return;
+  var p=0.7+0.3*Math.sin(T*1.8);
+  var cx=len*0.42, cy=0;
+  skinGlowAt(c,cx,cy,hh*(4.2+glow*1.4),pal.ene,0.10*glow/3*p);
+  if(full){
+    skinGlowAt(c,cx,cy,hh*(2.4+glow*0.8),pal.ene,0.16*glow/3*p);
+    // 能量粉尘
+    for(var i=0;i<8;i++){
+      var a=T*0.6+i*0.785;
+      var rad=hh*(2.6+glow*0.8);
+      var dx=cx+Math.cos(a)*len*0.36;
+      var dy=cy+Math.sin(a)*rad;
+      skinGlowAt(c,dx,dy,hh*0.22,glow>=3?"#ffffff":pal.ene,0.5*p,true);
+    }
+  }
+}
+
+/* ==================================================================
+   第9层：高光收边（沿外轮廓打一道亮线，让枪从背景跳出）
+   ================================================================== */
+function skinRim(c, type, len, hh, pal, glow){
+  if(glow<1) return;
+  c.strokeStyle=glow>=3?"rgba(255,255,255,0.85)":pal.hi;
+  c.globalAlpha=glow>=3?0.8:0.55;
+  c.lineWidth=0.9;
+  c.lineJoin="round";
+  if(type==="pistol"){
+    outline(c,[-2,-hh, len*0.94,-hh, len,-hh*0.55, len,hh*0.5, len*0.94,hh, -2,hh]);
+    c.stroke();
+  }else if(type==="rifle"||type==="sniper"||type==="shotgun"){
+    outline(c,[0,-hh, len*0.72,-hh*0.94, len*0.72,-hh*0.4, len*0.72,hh*0.4, len*0.72,hh*0.94, 0,hh]);
+    c.stroke();
+  }else if(type==="gatling"){
+    outline(c,[-len*0.26,-hh*1.1, len*0.34,-hh*1.05, len*0.34,hh*1.05, -len*0.26,hh*1.1]);
+    c.stroke();
+  }else if(type==="staff"){
+    outline(c,[0,-hh*1.0, len*0.86,-hh*0.76, len*0.86,hh*0.76, 0,hh*1.0]);
+    c.stroke();
+  }else if(type==="cannon"){
+    outline(c,[0,-hh, len*0.7,-hh*1.06, len,-hh*1.1, len,hh*1.1, len*0.7,hh*1.06, 0,hh]);
+    c.stroke();
+  }else{
+    outline(c,[0,-hh, len*0.28,-hh*0.86, len*0.4,-hh*0.4, len*0.4,hh*0.4, len*0.28,hh*0.86, 0,hh]);
+    c.stroke();
+  }
+  c.globalAlpha=1; c.lineJoin="miter";
+}
+
+/* ==================================================================
+   ===== 唯一入口：drawWeaponSkin =====
+   图鉴缩略图 / 详情大图 / 局内手持 全部调它
+   ctx, weaponType(0-7), skinId, level, x, y, scale, flip, animTime, mode
+   mode: "thumb" 缩略图 / "detail" 详情 / "game" 局内
+   ================================================================== */
+function drawWeaponSkin(c, weaponType, skinId, level, x, y, scale, flip, animTime, mode){
+  mode=mode||"detail";
+  var sk=SKIN_DEF[skinId]||SKIN_DEF.basicWhite;
+  var pal=sk.pal;
+  var T=animTime||(Date.now()/1000);
+  var ty=WEP_TYPES[Math.max(0,Math.min(7,weaponType|0))];
+  // 尺寸（按等级微增）
+  var L=Math.max(1,Math.min(50,level|0));
+  var grow=1+ (L-1)*0.004;
+  var lenBase = ty==="sniper"?58: ty==="rifle"?40: ty==="staff"?38: ty==="cannon"?36: ty==="gatling"?34: ty==="shotgun"?33: ty==="drone"?28: 26;
+  var hhBase  = ty==="sniper"?2.6: ty==="rifle"?3.6: ty==="staff"?2.0: ty==="cannon"?6.6: ty==="gatling"?6.4: ty==="shotgun"?4.8: ty==="drone"?3.8: 4.3;
+  var len=lenBase*grow, hh=hhBase*grow;
+
+  // 简化档位：thumb 隐藏拖尾/氛围光/部分悬浮
+  var showTrail = (mode==="detail") || (mode==="game" && sk.glow>=3);
+  var showAura  = (mode==="detail") || (mode==="game" && sk.glow>=3);
+  var showFloat = (mode!=="thumb") || sk.glow>=4;
+  var showExtend= (mode!=="thumb") || sk.glow>=4;
+
+  c.save();
+  c.translate(x,y);
+  if(flip) c.scale(-1,1);
+  c.scale(scale,scale);
+
+  // ---- 第8层先画氛围光（在枪后面） ----
+  skinAura(c, len, hh, pal, T, sk.glow, showAura);
+
+  // ---- 第6层：拖尾（在枪后面） ----
+  if(showTrail) skinTrail(c, sk.trail, len, hh, pal, T, sk.glow);
+
+  // ---- 第4层：外延件（在枪后面画翼/披风，让枪身压在上面） ----
+  if(showExtend) skinExtend(c, sk.extend, len, hh, pal, T, sk.glow);
+
+  // ---- 第1层：底壳 ----
+  var geo=skinBase(c, ty, L, pal, sk.baseMat, T, len, hh);
+
+  // ---- 第2层：甲片 ----
+  skinShell(c, sk.shell, len, hh, pal, T, sk.glow);
+
+  // ---- 第3层：能量核心 ----
+  skinCore(c, len, hh, pal, T, sk.glow, sk.dyn);
+
+  // ---- 第5层：悬浮件 ----
+  if(showFloat) skinFloaters(c, sk.floaters, len, hh, pal, T, sk.glow);
+
+  // ---- 第9层：高光收边 ----
+  skinRim(c, ty, len, hh, pal, sk.glow);
+
+  c.restore();
+  return {len:len*scale, hh:hh*scale, muzzleX:geo.mz, muzzleY:geo.mzy, pal:pal, skin:sk};
+}
+
+/* 当前装备皮肤（全局） */
+var currentSkin="basicWhite";
+
 var FAM_DRAW={pistol:famPistol,rifle:famRifle,sniper:famSniper,shotgun:famShotgun,
               gatling:famGatling,staff:famStaff,cannon:famCannon,drone:famDrone};
 
@@ -3681,74 +4450,99 @@ function wepInfo(typeIdx,lv){
 function drawGun(){
   var ty=(typeof gunType==="number")?gunType:0;
   var L=gunLevel||1;
-  var info=wepDraw(ty,L,ctx,null);
-  var mx=info.len;
+  var sk=(typeof currentSkin==="string")?currentSkin:"basicWhite";
+  var T=Date.now()/1000;
+  // 后坐位移
+  var rec=0;
+  if(player&&player.muzzle>0) rec=-Math.min(3.2,player.muzzle*26);
+  // 用枪皮引擎绘制（与图鉴/详情同一个函数）
+  var info=drawWeaponSkin(ctx, ty, sk, L, rec, 0, 1.0, false, T, "game");
+  var mx=rec+info.len;
   var pal=info.pal;
-  // ===== 开火瞬间：枪口闪光（按武器类型换形状） =====
+  var skin=info.skin||{};
+  // ===== 枪口闪光（按风格族换形） =====
   if(player&&player.muzzle>0){
     var mf=Math.max(0,player.muzzle/0.09);
-    ctx.save();ctx.translate(mx,0);
-    // 通用底层光斑
-    var fg=wepGlow(pal.e,16);
-    ctx.globalAlpha=mf*0.9;
-    ctx.drawImage(fg,-16*1.2,-16*1.2,16*2.4,16*2.4);
+    ctx.save(); ctx.translate(mx, info.muzzleY||0);
+    var mz=skin.muzzle||"plain";
+    var ene=pal.ene, hi=pal.hi, sub=pal.sub;
+    // 底光
+    skinGlowAt(ctx,0,0,13,ene,0.85*mf);
     ctx.globalAlpha=mf;
-    var tname=WEP_TYPES[ty];
-    if(tname==="pistol"){
-      // 手枪：三瓣火花
-      ctx.fillStyle="#ffe24a";
-      for(var k=0;k<3;k++){var a2=-0.5+k*0.5;
-        ctx.beginPath();ctx.moveTo(0,0);
-        ctx.lineTo(Math.cos(a2)*9*mf,Math.sin(a2)*5*mf);
-        ctx.lineTo(Math.cos(a2)*7*mf,Math.sin(a2)*7*mf);ctx.closePath();ctx.fill();}
-    }else if(tname==="rifle"){
-      // 步枪：锥形焰
-      ctx.fillStyle="#ffd24a";
-      ctx.beginPath();ctx.moveTo(0,-3.2*mf);ctx.lineTo(13*mf,0);ctx.lineTo(0,3.2*mf);ctx.closePath();ctx.fill();
-    }else if(tname==="sniper"){
-      // 狙击：细长刺焰
-      ctx.fillStyle="#ffffff";
-      ctx.beginPath();ctx.moveTo(0,-1.6*mf);ctx.lineTo(22*mf,0);ctx.lineTo(0,1.6*mf);ctx.closePath();ctx.fill();
-      ctx.fillStyle=pal.e;ctx.globalAlpha=mf*0.6;
-      ctx.beginPath();ctx.moveTo(0,-3.4*mf);ctx.lineTo(16*mf,0);ctx.lineTo(0,3.4*mf);ctx.closePath();ctx.fill();
-    }else if(tname==="shotgun"){
-      // 霰弹：扇形爆发
-      ctx.fillStyle="#ffb84a";
-      for(var k=0;k<5;k++){var a2=(k-2)*0.28;
-        ctx.beginPath();ctx.moveTo(0,0);
-        ctx.lineTo(Math.cos(a2)*11*mf,Math.sin(a2)*11*mf);
-        ctx.lineTo(Math.cos(a2+0.14)*8*mf,Math.sin(a2+0.14)*8*mf);ctx.closePath();ctx.fill();}
-    }else if(tname==="gatling"){
-      // 加特林：螺旋焰
-      ctx.strokeStyle="#ffdc5e";ctx.lineWidth=2.2*mf;
+
+    if(mz==="dragonbreath"){
+      // 龙口喷息：锥形 + 齿状边
+      ctx.fillStyle=sub;
       ctx.beginPath();
-      for(var k=0;k<=12;k++){var a2=k*0.9+player.muzzle*40;
-        ctx.lineTo(3+k*1.0*mf,Math.sin(a2)*3.4*mf);}
-      ctx.stroke();
-    }else if(tname==="staff"){
-      // 法杖：聚能环
-      ctx.strokeStyle=pal.e;ctx.lineWidth=2.0*mf;
-      ctx.beginPath();ctx.arc(0,0,7*mf,0,6.2832);ctx.stroke();
-      ctx.strokeStyle=pal.e2;ctx.lineWidth=1.2*mf;
-      ctx.beginPath();ctx.arc(0,0,11*mf,0.4,4.6);ctx.stroke();
-    }else if(tname==="cannon"){
-      // 巨炮：圆形冲击波
-      ctx.strokeStyle=pal.e;ctx.lineWidth=2.6*mf;
-      ctx.beginPath();ctx.arc(0,0,12*mf,0,6.2832);ctx.stroke();
-      ctx.strokeStyle="#ffffff";ctx.lineWidth=1.4*mf;
-      ctx.beginPath();ctx.arc(0,0,7*mf,0,6.2832);ctx.stroke();
-    }else{
-      // 浮游：离散光点
-      ctx.fillStyle=pal.e2;
-      for(var k=0;k<4;k++){var a2=k*1.57+player.muzzle*30;
-        ctx.beginPath();ctx.arc(Math.cos(a2)*7*mf,Math.sin(a2)*7*mf,1.7*mf,0,6.2832);ctx.fill();}
+      ctx.moveTo(0,-3.4*mf);
+      for(var k=0;k<7;k++){
+        var t=k/6;
+        ctx.lineTo(4+15*t*mf, (-3.4+6.8*t+Math.sin(k*1.6)*1.5)*mf);
+      }
+      ctx.lineTo(0,3.4*mf); ctx.closePath(); ctx.fill();
+      ctx.fillStyle=ene; ctx.globalAlpha=0.85*mf;
+      ctx.beginPath(); ctx.moveTo(0,-1.6*mf);
+      ctx.lineTo(18*mf,0); ctx.lineTo(0,1.6*mf); ctx.closePath(); ctx.fill();
     }
-    // 中心白核
-    ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,3.2*mf,0,6.2832);ctx.fill();
-    // 彩色短命烟雾
-    ctx.globalAlpha=mf*0.22;ctx.fillStyle=pal.h;
-    ctx.beginPath();ctx.arc(6*mf,0,10*mf,0,6.2832);ctx.fill();
-    ctx.restore();ctx.globalAlpha=1;
+    else if(mz==="frostburst"){
+      // 冰棱爆裂：8 向锐利星芒
+      ctx.strokeStyle="#ffffff"; ctx.lineWidth=1.9*mf;
+      for(var k=0;k<8;k++){
+        var a=k*0.785;
+        var len2=(k%2?11:19)*mf;
+        ctx.beginPath(); ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(a)*len2, Math.sin(a)*len2); ctx.stroke();
+      }
+      ctx.fillStyle="#ffffff";
+      for(var k=0;k<6;k++){
+        var a2=k*1.047+0.3;
+        ctx.beginPath(); ctx.arc(Math.cos(a2)*9*mf, Math.sin(a2)*9*mf, 1.5*mf, 0, 6.2832); ctx.fill();
+      }
+    }
+    else if(mz==="darkvortex"){
+      // 墨焰旋涡：暗色旋涡 + 亮边
+      ctx.strokeStyle=ene; ctx.lineWidth=2.2*mf;
+      ctx.beginPath();
+      for(var k=0;k<=18;k++){
+        var t=k/18, a3=t*9;
+        ctx.lineTo(Math.cos(a3)*t*15*mf, Math.sin(a3)*t*15*mf);
+      }
+      ctx.stroke();
+      ctx.strokeStyle=hi; ctx.globalAlpha=0.7*mf; ctx.lineWidth=1.0*mf;
+      ctx.beginPath(); ctx.arc(0,0,7*mf,0,6.2832); ctx.stroke();
+    }
+    else if(mz==="pulse"){
+      // 能量脉冲：同心方环
+      ctx.strokeStyle=ene; ctx.lineWidth=1.5*mf;
+      for(var k=0;k<3;k++){
+        var s2=(4+k*4)*mf;
+        ctx.strokeRect(-s2*0.6,-s2*0.6,s2*1.2,s2*1.2);
+      }
+    }
+    else{
+      // plain
+      ctx.fillStyle=ene;
+      ctx.beginPath(); ctx.arc(0,0,4.5*mf,0,6.2832); ctx.fill();
+    }
+    // 通用白核
+    ctx.globalAlpha=mf*0.95;
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(0,0,2.6*mf,0,6.2832); ctx.fill();
+    ctx.restore(); ctx.globalAlpha=1;
+
+    // 短命彩烟（取皮肤主色，0.3 秒）
+    var smokeT=1-player.muzzle/0.09;
+    if(smokeT<0.75){
+      ctx.globalAlpha=(1-smokeT/0.75)*0.22;
+      ctx.fillStyle=pal.main;
+      ctx.beginPath(); ctx.arc(mx+7, (info.muzzleY||0), 5+smokeT*16, 0, 6.2832); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    // 震屏分级（按武器重量）
+    try{
+      var wt = (ty===6||ty===4)?1.6 : (ty===2||ty===3)?1.15 : 0.75;
+      if(typeof cam!=="undefined"&&cam) cam.shake=Math.max(cam.shake||0, 1.6*wt);
+    }catch(e){}
   }
 }
 /* ========== update ========== */
@@ -4458,13 +5252,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v6.5");
+    localStorage.setItem("njs_patch","v7.0");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v6.5"){
+    if(seen!=="v7.0"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -9067,7 +9861,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v6.5</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v7.0</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -9098,6 +9892,14 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 17:23:38",items:[
+      "🎨 枪皮系统 v1：五层结构 + 九步绘制，枪只是底座",
+      "🔥 至情至圣（炎羽天启）：白瓷半透 + 火焰羽翼张开 + 悬浮羽片",
+      "🌑 幽焰骑士：黑曜石装甲 + 焰状披风 + 墨焰旋涡枪口",
+      "❄ 星梦奇缘（冰晶神谕·神话）：水晶半透 + 冰凤凰翼 + 碎晶环绕 + 光柱",
+      "📚 图鉴新增「🎨 枪皮」标签页，可按稀有度查看并装备",
+      "⚡ 移除全部 shadowBlur，发光走离屏预渲染"
+    ]},
     {time:"2026-10-24 15:42:01",items:[
       "✨ 武器重置为流线曲面：贝塞尔曲线轮廓，不再直角块拼装",
       "🎨 三层光影：主体渐变 + 顶部高光带 + 曲面细分线",
@@ -9301,7 +10103,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 15:42:01";
+    pd.textContent="更新于 2026 年 10 月 24 日 17:23:38";
   }
 })();
 </script>
@@ -9320,6 +10122,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button id="codexTab0" onclick="codexSwitch(0)" style="flex:1;padding:7px 0;border-radius:12px;background:linear-gradient(135deg,#ff2a6d,#ff8a5b);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer">🔫 武器</button>
       <button id="codexTab1" onclick="codexSwitch(1)" style="flex:1;padding:7px 0;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(61,255,122,.3);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
       <button id="codexTab2" onclick="codexSwitch(2)" style="flex:1;padding:7px 0;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(176,38,255,.3);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
+      <button id="codexTab3" onclick="codexSwitch(3)" style="flex:1;padding:7px 0;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(251,191,36,.35);color:#fbbf24;font-size:12px;cursor:pointer">🎨 枪皮</button>
     </div>
     <div id="codexGrid" style="flex:1;min-height:200px;max-height:62vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:2px"></div>
     <div id="codexDetail" style="display:none;flex:1;min-height:200px;max-height:62vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:2px"></div>
@@ -9647,9 +10450,12 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     var ti=document.getElementById("codexTitle");
     var active="linear-gradient(135deg,#ff2a6d,#ff8a5b);color:#fff;font-weight:700;border:none";
     var idle="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#8fb8d8;font-weight:400";
-    if(tab===0){t0.style.cssText+=";"+active;t1.style.cssText=";"+idle;t2.style.cssText=";"+idle;ti.textContent="武器图鉴";codexRenderWeapons();}
-    else if(tab===1){t1.style.cssText+=";"+active;t0.style.cssText=";"+idle;t2.style.cssText=";"+idle;ti.textContent="小怪图鉴";codexRenderMobs();}
-    else{t2.style.cssText+=";"+active;t0.style.cssText=";"+idle;t1.style.cssText=";"+idle;ti.textContent="Boss图鉴";codexRenderBoss();}
+    var t3=document.getElementById("codexTab3");
+    var idleAll=function(){ t0.style.cssText=";"+idle;t1.style.cssText=";"+idle;t2.style.cssText=";"+idle; if(t3)t3.style.cssText=";"+idle; };
+    if(tab===0){idleAll();t0.style.cssText+=";"+active;ti.textContent="武器图鉴";codexRenderWeapons();}
+    else if(tab===1){idleAll();t1.style.cssText+=";"+active;ti.textContent="小怪图鉴";codexRenderMobs();}
+    else if(tab===2){idleAll();t2.style.cssText+=";"+active;ti.textContent="Boss图鉴";codexRenderBoss();}
+    else{idleAll();if(t3)t3.style.cssText+=";"+active;ti.textContent="枪皮图鉴";codexRenderSkins();}
     // 绑定手动拖动滚动（全局 touch-action:none 导致原生滚动失效）
     var _g=document.getElementById("codexGrid");
     var _d=document.getElementById("codexDetail");
@@ -9665,6 +10471,89 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     if(sub){var sd=document.createElement("div");sd.style.cssText="font-size:9px;color:#7c86c8";sd.textContent=sub;d.appendChild(sd);}
     return d;
   }
+  /* ===== 枪皮图鉴 ===== */
+  function codexRenderSkins(){
+    var g=document.getElementById("codexGrid"); if(!g)return;
+    var dt=document.getElementById("codexDetail"); if(dt)dt.style.display="none";
+    g.style.display="grid"; g.innerHTML="";
+    var ids=Object.keys(SKIN_DEF);
+    for(var i=0;i<ids.length;i++){
+      (function(id){
+        var sk=SKIN_DEF[id];
+        var rar=SKIN_RAR[sk.rar]||SKIN_RAR.white;
+        var d=document.createElement("div");
+        d.onclick=function(){ codexShowSkin(id); };
+        d.style.cssText="border-radius:12px;padding:6px 4px;text-align:center;cursor:pointer;background:rgba(255,255,255,.05);border:2px solid "+rar.col+";position:relative;overflow:hidden";
+        if(sk.rar==="gold"||sk.rar==="red"){
+          d.style.boxShadow="0 0 12px "+rar.col+"88";
+        }
+        var cv=document.createElement("canvas");
+        cv.width=110; cv.height=76;
+        cv.style.cssText="width:104px;height:72px;margin:0 auto;display:block";
+        var c2=cv.getContext("2d");
+        try{ drawWeaponSkin(c2, 1, id, 30, 14, 38, 1.25, false, (i*0.7)+1.2, "detail"); }catch(e){}
+        var nm=document.createElement("div");
+        nm.style.cssText="font-size:10px;color:#e8f0ff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
+        nm.textContent=sk.name;
+        var rs=document.createElement("div");
+        rs.style.cssText="font-size:8px;color:"+rar.col;
+        rs.textContent="★".repeat(rar.stars)+" "+rar.n;
+        var fm=document.createElement("div");
+        fm.style.cssText="font-size:8px;color:#7c86c8";
+        fm.textContent=sk.fam;
+        d.appendChild(cv);d.appendChild(nm);d.appendChild(rs);d.appendChild(fm);
+        g.appendChild(d);
+      })(ids[i]);
+    }
+  }
+  function codexShowSkin(id){
+    var g=document.getElementById("codexGrid"); if(g)g.style.display="none";
+    var dt=document.getElementById("codexDetail"); if(!dt)return;
+    dt.style.display="block"; dt.innerHTML="";
+    var sk=SKIN_DEF[id]; var rar=SKIN_RAR[sk.rar]||SKIN_RAR.white;
+    // 大图
+    var cv=document.createElement("canvas");
+    cv.width=520; cv.height=300;
+    cv.style.cssText="width:100%;max-width:520px;height:auto;display:block;margin:0 auto;border-radius:12px;background:radial-gradient(circle at 50% 50%,rgba(30,40,70,.6),rgba(6,10,20,.95))";
+    var c2=cv.getContext("2d");
+    try{ drawWeaponSkin(c2, 1, id, 50, 60, 150, 2.6, false, Date.now()/1000, "detail"); }catch(e){}
+    dt.appendChild(cv);
+    var h=document.createElement("div");
+    h.style.cssText="text-align:center;margin-top:8px";
+    h.innerHTML='<div style="font-size:18px;font-weight:700;color:'+rar.col+'">'+sk.name+'</div>'+
+      '<div style="font-size:12px;color:'+rar.col+';margin-top:2px">'+"★".repeat(rar.stars)+' '+rar.n+' · '+sk.fam+'</div>';
+    dt.appendChild(h);
+    var info=document.createElement("div");
+    info.style.cssText="font-size:11px;color:#a8b8d8;line-height:1.8;margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)";
+    var matName={matte:"哑光涂装",lightmetal:"轻金属",brushed:"冷金属拉丝",obsidian:"黑曜石",porcelain:"白瓷半透",crystal:"水晶半透"};
+    var shellName={feather:"羽片外骨骼",ice:"冰棱甲片",armor:"重装甲片",plate:"金属贴片",mechplate:"机械板"};
+    var exName={wings:"火焰羽翼",icewing:"冰凤凰翼",cape:"焰状披风"};
+    info.innerHTML=
+      '材质：'+(matName[sk.baseMat]||sk.baseMat)+
+      (sk.shell?'　甲片：'+(shellName[sk.shell]||sk.shell):'')+
+      (sk.extend?'<br>外延：'+(exName[sk.extend]||sk.extend):'')+
+      (sk.floaters&&sk.floaters.length?'　悬浮件：'+sk.floaters.length+' 组':'')+
+      (sk.trail?'<br>拖尾：'+sk.trail:'')+
+      '<br>发光强度：'+sk.glow+'/3　动态：'+sk.dyn;
+    dt.appendChild(info);
+    var use=document.createElement("button");
+    use.style.cssText="display:block;margin:12px auto 4px;padding:10px 36px;border-radius:22px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,"+rar.col+",#7c3aed);border:none;color:#06111a";
+    use.textContent=(currentSkin===id)?"已装备":"装 备";
+    use.onclick=function(){
+      currentSkin=id;
+      try{ var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}"); _c.skin=id; localStorage.setItem("njs_codex",JSON.stringify(_c)); }catch(e){}
+      codexShowSkin(id);
+    };
+    dt.appendChild(use);
+    var back=document.createElement("button");
+    back.style.cssText="display:block;margin:8px auto;padding:8px 28px;border-radius:20px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(160,168,255,.4);color:#b8c0ff";
+    back.textContent="← 返回列表";
+    back.onclick=function(){ codexRenderSkins(); };
+    dt.appendChild(back);
+    var _d=document.getElementById("codexDetail");
+    if(typeof _bindDrag==="function")_bindDrag(_d);
+  }
+
   function codexRenderWeapons(){
     var g=document.getElementById("codexGrid");if(!g)return;
     var dt=document.getElementById("codexDetail");if(dt)dt.style.display="none";
