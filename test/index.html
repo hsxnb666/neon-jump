@@ -121,7 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.0</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.1</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3153,13 +3153,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v5.0");
+    localStorage.setItem("njs_patch","v5.1");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v5.0"){
+    if(seen!=="v5.1"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7201,9 +7201,24 @@ function lbRender(){
     var s4=document.createElement("span");
     s4.style.cssText="color:#7c86c8;font-size:10px;min-width:42px;text-align:right";
     s4.textContent=String(r.dist||0)+"m";
-    row.appendChild(s1); row.appendChild(s2); row.appendChild(s3); row.appendChild(s4);
+    var s5=document.createElement("span");
+    s5.style.cssText="color:#5a6a95;font-size:10px;min-width:62px;text-align:right;font-variant-numeric:tabular-nums";
+    s5.textContent=fmtRankTime(r.created_at);
+    row.appendChild(s1); row.appendChild(s2); row.appendChild(s3); row.appendChild(s4); row.appendChild(s5);
     box.appendChild(row);
   }
+}
+
+// 时间格式化：ISO -> "月-日 时:分"（无效/缺省显示 —）
+function fmtRankTime(t){
+  if(!t)return "—";
+  try{
+    var d=new Date(t);
+    if(isNaN(d.getTime()))return "—";
+    var M=d.getMonth()+1, D=d.getDate(), h=d.getHours(), m=d.getMinutes();
+    var p=function(n){return (n<10?"0":"")+n;};
+    return p(M)+"-"+p(D)+" "+p(h)+":"+p(m);
+  }catch(e){ return "—"; }
 }
 
 // ===== 富豪榜：按本机终身累计金币（只增不减，含花掉的） =====
@@ -7226,14 +7241,32 @@ function lbRenderRichTo(box){
   tip.style.cssText="color:#7c86c8;text-align:center;padding:5px;font-size:11px;line-height:1.4";
   tip.innerHTML="💰 富豪榜 · 终身累计金币<br><span style='color:#ffd54a'>赚过的每一枚都算数（含已花掉的）</span>";
   box.appendChild(tip);
-  // 全网富豪榜列表
-  var arr=lbCacheRich||[];
+  // 全网富豪榜列表（同昵称去重：只保留 lifetime_coins 最高的一条）
+  var raw=lbCacheRich||[];
+  var seen={},arr=[];
+  for(var _k=0;_k<raw.length;_k++){
+    var _rr=raw[_k]||{};
+    var _rn=_rr.name||"玩家";
+    var _lc=(typeof _rr.lifetime_coins==="number")?_rr.lifetime_coins:0;
+    if(!(_rn in seen)||_lc>seen[_rn].lifetime_coins)seen[_rn]=_rr;
+  }
+  arr=Object.keys(seen).map(function(k){return seen[k];});
+  arr.sort(function(a,b){return (b.lifetime_coins||0)-(a.lifetime_coins||0);});
   if(!arr.length){
     var emp=document.createElement("div");
     emp.style.cssText="color:#7c86c8;text-align:center;padding:10px;font-size:12px;line-height:1.6";
     emp.textContent="暂无全网记录\n打一局即可上传你的终身金币";
     box.appendChild(emp);
   }
+  // 表头：名次 + 昵称 + 金币 + 时间
+  var hdr=document.createElement("div");
+  hdr.style.cssText="display:flex;align-items:center;gap:8px;padding:3px 8px;margin-bottom:2px;font-size:10px;color:#6a7fb8";
+  var hs1=document.createElement("span");hs1.style.cssText="width:28px;text-align:center";hs1.textContent="#";
+  var hs2=document.createElement("span");hs2.style.cssText="flex:1";hs2.textContent="昵称";
+  var hs3=document.createElement("span");hs3.style.cssText="min-width:56px;text-align:right";hs3.textContent="金币";
+  var hs4=document.createElement("span");hs4.style.cssText="min-width:64px;text-align:right";hs4.textContent="时间";
+  hdr.appendChild(hs1);hdr.appendChild(hs2);hdr.appendChild(hs3);hdr.appendChild(hs4);
+  box.appendChild(hdr);
   for(var i=0;i<arr.length;i++){
     var r=arr[i]||{};
     var rn=r.name||"玩家";
@@ -7249,9 +7282,12 @@ function lbRenderRichTo(box){
     s2.style.cssText="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"+(isMe?"color:#ffd54a;font-weight:700;":"color:#cfe8ff;");
     s2.textContent=rn;
     var s3=document.createElement("span");
-    s3.style.cssText="color:#ffd700;font-weight:800;font-size:"+(i===0?"18px":"14px")+";text-shadow:0 0 8px rgba(255,215,0,.5);min-width:64px;text-align:right";
+    s3.style.cssText="color:#ffd700;font-weight:800;font-size:"+(i===0?"16px":"13px")+";text-shadow:0 0 8px rgba(255,215,0,.5);min-width:56px;text-align:right";
     s3.textContent=String(lc);
-    row.appendChild(s1); row.appendChild(s2); row.appendChild(s3);
+    var s4=document.createElement("span");
+    s4.style.cssText="min-width:64px;text-align:right;color:#5a6a95;font-size:10px;font-variant-numeric:tabular-nums";
+    s4.textContent=fmtRankTime(r.created_at);
+    row.appendChild(s1); row.appendChild(s2); row.appendChild(s3); row.appendChild(s4);
     box.appendChild(row);
   }
   // 底部：本机终身累计 + 当前持有
@@ -7360,33 +7396,75 @@ function lbSubmit(sc,ds){
   lbSetName(nm);
   var _lifetime=0;
   try{ var _c2=JSON.parse(localStorage.getItem("njs_codex")||"{}"); if(typeof _c2.lifetime==="number")_lifetime=_c2.lifetime; }catch(_){}
-  var body=JSON.stringify({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime});
   var _submitT=Date.now();
-  var x=new XMLHttpRequest();
-  x.open("POST",LB_URL+"/rest/v1/scores",true);
-  x.setRequestHeader("apikey",LB_KEY);
-  x.setRequestHeader("Authorization","Bearer "+LB_KEY);
-  x.setRequestHeader("Content-Type","application/json");
-  x.setRequestHeader("Prefer","return=representation");
-  x.timeout=8000;
-  x.onload=function(){
-    if(x.status<300){
-      // F：取回数据库 id 并记录
-      var newId=null;
+  var _body=JSON.stringify({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime});
+  // 先去重查询：该昵称是否已有记录，取终身金币最高的一条
+  var q=new XMLHttpRequest();
+  q.open("GET",LB_URL+"/rest/v1/scores?name=eq."+encodeURIComponent(nm)+"&select=id,lifetime_coins&order=lifetime_coins.desc&limit=1",true);
+  q.setRequestHeader("apikey",LB_KEY);
+  q.setRequestHeader("Authorization","Bearer "+LB_KEY);
+  q.timeout=8000;
+  q.onload=function(){
+    var existId=null, existLt=-1;
+    if(q.status===200){
       try{
-        var rj=JSON.parse(x.responseText||"[]");
-        if(rj&&rj.length&&rj[0].id!==undefined)newId=rj[0].id;
+        var qd=JSON.parse(q.responseText||"[]");
+        if(qd.length){ existId=qd[0].id; existLt=(typeof qd[0].lifetime_coins==="number")?qd[0].lifetime_coins:0; }
       }catch(e){}
-      if(newId!==null)myIdsAdd(newId);
-      // D：记录成绩指纹
-      myRecsAdd(sc,ds,_submitT);
-      lbStat("已上传");
-      saveScore(sc,ds);
-      lbFetchAll();
-    } else { lbStat("上传失败"); }
+    }
+    var doPost=function(){
+      var x=new XMLHttpRequest();
+      x.open("POST",LB_URL+"/rest/v1/scores",true);
+      x.setRequestHeader("apikey",LB_KEY);
+      x.setRequestHeader("Authorization","Bearer "+LB_KEY);
+      x.setRequestHeader("Content-Type","application/json");
+      x.setRequestHeader("Prefer","return=representation");
+      x.timeout=8000;
+      x.onload=function(){
+        if(x.status<300){
+          var newId=null;
+          try{ var rj=JSON.parse(x.responseText||"[]"); if(rj&&rj.length&&rj[0].id!==undefined)newId=rj[0].id; }catch(e){}
+          if(newId!==null)myIdsAdd(newId);
+          myRecsAdd(sc,ds,_submitT);
+          lbStat("已上传");
+          saveScore(sc,ds);
+          lbFetchAll();
+          try{ if(lbView==="rich")lbFetchRich(); }catch(e){}
+        } else { lbStat("上传失败"); }
+      };
+      x.onerror=function(){ lbStat("上传失败(离线)"); };
+      try{ x.send(_body); }catch(e){}
+    };
+    var doPatch=function(id){
+      var x=new XMLHttpRequest();
+      x.open("PATCH",LB_URL+"/rest/v1/scores?id=eq."+id,true);
+      x.setRequestHeader("apikey",LB_KEY);
+      x.setRequestHeader("Authorization","Bearer "+LB_KEY);
+      x.setRequestHeader("Content-Type","application/json");
+      x.setRequestHeader("Prefer","return=representation");
+      x.timeout=8000;
+      x.onload=function(){
+        if(x.status<300){
+          myRecsAdd(sc,ds,_submitT);
+          lbStat("已更新累计金币");
+          saveScore(sc,ds);
+          lbFetchAll();
+          try{ if(lbView==="rich")lbFetchRich(); }catch(e){}
+        } else { lbStat("更新失败"); }
+      };
+      x.onerror=function(){ lbStat("更新失败(离线)"); };
+      try{ x.send(JSON.stringify({lifetime_coins:_lifetime})); }catch(e){}
+    };
+    // 已存在：新终身金币更高才更新（去重），否则不新增不更新
+    if(existId!==null){
+      if(_lifetime>existLt){ doPatch(existId); }
+      else { lbStat("已有记录·金币未增"); saveScore(sc,ds); lbFetchAll(); try{ if(lbView==="rich")lbFetchRich(); }catch(e){} }
+    } else {
+      doPost();
+    }
   };
-  x.onerror=function(){ lbStat("上传失败(离线)"); };
-  try{ x.send(body); }catch(e){}
+  q.onerror=function(){ lbStat("查询失败"); };
+  try{ q.send(); }catch(e){}
 }
 
 function switchBoard(v){
@@ -7469,6 +7547,7 @@ function homeRankRender(){
   var box=document.getElementById("hrBoard");
   if(!box)return;
   _bindDrag(box);
+  if(lbView==="rich"){ lbRenderRichTo(box); return; }
   var arr=(lbView==="all"||lbView==="smart")?lbCacheAll:lbCacheMe;
   while(box.firstChild)box.removeChild(box.firstChild);
   if(!arr||!arr.length){
@@ -7497,7 +7576,10 @@ function homeRankRender(){
     var s4=document.createElement("span");
     s4.style.cssText="color:#7c86c8;font-size:11px;min-width:48px;text-align:right";
     s4.textContent=String(r.dist||0)+"m";
-    row.appendChild(s1);row.appendChild(s2);row.appendChild(s3);row.appendChild(s4);
+    var s5=document.createElement("span");
+    s5.style.cssText="color:#5a6a95;font-size:10px;min-width:62px;text-align:right;font-variant-numeric:tabular-nums";
+    s5.textContent=fmtRankTime(r.created_at);
+    row.appendChild(s1);row.appendChild(s2);row.appendChild(s3);row.appendChild(s4);row.appendChild(s5);
     box.appendChild(row);
   }
 }
@@ -7585,7 +7667,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.0</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.1</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7616,6 +7698,11 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 09:59:49",items:[
+      "🐛 修复主页富豪榜加载失败：homeRankRender 补 rich 分支",
+      "⏱ 排行榜加时间列（月-日 时:分，历史无数据显示—）",
+      "💰 富豪榜同昵称去重：只保留终身金币最高一条，更高则更新"
+    ]},
     {time:"2026-10-24 09:49:25",items:[
       "🐛 修复性能闪退：狂暴触发频率过高（每帧累积→按时间累积）",
       "💰 修复富豪榜卡加载：网络失败/超时兜底显示本机数据"
@@ -7751,7 +7838,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 09:49:25";
+    pd.textContent="更新于 2026 年 10 月 24 日 09:59:49";
   }
 })();
 </script>
