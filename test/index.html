@@ -171,7 +171,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v6.0</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v6.1</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -2500,60 +2500,242 @@ sShoot();if(gunLevel>=3)sfx(600+gunLevel*100,"square",0.05,0.03,200);
 spawnParticles(p.x+Math.cos(ang)*32,p.y+Math.sin(ang)*14,3,"#00f2ff",35)}
 
 /* 武器模型 */
+var WEP_DEF=[
+[1,1,"box","tube","orb","vent",0,0,0,0.862],
+[2,1,"taper","tube","diamond","vent",1,0,0,0.874],
+[3,1,"hex","tube","star","vent",0,0,0,0.886],
+[4,1,"wedge","tube","piston","vent",1,0,0,0.898],
+[5,1,"arrow","tube","spiral","vent",0,0,0,0.850],
+[6,1,"diamond","split","halo","vent",1,0,0,0.862],
+[7,1,"thick","split","orb","vent",0,0,0,0.874],
+[8,1,"rail","split","diamond","vent",1,0,0,0.886],
+[9,1,"crucible","split","star","vent",0,0,0,0.898],
+[10,1,"titan","split","piston","conduit",1,0,0,0.850],
+[11,2,"box","ring","spiral","conduit",2,0,0,0.962],
+[12,2,"taper","ring","halo","conduit",3,0,0,0.974],
+[13,2,"hex","ring","orb","conduit",4,0,0,0.986],
+[14,2,"wedge","ring","diamond","conduit",2,0,0,0.998],
+[15,2,"arrow","ring","star","conduit",3,0,0,0.950],
+[16,2,"diamond","spike","piston","conduit",4,0,0,0.962],
+[17,2,"thick","spike","spiral","conduit",2,0,0,0.974],
+[18,2,"rail","spike","halo","conduit",3,0,0,0.986],
+[19,2,"crucible","spike","orb","rune",4,0,0,0.998],
+[20,2,"titan","spike","diamond","rune",2,0,0,0.950],
+[21,2,"box","drum","star","rune",3,0,0,0.962],
+[22,2,"taper","drum","piston","rune",4,0,0,0.974],
+[23,2,"hex","drum","spiral","rune",2,0,0,0.986],
+[24,2,"wedge","drum","halo","rune",3,0,0,0.998],
+[25,2,"arrow","drum","orb","rune",4,0,0,0.950],
+[26,3,"diamond","claw","diamond","rune",5,1,1,1.012],
+[27,3,"thick","claw","star","rune",6,1,1,1.024],
+[28,3,"rail","claw","piston","piston",7,1,1,1.036],
+[29,3,"crucible","claw","spiral","piston",8,1,1,1.048],
+[30,3,"titan","claw","halo","piston",5,1,1,1.000],
+[31,3,"box","fork","orb","piston",6,1,1,1.012],
+[32,3,"taper","fork","diamond","piston",7,1,1,1.024],
+[33,3,"hex","fork","star","piston",8,1,1,1.036],
+[34,3,"wedge","fork","piston","piston",5,1,1,1.048],
+[35,3,"arrow","fork","spiral","piston",6,1,1,1.000],
+[36,3,"diamond","coil","halo","piston",7,1,1,1.012],
+[37,3,"thick","coil","orb","blade",8,1,1,1.024],
+[38,3,"rail","coil","diamond","blade",5,1,1,1.036],
+[39,3,"crucible","coil","star","blade",6,1,1,1.048],
+[40,3,"titan","coil","piston","blade",7,1,1,1.000],
+[41,4,"box","crown","spiral","blade",9,3,2,1.112],
+[42,4,"taper","crown","halo","blade",10,3,2,1.124],
+[43,4,"hex","crown","orb","blade",11,3,2,1.136],
+[44,4,"wedge","crown","diamond","blade",12,3,2,1.148],
+[45,4,"arrow","crown","star","blade",13,3,2,1.100],
+[46,4,"diamond","nova","piston","cell",14,3,3,1.112],
+[47,4,"thick","nova","spiral","cell",15,3,3,1.124],
+[48,4,"rail","nova","halo","cell",16,3,3,1.136],
+[49,4,"crucible","nova","orb","cell",17,3,3,1.148],
+[50,4,"titan","nova","diamond","cell",18,3,3,1.100]
+];
+/* ===== 武器配色表（19 套，暗夜霓虹 + 赛博重工） ===== */
+var WEP_PAL=[
+ {m:"#2a2f55",h:"#8fb8d8",e:"#ff00aa",e2:"#00f2ff"}, //0 冷钢+品红
+ {m:"#1a2040",h:"#7fdcff",e:"#00f2ff",e2:"#ffe600"}, //1 深蓝+青
+ {m:"#241a10",h:"#ffb066",e:"#ff8a5b",e2:"#ffe600"}, //2 锈铜+橙
+ {m:"#140a20",h:"#c98bff",e:"#b026ff",e2:"#ff00aa"}, //3 紫钢
+ {m:"#0a2018",h:"#6dffb0",e:"#3aff7a",e2:"#00f2ff"}, //4 军绿+翠
+ {m:"#1a0a10",h:"#ff8aa8",e:"#ff2a6d",e2:"#ffe600"}, //5 暗红
+ {m:"#0a0a1a",h:"#9fb8ff",e:"#7c3aed",e2:"#00f2ff"}, //6 靛蓝+紫
+ {m:"#180c00",h:"#ffc680",e:"#ff6600",e2:"#ffe600"}, //7 琥珀
+ {m:"#0a1218",h:"#8ff0ff",e:"#00ccff",e2:"#b026ff"}, //8 冰蓝
+ {m:"#1a0010",h:"#ffb0d8",e:"#ff00cc",e2:"#ffe600"}, //9 霓虹粉
+ {m:"#001a14",h:"#80ffd8",e:"#00ff88",e2:"#00f2ff"}, //10 赛博翠
+ {m:"#160a00",h:"#ffd080",e:"#ff9900",e2:"#ff2a6d"}, //11 熔金
+ {m:"#0a0018",h:"#b0a8ff",e:"#7c3aed",e2:"#ff00aa"}, //12 深紫
+ {m:"#0a0008",h:"#ffa0ff",e:"#ff00ff",e2:"#00f2ff"}, //13 品红
+ {m:"#000a18",h:"#80c8ff",e:"#00aaff",e2:"#ffe600"}, //14 苍穹
+ {m:"#101000",h:"#e8ff80",e:"#ccff00",e2:"#ff6600"}, //15 荧黄
+ {m:"#1a0a00",h:"#ffb080",e:"#ff4400",e2:"#ffe600"}, //16 炽红
+ {m:"#001018",h:"#80f0ff",e:"#00e5ff",e2:"#ff00aa"}, //17 极光
+ {m:"#0c0010",h:"#ffc0ff",e:"#ff00aa",e2:"#7c3aed"}  //18 终极紫红
+];
+
+/* ===== 离屏发光缓存（禁止每帧 shadowBlur） ===== */
+var _glowCache={};
+function wepGlow(color,r){
+  var k=color+"|"+r;
+  if(_glowCache[k])return _glowCache[k];
+  var c=document.createElement("canvas");
+  var sz=Math.ceil(r*2.4);c.width=sz;c.height=sz;
+  var g=c.getContext("2d");
+  var rg=g.createRadialGradient(sz/2,sz/2,r*0.1,sz/2,sz/2,r);
+  rg.addColorStop(0,color);
+  rg.addColorStop(0.42,color);
+  rg.addColorStop(1,"rgba(0,0,0,0)");
+  g.globalAlpha=1;g.fillStyle=rg;
+  g.beginPath();g.arc(sz/2,sz/2,r,0,6.2832);g.fill();
+  _glowCache[k]=c;
+  return c;
+}
+function drawGlowCircle(cx,cy,r,color,alpha){
+  var img=wepGlow(color,r);
+  ctx.globalAlpha=alpha===undefined?1:alpha;
+  ctx.drawImage(img,cx-r*1.2,cy-r*1.2,r*2.4,r*2.4);
+  ctx.globalAlpha=1;
+}
+
+/* ===== 分层武器绘制：图鉴 / 详情 / 局内手持 三处共用 =====
+   参数 L 武器等级；opt.ctx2 指定画布；opt.t 时间偏移
+   绘制坐标：枪口朝 +x，握把在原点附近，枪身 y 范围约 -14..14 */
+function wepDraw(L,c2,opt){
+  var c=c2||ctx;
+  var d=WEP_DEF[Math.max(0,Math.min(49,L-1))];
+  var pal=WEP_PAL[d[6]%WEP_PAL.length];
+  var gen=d[1],body=d[2],mz=d[3],coreT=d[4],decoT=d[5];
+  var sc=d[9];
+  var T=(opt&&opt.t!==undefined)?opt.t:(Date.now()/1000);
+  c.save();
+  c.scale(sc,sc);
+
+  /* --- 层1：外发光轮廓（离屏缓存，非 shadowBlur） --- */
+  var gl=wepGlow(pal.e,34);
+  c.globalAlpha=0.30;
+  c.drawImage(gl,-20*1.2,-20*1.2,68*2.4,44*2.4);
+  c.globalAlpha=1;
+
+  var bw=26+gen*7+(gen===4?10:0);   // 枪身长
+  var bh=7+gen*2.2;                // 枪身半高
+  var mx0=bw;                      // 枪口起点
+
+  /* --- 层2：枪身主体（几何块面 + 倒角 + 明暗分层） --- */
+  var gBody=c.createLinearGradient(-6,-bh,mx0,bh);
+  gBody.addColorStop(0,"#05060c");
+  gBody.addColorStop(0.35,pal.m);
+  gBody.addColorStop(0.62,pal.m);
+  gBody.addColorStop(1,"#02030a");
+  c.fillStyle=gBody;
+  c.beginPath();
+  if(body==="box"){ c.moveTo(-4,-bh);c.lineTo(mx0-2,-bh);c.lineTo(mx0,-bh*0.45);c.lineTo(mx0,bh*0.45);c.lineTo(mx0-2,bh);c.lineTo(-4,bh);c.closePath(); }
+  else if(body==="taper"){ c.moveTo(-5,-bh*0.9);c.lineTo(mx0-9,-bh*0.6);c.lineTo(mx0,-bh*0.35);c.lineTo(mx0,bh*0.35);c.lineTo(mx0-9,bh*0.6);c.lineTo(-5,bh*0.9);c.closePath(); }
+  else if(body==="hex"){ c.moveTo(-3,-bh);c.lineTo(mx0-8,-bh);c.lineTo(mx0,-bh*0.2);c.lineTo(mx0,bh*0.2);c.lineTo(mx0-8,bh);c.lineTo(-3,bh);c.closePath(); }
+  else if(body==="wedge"){ c.moveTo(-5,-bh*0.8);c.lineTo(mx0-12,-bh);c.lineTo(mx0,-bh*0.3);c.lineTo(mx0,bh*0.3);c.lineTo(mx0-12,bh);c.lineTo(-5,bh*0.8);c.closePath(); }
+  else if(body==="arrow"){ c.moveTo(-4,-bh*0.7);c.lineTo(mx0*0.55,-bh);c.lineTo(mx0,-bh*0.25);c.lineTo(mx0,bh*0.25);c.lineTo(mx0*0.55,bh);c.lineTo(-4,bh*0.7);c.closePath(); }
+  else if(body==="diamond"){ c.moveTo(-2,0);c.lineTo(mx0*0.3,-bh);c.lineTo(mx0-6,-bh*0.85);c.lineTo(mx0,0);c.lineTo(mx0-6,bh*0.85);c.lineTo(mx0*0.3,bh);c.closePath(); }
+  else if(body==="thick"){ c.moveTo(-6,-bh*1.15);c.lineTo(mx0-4,-bh*1.05);c.lineTo(mx0,-bh*0.4);c.lineTo(mx0,bh*0.4);c.lineTo(mx0-4,bh*1.05);c.lineTo(-6,bh*1.15);c.closePath(); }
+  else if(body==="rail"){ c.moveTo(-4,-bh);c.lineTo(mx0*0.6,-bh*1.25);c.lineTo(mx0,-bh*0.5);c.lineTo(mx0,bh*0.5);c.lineTo(mx0*0.6,bh*1.25);c.lineTo(-4,bh);c.closePath(); }
+  else if(body==="crucible"){ c.moveTo(-3,-bh*1.1);c.lineTo(mx0*0.4,-bh*1.1);c.lineTo(mx0,-bh*0.75);c.lineTo(mx0,bh*0.75);c.lineTo(mx0*0.4,bh*1.1);c.lineTo(-3,bh*1.1);c.closePath(); }
+  else { c.moveTo(-6,-bh*1.2);c.lineTo(mx0*0.5,-bh*1.3);c.lineTo(mx0,-bh*0.6);c.lineTo(mx0,bh*0.6);c.lineTo(mx0*0.5,bh*1.3);c.lineTo(-6,bh*1.2);c.closePath(); }
+  c.fill();
+  // 顶部高光（倒角）
+  c.fillStyle="rgba(255,255,255,.14)";
+  c.beginPath();c.moveTo(-4,-bh);c.lineTo(mx0-6,-bh*0.62);c.lineTo(mx0-6,-bh*0.28);c.lineTo(-4,-bh*0.62);c.closePath();c.fill();
+  // 底部暗面
+  c.fillStyle="rgba(0,0,0,.42)";
+  c.beginPath();c.moveTo(-4,bh);c.lineTo(mx0-6,bh*0.62);c.lineTo(mx0-6,bh*0.25);c.lineTo(-4,bh*0.62);c.closePath();c.fill();
+  // 描边
+  c.strokeStyle=pal.h;c.globalAlpha=0.5;c.lineWidth=0.8;c.stroke();c.globalAlpha=1;
+
+  /* --- 层3：握把 + 扳机（工业感） --- */
+  c.fillStyle="#08080f";
+  c.beginPath();c.moveTo(-1,-bh*0.2);c.lineTo(-6,bh*1.9);c.lineTo(-13,bh*1.9);c.lineTo(-9,-bh*0.2);c.closePath();c.fill();
+  c.fillStyle=pal.h;c.globalAlpha=0.35;
+  c.fillRect(-7,bh*0.5,4,Math.max(2,bh*0.9));c.globalAlpha=1;
+  // 扳机护圈
+  c.strokeStyle=pal.m;c.lineWidth=1.4;
+  c.beginPath();c.arc(2,bh*1.05,bh*0.55,0.1,Math.PI*0.95);c.stroke();
+
+  /* --- 层4：装饰细节（散热槽 / 导管 / 符文 / 活塞 / 刃片 / 电池） --- */
+  c.globalAlpha=0.9;
+  if(decoT==="vent"){ for(var i=0;i<3+gen;i++){ c.fillStyle="rgba(0,0,0,.55)"; c.fillRect(4+i*(4+gen),-bh*0.55,2.2,bh*0.75);} }
+  else if(decoT==="conduit"){ c.strokeStyle=pal.e2;c.lineWidth=1.1;c.globalAlpha=0.75; c.beginPath();c.moveTo(3,bh*0.72); for(var i=0;i<5;i++){c.lineTo(3+i*bw/5,bh*(i%2?0.72:0.42));} c.stroke();c.globalAlpha=1; }
+  else if(decoT==="rune"){ c.strokeStyle=pal.e2;c.lineWidth=1;c.globalAlpha=0.6; for(var i=0;i<3;i++){var rx=8+i*(6+gen*1.5); c.beginPath();c.moveTo(rx,-bh*0.3);c.lineTo(rx+2,0);c.lineTo(rx,bh*0.3);c.lineTo(rx-2,0);c.closePath();c.stroke();} c.globalAlpha=1; }
+  else if(decoT==="piston"){ c.fillStyle=pal.h;c.globalAlpha=0.4; for(var i=0;i<2;i++){ var px=6+i*(10+gen*2); c.fillRect(px,-bh*1.45,3,bh*0.8); c.fillStyle="rgba(0,0,0,.5)";c.fillRect(px,-bh*1.45,3,2); c.fillStyle=pal.h;} c.globalAlpha=1; }
+  else if(decoT==="blade"){ c.fillStyle=pal.e;c.globalAlpha=0.55; for(var i=0;i<2;i++){ var bx=10+i*(9+gen*2); c.beginPath();c.moveTo(bx,-bh);c.lineTo(bx+6,-bh*0.5);c.lineTo(bx+2,-bh);c.closePath();c.fill();} c.globalAlpha=1; }
+  else { for(var i=0;i<2+gen;i++){ var cx2=8+i*(7+gen); c.fillStyle=i%2?pal.e:pal.e2; c.globalAlpha=0.42; c.fillRect(cx2,bh*0.35,3,3.5); } c.globalAlpha=1; }
+
+  /* --- 层5：能量核心（脉动呼吸） --- */
+  var puls=0.55+0.45*Math.sin(T*3.1+L);
+  var coreX=bw*0.42, coreY=0, coreR=(2.6+gen*1.15)*(0.88+puls*0.25);
+  drawGlowCircle(coreX,coreY,coreR*3.1,pal.e,0.55*puls);
+  if(coreT==="orb"){ c.fillStyle=pal.e;c.beginPath();c.arc(coreX,coreY,coreR,0,6.2832);c.fill(); c.fillStyle="rgba(255,255,255,.92)";c.beginPath();c.arc(coreX-coreR*0.25,coreY-coreR*0.25,coreR*0.42,0,6.2832);c.fill(); }
+  else if(coreT==="diamond"){ c.fillStyle=pal.e;c.beginPath();c.moveTo(coreX,coreY-coreR*1.45);c.lineTo(coreX+coreR*0.9,coreY);c.lineTo(coreX,coreY+coreR*1.45);c.lineTo(coreX-coreR*0.9,coreY);c.closePath();c.fill(); c.fillStyle="rgba(255,255,255,.85)";c.beginPath();c.arc(coreX,coreY,coreR*0.38,0,6.2832);c.fill(); }
+  else if(coreT==="star"){ c.fillStyle=pal.e;c.beginPath(); for(var i=0;i<10;i++){var a=i*Math.PI/5-Math.PI/2; var rr=i%2?coreR*0.5:coreR*1.6; c.lineTo(coreX+Math.cos(a)*rr,coreY+Math.sin(a)*rr);} c.closePath();c.fill(); }
+  else if(coreT==="piston"){ c.fillStyle=pal.e;c.fillRect(coreX-coreR,coreY-coreR*0.55,coreR*2,coreR*1.1); c.fillStyle="rgba(255,255,255,.8)";c.fillRect(coreX-coreR*0.3,coreY-coreR*0.28,coreR*0.6,coreR*0.56); }
+  else if(coreT==="spiral"){ c.strokeStyle=pal.e;c.lineWidth=1.8;c.beginPath(); for(var i=0;i<=26;i++){var a=i/26*Math.PI*4+T*1.6; var rr=coreR*(i/26*1.25); c.lineTo(coreX+Math.cos(a)*rr,coreY+Math.sin(a)*rr);} c.stroke(); c.fillStyle=pal.e2;c.beginPath();c.arc(coreX,coreY,coreR*0.4,0,6.2832);c.fill(); }
+  else { c.strokeStyle=pal.e;c.lineWidth=1.7;c.beginPath();c.arc(coreX,coreY,coreR*1.15,0,6.2832);c.stroke(); c.strokeStyle=pal.e2;c.lineWidth=1.1;c.beginPath();c.arc(coreX,coreY,coreR*0.6,T*2,T*2+4.2);c.stroke(); c.fillStyle="rgba(255,255,255,.9)";c.beginPath();c.arc(coreX,coreY,coreR*0.3,0,6.2832);c.fill(); }
+
+  /* --- 层6：枪口装置（10 种形态差异化） --- */
+  var mlen=6+gen*2.4;
+  c.fillStyle=pal.m;
+  if(mz==="tube"){ c.fillRect(mx0-2,-bh*0.42,mlen,bh*0.84); c.fillStyle=pal.e;c.fillRect(mx0+mlen-2.5,-bh*0.26,2.5,bh*0.52); }
+  else if(mz==="split"){ c.fillRect(mx0-2,-bh*0.62,mlen*0.85,bh*0.42); c.fillRect(mx0-2,bh*0.2,mlen*0.85,bh*0.42); c.fillStyle=pal.e;c.fillRect(mx0+mlen*0.85-2.5,-bh*0.5,2.5,bh*0.32);c.fillRect(mx0+mlen*0.85-2.5,bh*0.18,2.5,bh*0.32); }
+  else if(mz==="ring"){ c.beginPath();c.arc(mx0+mlen*0.5,0,bh*0.85,0,6.2832);c.fill(); c.fillStyle="#02030a";c.beginPath();c.arc(mx0+mlen*0.5,0,bh*0.5,0,6.2832);c.fill(); c.strokeStyle=pal.e;c.lineWidth=1.8;c.beginPath();c.arc(mx0+mlen*0.5,0,bh*0.72,T*2,T*2+4.6);c.stroke(); }
+  else if(mz==="spike"){ c.beginPath();c.moveTo(mx0,-bh*0.7);c.lineTo(mx0+mlen*1.5,0);c.lineTo(mx0,bh*0.7);c.closePath();c.fill(); c.fillStyle=pal.e;c.beginPath();c.moveTo(mx0+mlen*0.6,-bh*0.2);c.lineTo(mx0+mlen*1.5,0);c.lineTo(mx0+mlen*0.6,bh*0.2);c.closePath();c.fill(); }
+  else if(mz==="drum"){ c.beginPath();c.arc(mx0+mlen*0.35,0,bh*0.9,0,6.2832);c.fill(); for(var i=0;i<6;i++){ var a=i*Math.PI/3+T*1.4; c.fillStyle=i%2?pal.e:pal.e2; c.beginPath();c.arc(mx0+mlen*0.35+Math.cos(a)*bh*0.55,Math.sin(a)*bh*0.55,1.6,0,6.2832);c.fill();} }
+  else if(mz==="claw"){ for(var i=-1;i<=1;i++){ c.fillStyle=pal.m; c.beginPath();c.moveTo(mx0,i*bh*0.5);c.lineTo(mx0+mlen*1.25,i*bh*0.95);c.lineTo(mx0+mlen*0.9,i*bh*0.28);c.closePath();c.fill(); } c.fillStyle=pal.e;c.fillRect(mx0+mlen*0.7,-2,3,4); }
+  else if(mz==="fork"){ c.fillRect(mx0-2,-bh*0.55,mlen,bh*0.32);c.fillRect(mx0-2,bh*0.23,mlen,bh*0.32); c.strokeStyle=pal.e2;c.lineWidth=1.3;c.beginPath();c.moveTo(mx0+mlen*0.5,-bh*0.4);c.lineTo(mx0+mlen*1.2,0);c.lineTo(mx0+mlen*0.5,bh*0.4);c.stroke(); }
+  else if(mz==="coil"){ for(var i=0;i<4;i++){ c.strokeStyle=i%2?pal.e:pal.h;c.lineWidth=1.7;c.beginPath();c.arc(mx0+i*2.1,0,bh*0.72,0,6.2832);c.stroke(); } }
+  else if(mz==="crown"){ c.fillRect(mx0-2,-bh*0.4,mlen*0.7,bh*0.8); for(var i=-2;i<=2;i++){ c.fillStyle=i%2?pal.e:pal.m; c.beginPath();c.moveTo(mx0+mlen*0.6,i*bh*0.3);c.lineTo(mx0+mlen*1.2,i*bh*0.42);c.lineTo(mx0+mlen*1.2,i*bh*0.12);c.closePath();c.fill(); } }
+  else { drawGlowCircle(mx0+mlen*0.6,0,bh*1.5,pal.e,0.6); c.fillStyle="rgba(255,255,255,.95)";c.beginPath();c.arc(mx0+mlen*0.6,0,bh*0.42,0,6.2832);c.fill(); c.strokeStyle=pal.e2;c.lineWidth=1.5;c.beginPath();c.arc(mx0+mlen*0.6,0,bh*0.95,T*3,T*3+5.2);c.stroke(); }
+
+  /* --- 层7：悬浮部件 + 能量环（高级以上） --- */
+  if(d[7]>0){ for(var i=0;i<d[7];i++){ var fa=T*1.7+i*2.094; var fx=bw*0.5+Math.cos(fa)*7, fy=Math.sin(fa)*bh*1.9; c.fillStyle=pal.e2;c.globalAlpha=0.85; c.beginPath();c.moveTo(fx,fy-2.2);c.lineTo(fx+2.6,fy);c.lineTo(fx,fy+2.2);c.lineTo(fx-2.6,fy);c.closePath();c.fill(); c.globalAlpha=1; } }
+  if(d[8]>0){ for(var i=0;i<d[8];i++){ c.strokeStyle=i%2?pal.e:pal.e2; c.globalAlpha=0.42; c.lineWidth=1.5; c.beginPath(); c.arc(coreX,0,coreR*2.4+i*5.5,T*(i%2?1:-1.4)+i,T*(i%2?1:-1.4)+i+4.4); c.stroke(); c.globalAlpha=1; } }
+
+  /* --- 层8：终极武器额外装甲板 --- */
+  if(gen===4){ c.fillStyle=pal.m;c.globalAlpha=0.95; c.beginPath();c.moveTo(-8,-bh*1.5);c.lineTo(bw*0.35,-bh*1.75);c.lineTo(bw*0.35,-bh*1.15);c.lineTo(-8,-bh*1.0);c.closePath();c.fill(); c.beginPath();c.moveTo(-8,bh*1.5);c.lineTo(bw*0.35,bh*1.75);c.lineTo(bw*0.35,bh*1.15);c.lineTo(-8,bh*1.0);c.closePath();c.fill(); c.globalAlpha=1; c.strokeStyle=pal.e;c.globalAlpha=0.5;c.lineWidth=1;c.stroke();c.globalAlpha=1; }
+
+  c.restore();
+  return {muzzleX:mx0*sc, muzzleY:0, len:bw*sc};
+}
+
+/* 抓取当前等级武器数据（供其他地方查枪口位置） */
+function wepInfo(L){
+  var d=WEP_DEF[Math.max(0,Math.min(49,L-1))];
+  var bw=26+d[1]*7+(d[1]===4?10:0);
+  return {len:bw*d[9], sc:d[9], pal:WEP_PAL[d[6]%WEP_PAL.length], gen:d[1]};
+}
+
 function drawGun(){
-var L=gunLevel;
-if(L===1){ctx.shadowBlur=(FQ>=2?10:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#2a2f55";ctx.fillRect(2,8,16,6);ctx.fillStyle="#ff00aa";ctx.fillRect(16,9,8,3.5);ctx.fillStyle="#00f2ff";ctx.fillRect(8,3,5,5);ctx.fillStyle="#ff00aa";ctx.fillRect(4,14,4,4)}
-else if(L===2){ctx.shadowBlur=(FQ>=2?12:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#2a2f55";ctx.fillRect(2,8,20,7);ctx.fillStyle="#ff00aa";ctx.fillRect(20,8,12,3);ctx.fillRect(20,12,12,3);ctx.fillStyle="#00f2ff";ctx.fillRect(6,3,7,6);ctx.fillStyle="#ffe600";ctx.fillRect(24,6,4,2);ctx.fillStyle="#ff00aa";ctx.fillRect(4,14,4,5)}
-else if(L===3){ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#00f2ff";ctx.fillStyle="#1a2040";ctx.fillRect(0,8,26,7);ctx.fillStyle="#00f2ff";ctx.fillRect(24,9.5,14,4);ctx.fillStyle="#ff00aa";ctx.fillRect(4,3,8,4);ctx.fillStyle="#ffe600";ctx.fillRect(10,6,10,2);var core=0.5+Math.sin(Date.now()/120)*0.5;ctx.fillStyle="rgba(0,242,255,"+(0.5+core*0.5)+")";ctx.fillRect(12,9,8,5);ctx.fillStyle="#2a2f55";ctx.fillRect(2,14,4,5)}
-else if(L===4){ctx.shadowBlur=(FQ>=2?20:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#16102e";ctx.fillRect(-2,7,28,9);ctx.fillStyle="#ff00aa";ctx.fillRect(24,8,16,7);ctx.fillStyle="#b026ff";ctx.fillRect(38,9.5,6,4);ctx.save();ctx.translate(18,11);ctx.rotate(Date.now()/180);ctx.strokeStyle="#ffe600";ctx.lineWidth=2;ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#ffe600";ctx.beginPath();ctx.arc(0,0,8,0,Math.PI*1.5);ctx.stroke();ctx.beginPath();ctx.arc(0,0,4.5,Math.PI,Math.PI*2.5);ctx.stroke();ctx.restore();var pulse=0.5+Math.sin(Date.now()/100)*0.5;ctx.shadowBlur=(FQ>=2?12:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="rgba(255,0,170,"+(0.4+pulse*0.6)+")";ctx.beginPath();ctx.moveTo(2,7);ctx.lineTo(5,2);ctx.lineTo(8,7);ctx.closePath();ctx.fill();ctx.fillStyle="#00f2ff";ctx.fillRect(0,3,7,4);ctx.fillStyle="#16102e";ctx.fillRect(0,15,4,5)}
-else if(L===5){ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#ff8a5b";ctx.fillStyle="#3a2000";ctx.fillRect(0,6,22,10);ctx.fillStyle="#ff8a5b";ctx.fillRect(20,7,12,8);ctx.fillStyle="#ffe600";ctx.fillRect(30,9,5,4);var fp=0.5+Math.sin(Date.now()/70)*0.5;ctx.fillStyle="rgba(255,80,0,"+(0.4+fp*0.6)+")";ctx.beginPath();ctx.arc(12,11,4+fp*2,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ff2a6d";ctx.fillRect(4,2,8,4);ctx.fillStyle="#3a2000";ctx.fillRect(2,15,4,5)}
-else if(L===6){ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#7fdcff";ctx.fillStyle="#0a2a3a";ctx.fillRect(0,7,24,8);ctx.fillStyle="#7fdcff";ctx.fillRect(22,5,14,3);ctx.fillRect(22,13,14,3);ctx.fillStyle="#fff";ctx.fillRect(24,9,10,3);var ic=0.5+Math.sin(Date.now()/150)*0.5;ctx.fillStyle="rgba(255,255,255,"+(0.3+ic*0.7)+")";ctx.beginPath();ctx.moveTo(10,2);ctx.lineTo(13,8);ctx.lineTo(7,8);ctx.closePath();ctx.fill();ctx.fillStyle="#7fdcff";ctx.fillRect(2,14,4,5)}
-else if(L===7){ctx.shadowBlur=(FQ>=2?18:0);ctx.shadowColor="#b026ff";ctx.fillStyle="#1a0a30";ctx.fillRect(-4,7,34,7);ctx.fillStyle="#b026ff";ctx.fillRect(28,9,22,3);ctx.fillStyle="#fff";ctx.fillRect(46,9.5,4,2);ctx.fillStyle="#7c3aed";ctx.fillRect(2,2,10,4);ctx.fillStyle="#ffe600";ctx.fillRect(14,5,8,2);var lp=0.5+Math.sin(Date.now()/90)*0.5;ctx.fillStyle="rgba(176,38,255,"+(0.4+lp*0.6)+")";ctx.fillRect(8,9,14,4);ctx.fillStyle="#1a0a30";ctx.fillRect(-2,14,4,5)}
-else if(L===8){ctx.shadowBlur=(FQ>=2?22:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#0d0620";ctx.fillRect(-4,5,32,11);ctx.fillStyle="#ff00aa";ctx.fillRect(26,7,18,7);ctx.fillStyle="#fff";ctx.fillRect(42,8.5,5,4);ctx.save();ctx.translate(14,10);ctx.rotate(Date.now()/120);ctx.strokeStyle="#ffe600";ctx.lineWidth=2;ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#ffe600";ctx.beginPath();ctx.arc(0,0,9,0,Math.PI*1.6);ctx.stroke();ctx.strokeStyle="#00f2ff";ctx.beginPath();ctx.arc(0,0,5.5,Math.PI*0.5,Math.PI*2.1);ctx.stroke();ctx.restore();ctx.save();ctx.translate(30,10);ctx.rotate(-Date.now()/90);ctx.strokeStyle="#ff00aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*1.8);ctx.stroke();ctx.restore();var qp=0.5+Math.sin(Date.now()/80)*0.5;ctx.fillStyle="rgba(255,230,0,"+(0.3+qp*0.7)+")";ctx.beginPath();ctx.moveTo(2,5);ctx.lineTo(5,0);ctx.lineTo(8,5);ctx.closePath();ctx.fill();ctx.fillStyle="#0d0620";ctx.fillRect(-2,15,4,5)}
-else if(L===9){ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#3aff7a";ctx.fillStyle="#0a2010";ctx.fillRect(0,6,24,10);ctx.fillStyle="#3aff7a";ctx.fillRect(22,7,14,8);ctx.fillStyle="#fff";ctx.fillRect(34,9.5,4,3);var dp=0.5+Math.sin(Date.now()/200)*0.5;ctx.fillStyle="rgba(58,255,122,"+(0.4+dp*0.5)+")";ctx.beginPath();ctx.arc(14,16+dp*3,2.5,0,Math.PI*2);ctx.fill();ctx.fillStyle="#3aff7a";ctx.fillRect(6,2,8,3);ctx.fillStyle="#0a2010";ctx.fillRect(2,15,4,5)}
-else if(L===10){ctx.shadowBlur=(FQ>=2?18:0);ctx.shadowColor="#00f2ff";ctx.fillStyle="#001830";ctx.fillRect(-2,6,30,10);ctx.fillStyle="#00f2ff";ctx.fillRect(26,8,16,6);for(var wi=0;wi<3;wi++){var wv=0.5+Math.sin(Date.now()/80+wi*1.2)*0.5;ctx.fillStyle="rgba(0,242,255,"+(0.3+wv*0.5)+")";ctx.fillRect(4+wi*8,8+Math.sin(Date.now()/60+wi)*2,6,4)}ctx.fillStyle="#fff";ctx.fillRect(40,9,4,3);ctx.fillStyle="#00f2ff";ctx.fillRect(0,3,8,3);ctx.fillStyle="#001830";ctx.fillRect(-2,15,4,5)}
-else if(L===11){ctx.shadowBlur=(FQ>=2?20:0);ctx.shadowColor="#ff2a6d";ctx.fillStyle="#1a0008";ctx.fillRect(-4,5,36,12);ctx.fillStyle="#ff2a6d";ctx.fillRect(30,7,20,8);ctx.fillStyle="#ff8a5b";ctx.fillRect(48,9,6,4);ctx.save();ctx.translate(16,11);ctx.rotate(Date.now()/100);ctx.strokeStyle="#ff2a6d";ctx.lineWidth=2;ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#ff2a6d";ctx.beginPath();ctx.arc(0,0,7,0,Math.PI*1.3);ctx.stroke();ctx.beginPath();ctx.arc(0,0,4,Math.PI*0.5,Math.PI*2);ctx.stroke();ctx.restore();var cp=0.5+Math.sin(Date.now()/90)*0.5;ctx.fillStyle="rgba(255,42,109,"+(0.3+cp*0.7)+")";ctx.beginPath();ctx.moveTo(2,5);ctx.lineTo(5,0);ctx.lineTo(8,5);ctx.closePath();ctx.fill();ctx.fillStyle="#ff8a5b";ctx.fillRect(2,2,6,3);ctx.fillStyle="#1a0008";ctx.fillRect(-4,16,4,5)}
-else if(L===12){ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#fff";ctx.fillStyle="#080020";ctx.fillRect(-4,7,28,10);ctx.fillStyle="#ffe600";ctx.fillRect(22,8,14,3);ctx.fillStyle="#ff00aa";ctx.fillRect(22,12,14,3);ctx.fillStyle="#7fdcff";ctx.fillRect(22,15,14,3);ctx.fillStyle="#fff";ctx.fillRect(34,9,3,6);ctx.save();ctx.translate(12,11);ctx.rotate(Date.now()/80);ctx.strokeStyle="#ffe600";ctx.lineWidth=2;ctx.shadowBlur=(FQ>=2?12:0);ctx.beginPath();ctx.arc(0,0,7,0,4.71);ctx.stroke();ctx.restore();ctx.fillStyle="#080020";ctx.fillRect(-2,16,4,4)}
-else if(L===13){ctx.shadowBlur=(FQ>=2?14:0);ctx.shadowColor="#ff2a6d";ctx.fillStyle="#ff2a6d";ctx.beginPath();ctx.moveTo(0,6);ctx.lineTo(10,4);ctx.lineTo(12,11);ctx.lineTo(10,18);ctx.lineTo(0,16);ctx.closePath();ctx.fill();ctx.fillStyle="#0a0004";ctx.beginPath();ctx.moveTo(2,8);ctx.lineTo(9,6.5);ctx.lineTo(10.5,11);ctx.lineTo(9,15.5);ctx.lineTo(2,14);ctx.closePath();ctx.fill();ctx.fillStyle="#ff8a5b";ctx.beginPath();ctx.moveTo(11,7);ctx.lineTo(26,8);ctx.lineTo(26,11);ctx.lineTo(11,12);ctx.closePath();ctx.fill();ctx.fillStyle="#ff2a6d";ctx.beginPath();ctx.moveTo(11,11);ctx.lineTo(26,12);ctx.lineTo(26,15);ctx.lineTo(11,16);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(26,9);ctx.lineTo(31,11);ctx.lineTo(26,13);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.fillRect(0,1,2,5);ctx.fillRect(4,0,2,5)}
-else if(L===14){ctx.shadowBlur=(FQ>=2?16:0);ctx.shadowColor="#7fdcff";ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.moveTo(4,5);ctx.lineTo(9,1);ctx.lineTo(14,5);ctx.lineTo(14,17);ctx.lineTo(9,21);ctx.lineTo(4,17);ctx.closePath();ctx.fill();ctx.fillStyle="#000610";ctx.beginPath();ctx.moveTo(6,7);ctx.lineTo(9,4);ctx.lineTo(12,7);ctx.lineTo(12,15);ctx.lineTo(9,18);ctx.lineTo(6,15);ctx.closePath();ctx.fill();ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.moveTo(14,7);ctx.lineTo(22,6);ctx.lineTo(22,10);ctx.lineTo(14,10);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(14,12);ctx.lineTo(22,12);ctx.lineTo(22,16);ctx.lineTo(14,16);ctx.closePath();ctx.fill();ctx.fillStyle="#ff2a6d";ctx.fillRect(22,7,8,3);ctx.fillRect(22,13,8,3);ctx.fillStyle="#fff";ctx.fillRect(30,8,3,6);ctx.fillStyle="#ff2a6d";ctx.beginPath();ctx.moveTo(9,-2);ctx.lineTo(12,3);ctx.lineTo(6,3);ctx.closePath();ctx.fill()}
-else if(L===15){ctx.shadowBlur=(FQ>=2?18:0);ctx.shadowColor="#ffe600";ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(8,3);ctx.lineTo(20,3);ctx.lineTo(28,11);ctx.lineTo(20,19);ctx.lineTo(8,19);ctx.closePath();ctx.fill();ctx.fillStyle="#101000";ctx.beginPath();ctx.moveTo(3,11);ctx.lineTo(9,6);ctx.lineTo(18,6);ctx.lineTo(24,11);ctx.lineTo(18,16);ctx.lineTo(9,16);ctx.closePath();ctx.fill();ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(24,7);ctx.lineTo(36,5);ctx.lineTo(40,11);ctx.lineTo(36,17);ctx.lineTo(24,15);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(-6,7);ctx.lineTo(-6,15);ctx.closePath();ctx.fill();ctx.save();ctx.translate(13,11);ctx.rotate(Date.now()/70);ctx.strokeStyle="#ff00aa";ctx.lineWidth=2;ctx.shadowBlur=(FQ>=2?14:0);ctx.beginPath();ctx.arc(0,0,5,0,4.08);ctx.stroke();ctx.restore()}
-else if(L===16){ctx.shadowBlur=(FQ>=2?18:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#ff00aa";for(var sp16=0;sp16<6;sp16++){var a16=sp16*Math.PI/3+Date.now()/900;ctx.beginPath();ctx.moveTo(10+Math.cos(a16)*8,11+Math.sin(a16)*8);ctx.lineTo(10+Math.cos(a16)*15,11+Math.sin(a16)*15);ctx.lineTo(10+Math.cos(a16+0.4)*8,11+Math.sin(a16+0.4)*8);ctx.closePath();ctx.fill()}ctx.fillStyle="#080010";ctx.beginPath();ctx.arc(10,11,8,0,6.28);ctx.fill();ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.arc(10,11,4,0,6.28);ctx.fill();ctx.fillStyle="#ff00aa";ctx.fillRect(18,8,14,3);ctx.fillRect(18,12,14,3);ctx.fillStyle="#fff";ctx.fillRect(31,9,3,5)}
-else if(L===17){ctx.shadowBlur=(FQ>=2?20:0);ctx.shadowColor="#b026ff";ctx.fillStyle="#b026ff";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(6,4);ctx.lineTo(18,4);ctx.lineTo(24,11);ctx.lineTo(18,18);ctx.lineTo(6,18);ctx.closePath();ctx.fill();ctx.fillStyle="#100020";ctx.beginPath();ctx.moveTo(3,11);ctx.lineTo(7,7);ctx.lineTo(16,7);ctx.lineTo(20,11);ctx.lineTo(16,15);ctx.lineTo(7,15);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(20,11);ctx.lineTo(34,7);ctx.lineTo(38,11);ctx.lineTo(34,15);ctx.closePath();ctx.fill();ctx.fillStyle="#b026ff";ctx.beginPath();ctx.moveTo(34,6);ctx.lineTo(40,2);ctx.lineTo(38,11);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(34,16);ctx.lineTo(40,20);ctx.lineTo(38,11);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.fillRect(11,10,3,3)}
-else if(L===18){ctx.shadowBlur=(FQ>=2?20:0);ctx.shadowColor="#ffe600";ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(2,11);ctx.lineTo(10,2);ctx.lineTo(22,2);ctx.lineTo(30,11);ctx.lineTo(22,20);ctx.lineTo(10,20);ctx.closePath();ctx.fill();ctx.fillStyle="#0a0800";ctx.beginPath();ctx.moveTo(6,11);ctx.lineTo(11,6);ctx.lineTo(20,6);ctx.lineTo(25,11);ctx.lineTo(20,16);ctx.lineTo(11,16);ctx.closePath();ctx.fill();ctx.fillStyle="#ff00aa";ctx.fillRect(25,8,16,2);ctx.fillRect(25,12,16,2);ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(41,9);ctx.lineTo(46,11);ctx.lineTo(41,13);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";for(var sp18=0;sp18<3;sp18++){ctx.beginPath();ctx.moveTo(6+sp18*4,2);ctx.lineTo(8+sp18*4,-4);ctx.lineTo(10+sp18*4,2);ctx.closePath();ctx.fill()}}
-else if(L===19){ctx.shadowBlur=(FQ>=2?18:0);ctx.shadowColor="#3aff7a";ctx.fillStyle="#3aff7a";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(6,3);ctx.lineTo(16,3);ctx.lineTo(22,11);ctx.lineTo(16,19);ctx.lineTo(6,19);ctx.closePath();ctx.fill();ctx.fillStyle="#000a04";ctx.beginPath();ctx.moveTo(3,11);ctx.lineTo(7,6);ctx.lineTo(14,6);ctx.lineTo(19,11);ctx.lineTo(14,16);ctx.lineTo(7,16);ctx.closePath();ctx.fill();ctx.fillStyle="#3aff7a";ctx.beginPath();ctx.moveTo(22,6);ctx.lineTo(30,3);ctx.lineTo(32,11);ctx.lineTo(30,19);ctx.lineTo(22,16);ctx.closePath();ctx.fill();ctx.fillStyle="#ff2a6d";ctx.beginPath();ctx.moveTo(32,11);ctx.lineTo(38,8);ctx.lineTo(38,14);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(11,11,3,0,6.28);ctx.fill()}
-else if(L===20){ctx.shadowBlur=(FQ>=2?22:0);ctx.shadowColor="#fff";ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(8,5);ctx.lineTo(20,5);ctx.lineTo(28,11);ctx.lineTo(20,17);ctx.lineTo(8,17);ctx.closePath();ctx.fill();ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(28,7);ctx.lineTo(40,8);ctx.lineTo(42,11);ctx.lineTo(40,14);ctx.lineTo(28,15);ctx.closePath();ctx.fill();ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.arc(34,11,3,0,6.28);ctx.fill();ctx.fillStyle="#000";ctx.beginPath();ctx.moveTo(8,5);ctx.lineTo(4,-3);ctx.lineTo(14,3);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(20,5);ctx.lineTo(24,-3);ctx.lineTo(28,5);ctx.closePath();ctx.fill();ctx.save();ctx.translate(13,11);ctx.rotate(Date.now()/40);for(var ri20=0;ri20<3;ri20++){ctx.strokeStyle=["#ffe600","#ff00aa","#7fdcff"][ri20];ctx.lineWidth=1.5;ctx.shadowBlur=(FQ>=2?14:0);ctx.beginPath();ctx.arc(0,0,4+ri20*3,ri20*1.4,ri20*1.4+4.5);ctx.stroke()}ctx.restore()}
-else if(L===21){ctx.shadowBlur=(FQ>=2?22:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(7,4);ctx.lineTo(18,4);ctx.lineTo(25,11);ctx.lineTo(18,18);ctx.lineTo(7,18);ctx.closePath();ctx.fill();ctx.fillStyle="#0a0008";ctx.beginPath();ctx.moveTo(4,11);ctx.lineTo(8,7);ctx.lineTo(16,7);ctx.lineTo(20,11);ctx.lineTo(16,15);ctx.lineTo(8,15);ctx.closePath();ctx.fill();ctx.fillStyle="#b026ff";ctx.beginPath();ctx.moveTo(25,8);ctx.lineTo(34,4);ctx.lineTo(36,11);ctx.lineTo(34,18);ctx.lineTo(25,14);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(25,4);ctx.lineTo(31,0);ctx.lineTo(28,8);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(25,18);ctx.lineTo(31,22);ctx.lineTo(28,14);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.fillRect(12,10,3,3)}
-else if(L===22){ctx.shadowBlur=(FQ>=2?24:0);ctx.shadowColor="#00f2ff";ctx.fillStyle="#00f2ff";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(5,2);ctx.lineTo(14,2);ctx.lineTo(20,11);ctx.lineTo(14,20);ctx.lineTo(5,20);ctx.closePath();ctx.fill();ctx.fillStyle="#000810";ctx.beginPath();ctx.moveTo(3,11);ctx.lineTo(7,5);ctx.lineTo(12,5);ctx.lineTo(17,11);ctx.lineTo(12,17);ctx.lineTo(7,17);ctx.closePath();ctx.fill();ctx.fillStyle="#00f2ff";ctx.beginPath();ctx.moveTo(20,4);ctx.lineTo(22,0);ctx.lineTo(26,4);ctx.lineTo(24,11);ctx.lineTo(20,11);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(20,18);ctx.lineTo(22,22);ctx.lineTo(26,18);ctx.lineTo(24,11);ctx.lineTo(20,11);ctx.closePath();ctx.fill();ctx.fillStyle="#ff2a6d";ctx.fillRect(26,9,14,4);ctx.fillStyle="#fff";ctx.fillRect(38,10,3,2);for(var bi22=0;bi22<3;bi22++){var bv22=0.5+Math.sin(Date.now()/(60+bi22*40))*0.5;ctx.fillStyle="rgba(0,242,255,"+(0.3+bv22*0.5)+")";ctx.fillRect(4+bi22*4,6,2,10)}}
-else if(L===23){ctx.shadowBlur=(FQ>=2?24:0);ctx.shadowColor="#ffe600";ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(6,3);ctx.lineTo(16,3);ctx.lineTo(22,11);ctx.lineTo(16,19);ctx.lineTo(6,19);ctx.closePath();ctx.fill();ctx.fillStyle="#000600";ctx.beginPath();ctx.moveTo(3,11);ctx.lineTo(7,6);ctx.lineTo(14,6);ctx.lineTo(19,11);ctx.lineTo(14,16);ctx.lineTo(7,16);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";for(var sp23=0;sp23<4;sp23++){ctx.beginPath();ctx.moveTo(6+sp23*4,3);ctx.lineTo(4+sp23*4,-6);ctx.lineTo(8+sp23*4,3);ctx.closePath();ctx.fill()}ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(22,8);ctx.lineTo(34,6);ctx.lineTo(36,11);ctx.lineTo(34,16);ctx.lineTo(22,14);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(30,11,2.5,0,6.28);ctx.fill()}
-else if(L===24){ctx.shadowBlur=(FQ>=2?26:0);ctx.shadowColor="#ff2a6d";ctx.fillStyle="#ff2a6d";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(6,4);ctx.lineTo(18,4);ctx.lineTo(24,11);ctx.lineTo(18,18);ctx.lineTo(6,18);ctx.closePath();ctx.fill();ctx.fillStyle="#080006";ctx.beginPath();ctx.moveTo(3,11);ctx.lineTo(7,7);ctx.lineTo(16,7);ctx.lineTo(20,11);ctx.lineTo(16,15);ctx.lineTo(7,15);ctx.closePath();ctx.fill();ctx.fillStyle="#ff2a6d";ctx.beginPath();ctx.moveTo(24,6);ctx.lineTo(32,2);ctx.lineTo(40,6);ctx.lineTo(32,11);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(24,16);ctx.lineTo(32,20);ctx.lineTo(40,16);ctx.lineTo(32,11);ctx.closePath();ctx.fill();ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.arc(32,11,3.5,0,6.28);ctx.fill();ctx.save();ctx.translate(32,11);ctx.rotate(Date.now()/25);ctx.strokeStyle="#ffe600";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,7,0,4.71);ctx.stroke();ctx.restore()}
-else if(L===25){ctx.shadowBlur=(FQ>=2?26:0);ctx.shadowColor="#fff";ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(7,3);ctx.lineTo(19,3);ctx.lineTo(26,11);ctx.lineTo(19,19);ctx.lineTo(7,19);ctx.closePath();ctx.fill();ctx.fillStyle="#0a0800";ctx.beginPath();ctx.moveTo(4,11);ctx.lineTo(8,6);ctx.lineTo(17,6);ctx.lineTo(22,11);ctx.lineTo(17,16);ctx.lineTo(8,16);ctx.closePath();ctx.fill();ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(26,7);ctx.lineTo(38,4);ctx.lineTo(42,11);ctx.lineTo(38,18);ctx.lineTo(26,15);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";for(var sp25=0;sp25<5;sp25++){var a25=sp25*Math.PI/2.5+Date.now()/700;ctx.beginPath();ctx.moveTo(12+Math.cos(a25)*7,11+Math.sin(a25)*7);ctx.lineTo(12+Math.cos(a25)*14,11+Math.sin(a25)*14);ctx.lineTo(12+Math.cos(a25+0.35)*7,11+Math.sin(a25+0.35)*7);ctx.closePath();ctx.fill()}ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(12,11,4,0,6.28);ctx.fill()}
-else if(L===26){ctx.shadowBlur=(FQ>=2?28:0);ctx.shadowColor="#b026ff";ctx.fillStyle="#b026ff";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(6,3);ctx.lineTo(18,3);ctx.lineTo(24,11);ctx.lineTo(18,19);ctx.lineTo(6,19);ctx.closePath();ctx.fill();ctx.fillStyle="#080020";ctx.beginPath();ctx.moveTo(3,11);ctx.lineTo(7,6);ctx.lineTo(16,6);ctx.lineTo(20,11);ctx.lineTo(16,16);ctx.lineTo(7,16);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(24,8);ctx.lineTo(34,5);ctx.lineTo(36,11);ctx.lineTo(34,17);ctx.lineTo(24,14);ctx.closePath();ctx.fill();ctx.fillStyle="#b026ff";ctx.beginPath();ctx.moveTo(34,3);ctx.lineTo(44,0);ctx.lineTo(38,11);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(34,19);ctx.lineTo(44,22);ctx.lineTo(38,11);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(12,11,3,0,6.28);ctx.fill()}
-else if(L===27){ctx.shadowBlur=(FQ>=2?28:0);ctx.shadowColor="#ffe600";ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(8,4);ctx.lineTo(20,4);ctx.lineTo(28,11);ctx.lineTo(20,18);ctx.lineTo(8,18);ctx.closePath();ctx.fill();ctx.fillStyle="#040000";ctx.beginPath();ctx.moveTo(4,11);ctx.lineTo(9,7);ctx.lineTo(18,7);ctx.lineTo(24,11);ctx.lineTo(18,15);ctx.lineTo(9,15);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(28,5);ctx.lineTo(38,1);ctx.lineTo(42,11);ctx.lineTo(38,21);ctx.lineTo(28,17);ctx.closePath();ctx.fill();ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(42,11);ctx.lineTo(50,7);ctx.lineTo(50,15);ctx.closePath();ctx.fill();ctx.save();ctx.translate(15,11);ctx.rotate(Date.now()/12);ctx.strokeStyle="#fff";ctx.lineWidth=2.5;ctx.shadowBlur=(FQ>=2?20:0);ctx.beginPath();ctx.arc(0,0,8,0,3.46);ctx.stroke();ctx.restore()}
-else if(L===28){ctx.shadowBlur=(FQ>=2?30:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(6,2);ctx.lineTo(18,2);ctx.lineTo(24,11);ctx.lineTo(18,20);ctx.lineTo(6,20);ctx.closePath();ctx.fill();ctx.fillStyle="#020008";ctx.beginPath();ctx.moveTo(3,11);ctx.lineTo(7,5);ctx.lineTo(16,5);ctx.lineTo(20,11);ctx.lineTo(16,17);ctx.lineTo(7,17);ctx.closePath();ctx.fill();for(var sp28=0;sp28<8;sp28++){var a28=sp28*Math.PI/4+Date.now()/600;ctx.fillStyle=sp28%2?"#ff00aa":"#7fdcff";ctx.beginPath();ctx.moveTo(12+Math.cos(a28)*6,11+Math.sin(a28)*6);ctx.lineTo(12+Math.cos(a28)*16,11+Math.sin(a28)*16);ctx.lineTo(12+Math.cos(a28+0.28)*6,11+Math.sin(a28+0.28)*6);ctx.closePath();ctx.fill()}ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(24,11,4,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(12,11,4,0,6.28);ctx.fill()}
-else if(L===29){ctx.shadowBlur=(FQ>=2?30:0);ctx.shadowColor="#7fdcff";ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(7,3);ctx.lineTo(19,3);ctx.lineTo(26,11);ctx.lineTo(19,19);ctx.lineTo(7,19);ctx.closePath();ctx.fill();ctx.fillStyle="#000608";ctx.beginPath();ctx.moveTo(4,11);ctx.lineTo(8,6);ctx.lineTo(17,6);ctx.lineTo(22,11);ctx.lineTo(17,16);ctx.lineTo(8,16);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(26,7);ctx.lineTo(36,3);ctx.lineTo(38,11);ctx.lineTo(36,19);ctx.lineTo(26,15);ctx.closePath();ctx.fill();ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.moveTo(36,5);ctx.lineTo(44,11);ctx.lineTo(36,17);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(40,11,3,0,6.28);ctx.fill();ctx.fillStyle="#ff2a6d";ctx.fillRect(2,4,3,14)}
-else if(L===30){ctx.shadowBlur=(FQ>=2?32:0);ctx.shadowColor="#fff";var g30=ctx.createRadialGradient(16,11,2,16,11,22);g30.addColorStop(0,"#fff");g30.addColorStop(0.4,"#ffe600");g30.addColorStop(1,"transparent");ctx.fillStyle=g30;ctx.beginPath();ctx.arc(16,11,22,0,6.28);ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(8,3);ctx.lineTo(22,3);ctx.lineTo(30,11);ctx.lineTo(22,19);ctx.lineTo(8,19);ctx.closePath();ctx.fill();ctx.fillStyle="#000600";ctx.beginPath();ctx.moveTo(4,11);ctx.lineTo(10,6);ctx.lineTo(20,6);ctx.lineTo(26,11);ctx.lineTo(20,16);ctx.lineTo(10,16);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(15,11,5,0,6.28);ctx.fill();ctx.fillStyle="#ff00aa";ctx.fillRect(30,8,16,3);ctx.fillRect(30,12,16,3);ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(46,9);ctx.lineTo(52,11);ctx.lineTo(46,13);ctx.closePath();ctx.fill()}
-else if(L===31){ctx.shadowBlur=(FQ>=2?32:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(7,3);ctx.lineTo(19,3);ctx.lineTo(26,11);ctx.lineTo(19,19);ctx.lineTo(7,19);ctx.closePath();ctx.fill();ctx.fillStyle="#080004";ctx.beginPath();ctx.moveTo(4,11);ctx.lineTo(8,6);ctx.lineTo(17,6);ctx.lineTo(22,11);ctx.lineTo(17,16);ctx.lineTo(8,16);ctx.closePath();ctx.fill();var g31=ctx.createLinearGradient(26,0,46,0);g31.addColorStop(0,"#ff00aa");g31.addColorStop(0.5,"#b026ff");g31.addColorStop(1,"#7fdcff");ctx.fillStyle=g31;ctx.beginPath();ctx.moveTo(26,7);ctx.lineTo(44,6);ctx.lineTo(48,11);ctx.lineTo(44,16);ctx.lineTo(26,15);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";for(var sp31=0;sp31<3;sp31++){ctx.beginPath();ctx.moveTo(4+sp31*5,3);ctx.lineTo(2+sp31*5,-5);ctx.lineTo(8+sp31*5,3);ctx.closePath();ctx.fill()}ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(13,11,4,0,6.28);ctx.fill()}
-else if(L===32){ctx.shadowBlur=(FQ>=2?34:0);ctx.shadowColor="#fff";var g32=ctx.createRadialGradient(18,11,1,18,11,26);g32.addColorStop(0,"#fff");g32.addColorStop(0.3,"#7fdcff");g32.addColorStop(0.65,"#b026ff");g32.addColorStop(1,"transparent");ctx.fillStyle=g32;ctx.beginPath();ctx.arc(18,11,26,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(9,2);ctx.lineTo(23,2);ctx.lineTo(32,11);ctx.lineTo(23,20);ctx.lineTo(9,20);ctx.closePath();ctx.fill();ctx.fillStyle="#000";ctx.beginPath();ctx.moveTo(5,11);ctx.lineTo(11,5);ctx.lineTo(21,5);ctx.lineTo(27,11);ctx.lineTo(21,17);ctx.lineTo(11,17);ctx.closePath();ctx.fill();ctx.fillStyle="#b026ff";ctx.beginPath();ctx.arc(16,11,6,0,6.28);ctx.fill();for(var sp32=0;sp32<6;sp32++){var a32=sp32*Math.PI/3+Date.now()/800;ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.moveTo(16+Math.cos(a32)*18,11+Math.sin(a32)*18);ctx.lineTo(16+Math.cos(a32+0.5)*18,11+Math.sin(a32+0.5)*18);ctx.lineTo(16+Math.cos(a32+0.25)*26,11+Math.sin(a32+0.25)*26);ctx.closePath();ctx.fill()}ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(16,11,3,0,6.28);ctx.fill()}
-else if(L===33){ctx.shadowBlur=(FQ>=2?34:0);ctx.shadowColor="#ffe600";var g33a=ctx.createLinearGradient(0,0,48,0);g33a.addColorStop(0,"#1a0004");g33a.addColorStop(0.5,"#660011");g33a.addColorStop(1,"#ffe600");ctx.fillStyle=g33a;ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(8,3);ctx.lineTo(20,3);ctx.lineTo(28,11);ctx.lineTo(20,19);ctx.lineTo(8,19);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(28,7);ctx.lineTo(40,4);ctx.lineTo(44,11);ctx.lineTo(40,18);ctx.lineTo(28,15);ctx.closePath();ctx.fill();ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(44,11);ctx.lineTo(54,11);ctx.lineTo(44,11);ctx.closePath();ctx.fill();ctx.fillStyle="#000";ctx.beginPath();ctx.moveTo(44,8);ctx.lineTo(54,11);ctx.lineTo(44,14);ctx.closePath();ctx.fill();ctx.save();ctx.translate(14,11);ctx.rotate(Date.now()/10);ctx.strokeStyle="#ffe600";ctx.lineWidth=2.5;ctx.shadowBlur=(FQ>=2?22:0);ctx.beginPath();ctx.arc(0,0,7,0,3.46);ctx.stroke();ctx.restore();ctx.fillStyle="#ff00aa";ctx.fillRect(6,2,2,4);ctx.fillRect(14,2,2,4);ctx.fillRect(22,2,2,4)}
-else if(L===34){ctx.shadowBlur=(FQ>=2?36:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(7,2);ctx.lineTo(21,2);ctx.lineTo(28,11);ctx.lineTo(21,20);ctx.lineTo(7,20);ctx.closePath();ctx.fill();ctx.fillStyle="#040008";ctx.beginPath();ctx.moveTo(4,11);ctx.lineTo(9,5);ctx.lineTo(19,5);ctx.lineTo(24,11);ctx.lineTo(19,17);ctx.lineTo(9,17);ctx.closePath();ctx.fill();for(var sp34=0;sp34<10;sp34++){var a34=sp34*Math.PI/5+Date.now()/500;ctx.fillStyle=sp34%2?"#ff00aa":"#7fdcff";ctx.beginPath();ctx.moveTo(14+Math.cos(a34)*8,11+Math.sin(a34)*8);ctx.lineTo(14+Math.cos(a34+0.2)*8,11+Math.sin(a34+0.2)*8);ctx.lineTo(14+Math.cos(a34+0.1)*19,11+Math.sin(a34+0.1)*19);ctx.closePath();ctx.fill()}ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(14,11,5,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(14,11,2.5,0,6.28);ctx.fill()}
-else if(L===35){ctx.shadowBlur=(FQ>=2?38:0);ctx.shadowColor="#fff";var g35=ctx.createRadialGradient(20,11,2,20,11,30);g35.addColorStop(0,"#fff");g35.addColorStop(0.2,"#ffe600");g35.addColorStop(0.5,"#ff00aa");g35.addColorStop(0.8,"#b026ff");g35.addColorStop(1,"transparent");ctx.fillStyle=g35;ctx.beginPath();ctx.arc(20,11,30,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(10,1);ctx.lineTo(24,1);ctx.lineTo(34,11);ctx.lineTo(24,21);ctx.lineTo(10,21);ctx.closePath();ctx.fill();ctx.fillStyle="#000";ctx.beginPath();ctx.moveTo(6,11);ctx.lineTo(12,5);ctx.lineTo(22,5);ctx.lineTo(28,11);ctx.lineTo(22,17);ctx.lineTo(12,17);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(17,11,6,0,6.28);ctx.fill();ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.arc(17,11,3,0,6.28);ctx.fill();ctx.save();ctx.translate(17,11);ctx.rotate(Date.now()/8);for(var fi35=0;fi35<4;fi35++){ctx.strokeStyle=["#ffe600","#ff00aa","#7fdcff","#3aff7a"][fi35];ctx.lineWidth=2;ctx.shadowBlur=(FQ>=2?18:0);ctx.beginPath();ctx.arc(0,0,9+fi35*4,fi35*1.4,fi35*1.4+4);ctx.stroke()}ctx.restore()}
-else if(L===36){ctx.shadowBlur=(FQ>=2?38:0);ctx.shadowColor="#b026ff";var g36=ctx.createLinearGradient(0,0,56,0);g36.addColorStop(0,"#060020");g36.addColorStop(0.6,"#b026ff");g36.addColorStop(1,"#ffe600");ctx.fillStyle=g36;ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(8,3);ctx.lineTo(22,3);ctx.lineTo(30,11);ctx.lineTo(22,19);ctx.lineTo(8,19);ctx.closePath();ctx.fill();ctx.fillStyle="#000";ctx.beginPath();ctx.moveTo(4,11);ctx.lineTo(10,6);ctx.lineTo(20,6);ctx.lineTo(26,11);ctx.lineTo(20,16);ctx.lineTo(10,16);ctx.closePath();ctx.fill();ctx.fillStyle="#b026ff";ctx.beginPath();ctx.moveTo(30,6);ctx.lineTo(42,2);ctx.lineTo(48,11);ctx.lineTo(42,20);ctx.lineTo(30,16);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(48,11);ctx.lineTo(56,8);ctx.lineTo(56,14);ctx.closePath();ctx.fill();for(var sp36=0;sp36<5;sp36++){var a36=sp36*Math.PI/2.5+Date.now()/650;ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(15+Math.cos(a36)*7,11+Math.sin(a36)*7);ctx.lineTo(15+Math.cos(a36)*16,11+Math.sin(a36)*16);ctx.lineTo(15+Math.cos(a36+0.3)*7,11+Math.sin(a36+0.3)*7);ctx.closePath();ctx.fill()}ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(15,11,4,0,6.28);ctx.fill()}
-else if(L===37){ctx.shadowBlur=(FQ>=2?40:0);ctx.shadowColor="#7c3aed";var g37=ctx.createRadialGradient(22,11,2,22,11,32);g37.addColorStop(0,"#7c3aed");g37.addColorStop(0.5,"#b026ff");g37.addColorStop(1,"transparent");ctx.fillStyle=g37;ctx.beginPath();ctx.arc(22,11,32,0,6.28);ctx.fill();ctx.fillStyle="#7c3aed";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(9,2);ctx.lineTo(23,2);ctx.lineTo(32,11);ctx.lineTo(23,20);ctx.lineTo(9,20);ctx.closePath();ctx.fill();ctx.fillStyle="#080030";ctx.beginPath();ctx.moveTo(5,11);ctx.lineTo(11,5);ctx.lineTo(21,5);ctx.lineTo(27,11);ctx.lineTo(21,17);ctx.lineTo(11,17);ctx.closePath();ctx.fill();ctx.fillStyle="#b026ff";ctx.beginPath();ctx.moveTo(32,7);ctx.lineTo(44,4);ctx.lineTo(50,11);ctx.lineTo(44,18);ctx.lineTo(32,15);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(16,11,6,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(16,11,3,0,6.28);ctx.fill();ctx.save();ctx.translate(16,11);ctx.rotate(-Date.now()/7);ctx.strokeStyle="#ffe600";ctx.lineWidth=2;ctx.shadowBlur=(FQ>=2?18:0);ctx.beginPath();ctx.arc(0,0,12,0,4.2);ctx.stroke();ctx.restore()}
-else if(L===38){ctx.shadowBlur=(FQ>=2?42:0);ctx.shadowColor="#ff00aa";ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(8,2);ctx.lineTo(22,2);ctx.lineTo(30,11);ctx.lineTo(22,20);ctx.lineTo(8,20);ctx.closePath();ctx.fill();ctx.fillStyle="#100020";ctx.beginPath();ctx.moveTo(4,11);ctx.lineTo(10,5);ctx.lineTo(20,5);ctx.lineTo(26,11);ctx.lineTo(20,17);ctx.lineTo(10,17);ctx.closePath();ctx.fill();for(var sp38=0;sp38<12;sp38++){var a38=sp38*Math.PI/6+Date.now()/450;ctx.fillStyle=sp38%2?"#ff00aa":"#7fdcff";ctx.beginPath();ctx.moveTo(15+Math.cos(a38)*9,11+Math.sin(a38)*9);ctx.lineTo(15+Math.cos(a38+0.15)*9,11+Math.sin(a38+0.15)*9);ctx.lineTo(15+Math.cos(a38+0.075)*22,11+Math.sin(a38+0.075)*22);ctx.closePath();ctx.fill()}ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(15,11,6,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(15,11,3,0,6.28);ctx.fill()}
-else if(L===39){ctx.shadowBlur=(FQ>=2?44:0);ctx.shadowColor="#ffe600";var g39=ctx.createLinearGradient(0,0,60,0);g39.addColorStop(0,"#0a0010");g39.addColorStop(0.5,"#ffe600");g39.addColorStop(1,"#ff00aa");ctx.fillStyle=g39;ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(9,1);ctx.lineTo(25,1);ctx.lineTo(34,11);ctx.lineTo(25,21);ctx.lineTo(9,21);ctx.closePath();ctx.fill();ctx.fillStyle="#0a0010";ctx.beginPath();ctx.moveTo(6,11);ctx.lineTo(12,5);ctx.lineTo(22,5);ctx.lineTo(28,11);ctx.lineTo(22,17);ctx.lineTo(12,17);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(34,4);ctx.lineTo(48,1);ctx.lineTo(54,11);ctx.lineTo(48,21);ctx.lineTo(34,18);ctx.closePath();ctx.fill();ctx.fillStyle="#ff00aa";ctx.fillRect(40,9,14,4);ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(54,11);ctx.lineTo(62,7);ctx.lineTo(62,15);ctx.closePath();ctx.fill();ctx.save();ctx.translate(17,11);ctx.rotate(Date.now()/9);ctx.strokeStyle="#ffe600";ctx.lineWidth=3;ctx.shadowBlur=(FQ>=2?24:0);ctx.beginPath();ctx.arc(0,0,10,0,3.46);ctx.stroke();ctx.restore()}
-else if(L===40){ctx.shadowBlur=(FQ>=2?46:0);ctx.shadowColor="#fff";var g40=ctx.createRadialGradient(22,12,1,22,12,34);g40.addColorStop(0,"#fff");g40.addColorStop(0.15,"#ffe600");g40.addColorStop(0.4,"#ff00aa");g40.addColorStop(0.7,"#b026ff");g40.addColorStop(1,"transparent");ctx.fillStyle=g40;ctx.beginPath();ctx.arc(22,12,34,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(11,1);ctx.lineTo(27,1);ctx.lineTo(38,12);ctx.lineTo(27,23);ctx.lineTo(11,23);ctx.closePath();ctx.fill();ctx.fillStyle="#000";ctx.beginPath();ctx.moveTo(7,12);ctx.lineTo(14,5);ctx.lineTo(24,5);ctx.lineTo(31,12);ctx.lineTo(24,19);ctx.lineTo(14,19);ctx.closePath();ctx.fill();for(var sp40=0;sp40<8;sp40++){var a40=sp40*Math.PI/4+Date.now()/600;ctx.fillStyle=["#ffe600","#ff00aa","#7fdcff","#3aff7a"][sp40%4];ctx.beginPath();ctx.moveTo(19+Math.cos(a40)*14,12+Math.sin(a40)*14);ctx.lineTo(19+Math.cos(a40+0.3)*14,12+Math.sin(a40+0.3)*14);ctx.lineTo(19+Math.cos(a40+0.15)*24,12+Math.sin(a40+0.15)*24);ctx.closePath();ctx.fill()}ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(19,12,7,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(19,12,3.5,0,6.28);ctx.fill()}
-else if(L===41){ctx.shadowBlur=(FQ>=2?46:0);ctx.shadowColor="#ffe600";var g41=ctx.createLinearGradient(0,0,62,0);g41.addColorStop(0,"#020600");g41.addColorStop(0.4,"#ffe600");g41.addColorStop(1,"#ff6600");ctx.fillStyle=g41;ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(10,2);ctx.lineTo(26,2);ctx.lineTo(36,12);ctx.lineTo(26,22);ctx.lineTo(10,22);ctx.closePath();ctx.fill();ctx.fillStyle="#020600";ctx.beginPath();ctx.moveTo(6,12);ctx.lineTo(12,6);ctx.lineTo(22,6);ctx.lineTo(28,12);ctx.lineTo(22,18);ctx.lineTo(12,18);ctx.closePath();ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(36,6);ctx.lineTo(52,2);ctx.lineTo(58,12);ctx.lineTo(52,22);ctx.lineTo(36,18);ctx.closePath();ctx.fill();ctx.fillStyle="#ff6600";ctx.fillRect(44,10,16,4);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(18,12,6,0,6.28);ctx.fill();ctx.fillStyle="#ff6600";ctx.beginPath();ctx.arc(18,12,3,0,6.28);ctx.fill();ctx.save();ctx.translate(18,12);ctx.rotate(Date.now()/6);for(var fi41=0;fi41<3;fi41++){ctx.strokeStyle=["#ffe600","#ff6600","#fff"][fi41];ctx.lineWidth=2.5;ctx.shadowBlur=(FQ>=2?20:0);ctx.beginPath();ctx.arc(0,0,10+fi41*5,fi41*1.4,fi41*1.4+4.2);ctx.stroke()}ctx.restore()}
-else if(L===42){ctx.shadowBlur=(FQ>=2?48:0);ctx.shadowColor="#ff6600";var g42=ctx.createRadialGradient(24,12,2,24,12,36);g42.addColorStop(0,"#ff6600");g42.addColorStop(0.4,"#ffe600");g42.addColorStop(1,"transparent");ctx.fillStyle=g42;ctx.beginPath();ctx.arc(24,12,36,0,6.28);ctx.fill();ctx.fillStyle="#ff6600";ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(11,2);ctx.lineTo(27,2);ctx.lineTo(38,12);ctx.lineTo(27,22);ctx.lineTo(11,22);ctx.closePath();ctx.fill();ctx.fillStyle="#080400";ctx.beginPath();ctx.moveTo(7,12);ctx.lineTo(14,6);ctx.lineTo(24,6);ctx.lineTo(31,12);ctx.lineTo(24,18);ctx.lineTo(14,18);ctx.closePath();ctx.fill();for(var sp42=0;sp42<10;sp42++){var a42=sp42*Math.PI/5+Date.now()/500;ctx.fillStyle=sp42%2?"#ff6600":"#ffe600";ctx.beginPath();ctx.moveTo(19+Math.cos(a42)*8,12+Math.sin(a42)*8);ctx.lineTo(19+Math.cos(a42+0.28)*8,12+Math.sin(a42+0.28)*8);ctx.lineTo(19+Math.cos(a42+0.14)*20,12+Math.sin(a42+0.14)*20);ctx.closePath();ctx.fill()}ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(19,12,6,0,6.28);ctx.fill();ctx.fillStyle="#ff6600";ctx.beginPath();ctx.arc(19,12,3,0,6.28);ctx.fill()}
-else if(L===43){ctx.shadowBlur=(FQ>=2?50:0);ctx.shadowColor="#00ff88";var g43=ctx.createLinearGradient(0,0,66,0);g43.addColorStop(0,"#000a04");g43.addColorStop(0.5,"#00ff88");g43.addColorStop(1,"#ffe600");ctx.fillStyle=g43;ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(10,1);ctx.lineTo(28,1);ctx.lineTo(38,12);ctx.lineTo(28,23);ctx.lineTo(10,23);ctx.closePath();ctx.fill();ctx.fillStyle="#000a04";ctx.beginPath();ctx.moveTo(6,12);ctx.lineTo(13,5);ctx.lineTo(23,5);ctx.lineTo(30,12);ctx.lineTo(23,19);ctx.lineTo(13,19);ctx.closePath();ctx.fill();ctx.fillStyle="#00ff88";ctx.beginPath();ctx.moveTo(38,4);ctx.lineTo(54,1);ctx.lineTo(60,12);ctx.lineTo(54,23);ctx.lineTo(38,20);ctx.closePath();ctx.fill();ctx.fillStyle="#000a04";ctx.beginPath();ctx.moveTo(44,6);ctx.lineTo(54,6);ctx.lineTo(58,12);ctx.lineTo(54,18);ctx.lineTo(44,18);ctx.closePath();ctx.fill();ctx.fillStyle="#00ff88";ctx.beginPath();ctx.arc(19,12,7,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(19,12,3,0,6.28);ctx.fill();ctx.save();ctx.translate(19,12);ctx.rotate(Date.now()/5);ctx.strokeStyle="#ffe600";ctx.lineWidth=2.5;ctx.shadowBlur=(FQ>=2?22:0);ctx.beginPath();ctx.arc(0,0,12,0,4.5);ctx.stroke();ctx.restore()}
-else if(L===44){ctx.shadowBlur=(FQ>=2?52:0);ctx.shadowColor="#ff0066";var g44=ctx.createRadialGradient(26,12,2,26,12,38);g44.addColorStop(0,"#ff0066");g44.addColorStop(0.35,"#b026ff");g44.addColorStop(1,"transparent");ctx.fillStyle=g44;ctx.beginPath();ctx.arc(26,12,38,0,6.28);ctx.fill();ctx.fillStyle="#ff0066";ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(12,1);ctx.lineTo(28,1);ctx.lineTo(40,12);ctx.lineTo(28,23);ctx.lineTo(12,23);ctx.closePath();ctx.fill();ctx.fillStyle="#080004";ctx.beginPath();ctx.moveTo(7,12);ctx.lineTo(15,5);ctx.lineTo(25,5);ctx.lineTo(33,12);ctx.lineTo(25,19);ctx.lineTo(15,19);ctx.closePath();ctx.fill();for(var sp44=0;sp44<12;sp44++){var a44=sp44*Math.PI/6+Date.now()/400;ctx.fillStyle=sp44%2?"#ff0066":"#b026ff";ctx.beginPath();ctx.moveTo(20+Math.cos(a44)*10,12+Math.sin(a44)*10);ctx.lineTo(20+Math.cos(a44+0.13)*10,12+Math.sin(a44+0.13)*10);ctx.lineTo(20+Math.cos(a44+0.065)*24,12+Math.sin(a44+0.065)*24);ctx.closePath();ctx.fill()}ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(20,12,7,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(20,12,3.5,0,6.28);ctx.fill()}
-else if(L===45){ctx.shadowBlur=(FQ>=2?54:0);ctx.shadowColor="#7c3aed";var g45=ctx.createRadialGradient(24,12,1,24,12,40);g45.addColorStop(0,"#fff");g45.addColorStop(0.1,"#7c3aed");g45.addColorStop(0.4,"#ff00aa");g45.addColorStop(0.7,"#7fdcff");g45.addColorStop(1,"transparent");ctx.fillStyle=g45;ctx.beginPath();ctx.arc(24,12,40,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(12,1);ctx.lineTo(30,1);ctx.lineTo(42,12);ctx.lineTo(30,23);ctx.lineTo(12,23);ctx.closePath();ctx.fill();ctx.fillStyle="#000";ctx.beginPath();ctx.moveTo(8,12);ctx.lineTo(16,5);ctx.lineTo(26,5);ctx.lineTo(34,12);ctx.lineTo(26,19);ctx.lineTo(16,19);ctx.closePath();ctx.fill();ctx.fillStyle="#7c3aed";ctx.beginPath();ctx.arc(21,12,8,0,6.28);ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(21,12,4,0,6.28);ctx.fill();ctx.save();ctx.translate(21,12);ctx.rotate(Date.now()/4);for(var fi45=0;fi45<6;fi45++){ctx.strokeStyle=["#ffe600","#ff00aa","#7fdcff","#3aff7a","#b026ff","#fff"][fi45];ctx.lineWidth=2;ctx.shadowBlur=(FQ>=2?24:0);ctx.beginPath();ctx.arc(0,0,11+fi45*4,fi45*1,fi45*1+4.2);ctx.stroke()}ctx.restore()}
-else if(L===46){ctx.shadowBlur=(FQ>=2?56:0);ctx.shadowColor="#00ccff";var g46=ctx.createLinearGradient(0,0,70,0);g46.addColorStop(0,"#000410");g46.addColorStop(0.45,"#00ccff");g46.addColorStop(1,"#7fdcff");ctx.fillStyle=g46;ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(12,1);ctx.lineTo(30,1);ctx.lineTo(42,12);ctx.lineTo(30,23);ctx.lineTo(12,23);ctx.closePath();ctx.fill();ctx.fillStyle="#000410";ctx.beginPath();ctx.moveTo(8,12);ctx.lineTo(16,5);ctx.lineTo(26,5);ctx.lineTo(34,12);ctx.lineTo(26,19);ctx.lineTo(16,19);ctx.closePath();ctx.fill();ctx.fillStyle="#00ccff";ctx.beginPath();ctx.moveTo(42,4);ctx.lineTo(58,1);ctx.lineTo(64,12);ctx.lineTo(58,23);ctx.lineTo(42,20);ctx.closePath();ctx.fill();ctx.fillStyle="#000410";ctx.beginPath();ctx.moveTo(48,6);ctx.lineTo(58,6);ctx.lineTo(62,12);ctx.lineTo(58,18);ctx.lineTo(48,18);ctx.closePath();ctx.fill();for(var sp46=0;sp46<8;sp46++){var a46=sp46*Math.PI/4+Date.now()/550;ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.moveTo(21+Math.cos(a46)*9,12+Math.sin(a46)*9);ctx.lineTo(21+Math.cos(a46+0.3)*9,12+Math.sin(a46+0.3)*9);ctx.lineTo(21+Math.cos(a46+0.15)*19,12+Math.sin(a46+0.15)*19);ctx.closePath();ctx.fill()}ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(21,12,6,0,6.28);ctx.fill()}
-else if(L===47){ctx.shadowBlur=(FQ>=2?58:0);ctx.shadowColor="#ff9900";var g47=ctx.createRadialGradient(28,13,2,28,13,42);g47.addColorStop(0,"#ff9900");g47.addColorStop(0.3,"#ffe600");g47.addColorStop(0.6,"#ff00aa");g47.addColorStop(1,"transparent");ctx.fillStyle=g47;ctx.beginPath();ctx.arc(28,13,42,0,6.28);ctx.fill();ctx.fillStyle="#ff9900";ctx.beginPath();ctx.moveTo(0,13);ctx.lineTo(13,1);ctx.lineTo(31,1);ctx.lineTo(44,13);ctx.lineTo(31,25);ctx.lineTo(13,25);ctx.closePath();ctx.fill();ctx.fillStyle="#0a0400";ctx.beginPath();ctx.moveTo(9,13);ctx.lineTo(17,5);ctx.lineTo(27,5);ctx.lineTo(35,13);ctx.lineTo(27,21);ctx.lineTo(17,21);ctx.closePath();ctx.fill();for(var sp47=0;sp47<14;sp47++){var a47=sp47*Math.PI/7+Date.now()/380;ctx.fillStyle=sp47%2?"#ff9900":"#ffe600";ctx.beginPath();ctx.moveTo(22+Math.cos(a47)*11,13+Math.sin(a47)*11);ctx.lineTo(22+Math.cos(a47+0.11)*11,13+Math.sin(a47+0.11)*11);ctx.lineTo(22+Math.cos(a47+0.055)*26,13+Math.sin(a47+0.055)*26);ctx.closePath();ctx.fill()}ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(22,13,8,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(22,13,4,0,6.28);ctx.fill()}
-else if(L===48){ctx.shadowBlur=(FQ>=2?60:0);ctx.shadowColor="#ff00cc";var g48=ctx.createRadialGradient(26,13,1,26,13,44);g48.addColorStop(0,"#fff");g48.addColorStop(0.08,"#ff00cc");g48.addColorStop(0.25,"#ffe600");g48.addColorStop(0.5,"#b026ff");g48.addColorStop(0.75,"#7fdcff");g48.addColorStop(1,"transparent");ctx.fillStyle=g48;ctx.beginPath();ctx.arc(26,13,44,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(0,13);ctx.lineTo(13,0);ctx.lineTo(32,0);ctx.lineTo(45,13);ctx.lineTo(32,26);ctx.lineTo(13,26);ctx.closePath();ctx.fill();ctx.fillStyle="#080010";ctx.beginPath();ctx.moveTo(9,13);ctx.lineTo(18,5);ctx.lineTo(28,5);ctx.lineTo(37,13);ctx.lineTo(28,21);ctx.lineTo(18,21);ctx.closePath();ctx.fill();ctx.fillStyle="#ff00cc";ctx.beginPath();ctx.arc(23,13,9,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(23,13,4.5,0,6.28);ctx.fill();ctx.save();ctx.translate(23,13);ctx.rotate(Date.now()/3.5);for(var fi48=0;fi48<8;fi48++){ctx.strokeStyle=["#ffe600","#ff00cc","#7fdcff","#3aff7a","#b026ff","#fff","#ff8a5b","#ff2a6d"][fi48];ctx.lineWidth=2;ctx.shadowBlur=(FQ>=2?26:0);ctx.beginPath();ctx.arc(0,0,12+fi48*4,fi48*0.9,fi48*0.9+4);ctx.stroke()}ctx.restore()}
-else if(L===49){ctx.shadowBlur=(FQ>=2?62:0);ctx.shadowColor="#ccff00";var g49=ctx.createRadialGradient(28,14,1,28,14,46);g49.addColorStop(0,"#fff");g49.addColorStop(0.07,"#ccff00");g49.addColorStop(0.2,"#ff9900");g49.addColorStop(0.38,"#ffe600");g49.addColorStop(0.55,"#ff00aa");g49.addColorStop(0.75,"#7c3aed");g49.addColorStop(1,"transparent");ctx.fillStyle=g49;ctx.beginPath();ctx.arc(28,14,46,0,6.28);ctx.fill();ctx.fillStyle="#ccff00";ctx.beginPath();ctx.moveTo(0,14);ctx.lineTo(14,0);ctx.lineTo(34,0);ctx.lineTo(48,14);ctx.lineTo(34,28);ctx.lineTo(14,28);ctx.closePath();ctx.fill();ctx.fillStyle="#040a00";ctx.beginPath();ctx.moveTo(10,14);ctx.lineTo(19,6);ctx.lineTo(29,6);ctx.lineTo(38,14);ctx.lineTo(29,22);ctx.lineTo(19,22);ctx.closePath();ctx.fill();for(var sp49=0;sp49<16;sp49++){var a49=sp49*Math.PI/8+Date.now()/340;ctx.fillStyle=["#ccff00","#ff9900","#ffe600","#ff00aa"][sp49%4];ctx.beginPath();ctx.moveTo(24+Math.cos(a49)*12,14+Math.sin(a49)*12);ctx.lineTo(24+Math.cos(a49+0.09)*12,14+Math.sin(a49+0.09)*12);ctx.lineTo(24+Math.cos(a49+0.045)*28,14+Math.sin(a49+0.045)*28);ctx.closePath();ctx.fill()}ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(24,14,8,0,6.28);ctx.fill();ctx.fillStyle="#ccff00";ctx.beginPath();ctx.arc(24,14,4,0,6.28);ctx.fill()}
-else{ctx.shadowBlur=(FQ>=2?66:0);ctx.shadowColor="#fff";var g50=ctx.createRadialGradient(30,14,1,30,14,50);g50.addColorStop(0,"#fff");g50.addColorStop(0.06,"#ffe600");g50.addColorStop(0.16,"#ff00aa");g50.addColorStop(0.3,"#b026ff");g50.addColorStop(0.44,"#7c3aed");g50.addColorStop(0.58,"#7fdcff");g50.addColorStop(0.72,"#3aff7a");g50.addColorStop(0.85,"#ff8a5b");g50.addColorStop(1,"transparent");ctx.fillStyle=g50;ctx.beginPath();ctx.arc(30,14,50,0,6.28);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(0,14);ctx.lineTo(15,0);ctx.lineTo(36,0);ctx.lineTo(51,14);ctx.lineTo(36,28);ctx.lineTo(15,28);ctx.closePath();ctx.fill();ctx.fillStyle="#000";ctx.beginPath();ctx.moveTo(11,14);ctx.lineTo(21,6);ctx.lineTo(31,6);ctx.lineTo(41,14);ctx.lineTo(31,22);ctx.lineTo(21,22);ctx.closePath();ctx.fill();for(var sp50=0;sp50<20;sp50++){var a50=sp50*Math.PI/10+Date.now()/300;ctx.fillStyle=["#ffe600","#ff00aa","#7fdcff","#3aff7a","#b026ff"][sp50%5];ctx.beginPath();ctx.moveTo(26+Math.cos(a50)*13,14+Math.sin(a50)*13);ctx.lineTo(26+Math.cos(a50+0.08)*13,14+Math.sin(a50+0.08)*13);ctx.lineTo(26+Math.cos(a50+0.04)*32,14+Math.sin(a50+0.04)*32);ctx.closePath();ctx.fill()}ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(26,14,9,0,6.28);ctx.fill();ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(26,14,5,0,6.28);ctx.fill();ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.arc(26,14,2,0,6.28);ctx.fill();ctx.save();ctx.translate(26,14);ctx.rotate(-Date.now()/3);for(var fi50b=0;fi50b<10;fi50b++){ctx.strokeStyle=["#fff","#ffe600","#ff00aa","#7fdcff","#3aff7a","#b026ff","#ff8a5b","#ff2a6d","#00ff88","#7c3aed"][fi50b];ctx.lineWidth=1.5;ctx.shadowBlur=(FQ>=2?30:0);ctx.beginPath();ctx.arc(0,0,36+fi50b*5,fi50b*0.55,fi50b*0.55+5);ctx.stroke()}ctx.restore()}var mx=L>=45?70:L>=40?62:L>=35?56:L>=30?52:L>=25?50:L>=20?48:L>=15?46:L>=12?44:L>=9?42:L>=7?40:L>=4?38:L===3?34:L===2?28:22;
-if(player&&player.muzzle>0){ctx.save();ctx.translate(mx,10);var mf=player.muzzle/0.09;ctx.globalAlpha=mf;ctx.shadowBlur=(FQ>=2?18:0);ctx.shadowColor="#ffe600";ctx.fillStyle="#ffe600";ctx.beginPath();for(var k=0;k<8;k++){var a=k*Math.PI/4;var rr=(k%2===0?10:4)*mf;ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,3.5*mf,0,Math.PI*2);ctx.fill();ctx.restore();ctx.globalAlpha=1}
-ctx.shadowBlur=(FQ>=2?0:0)}
+  var L=gunLevel;
+  var info=wepDraw(L,ctx,null);
+  var mx=info.len;var weptSmoke=info.pal.h;
+  // 枪口火光（多层光斑 + 短促射线，从真实枪口位置发出）
+  if(player&&player.muzzle>0){
+    var mf=Math.max(0,player.muzzle/0.09);
+    ctx.save();ctx.translate(mx,0);
+    ctx.globalAlpha=mf*0.95;
+    var fg=wepGlow("#ffe600",16);
+    ctx.drawImage(fg,-16*1.2,-16*1.2,16*2.4,16*2.4);
+    ctx.globalAlpha=mf;
+    ctx.fillStyle="#fff";
+    ctx.beginPath();ctx.arc(0,0,4.2*mf,0,6.2832);ctx.fill();
+    // 短促射线
+    ctx.strokeStyle="rgba(255,255,255,"+(0.85*mf)+")";ctx.lineWidth=1.8;
+    for(var k=0;k<4;k++){var a2=k*Math.PI/2+0.4;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a2)*13*mf,Math.sin(a2)*13*mf);ctx.stroke();}
+    // 枪口烟雾
+    ctx.globalAlpha=mf*0.22;ctx.fillStyle=weptSmoke;
+    ctx.beginPath();ctx.arc(6*mf,0,11*mf,0,6.2832);ctx.fill();
+    ctx.restore();ctx.globalAlpha=1;
+  }
+}
+
+
 /* ========== update ========== */
 function update(rdt){
 if(gameState!=="playing")return;
@@ -3261,13 +3443,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v6.0");
+    localStorage.setItem("njs_patch","v6.1");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v6.0"){
+    if(seen!=="v6.1"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7870,7 +8052,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v6.0</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v6.1</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7901,6 +8083,12 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 12:38:53",items:[
+      "🔫 武器模型全面重做：50 把全部分层绘制（枪身/核心/枪口/装饰/外发光）",
+      "🎯 50 把武器两两唯一：枪型·枪口·核心·装饰·配色 五维组合互不重复",
+      "📚 图鉴/详情/局内共用同一绘制函数，不再有第二套画法",
+      "⚡ 移除每帧 shadowBlur，改用离屏预渲染发光，帧率更稳"
+    ]},
     {time:"2026-10-24 12:24:04",items:[
       "🔧 结算标题字号回调：「你倒下了」的 1.1 倍，不再挡住排行榜",
       "🔥 嘲讽文案再升级：更脏更狠，直接骂（30+30 句全换）"
@@ -8074,7 +8262,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 12:24:04";
+    pd.textContent="更新于 2026 年 10 月 24 日 12:38:53";
   }
 })();
 </script>
@@ -8386,71 +8574,19 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
 
   /* ===== 武器图鉴绘制（枪身 + 弹道色子弹）===== */
   function cxDrawWeapon(wd,ctx,cx,cy){
-    // 复用局内 drawGun()：临时切换全局 ctx 和 gunLevel，保证图鉴与局内手持完全一致
+    // 唯一绘制入口：与局内手持共用 wepDraw（不再维护第二套画法）
     var lv=wd.lv||1;
-    var _gctx=(typeof ctx!=="undefined")?ctx:null;
-    if(_gctx&&typeof drawGun==="function"){
-      try{
-        var _oldCtx=(typeof ctx!=='undefined'?ctx:null);
-        var _oldLv=(typeof gunLevel!=="undefined"?gunLevel:1);
-        // 全局 ctx 临时指向图鉴画布
-        if(typeof window!=="undefined"){ window.__cxCtx=_oldCtx; }
-        // drawGun 引用的是全局 ctx 变量，这里直接把全局 ctx 换成图鉴 ctx
-        // 但全局 ctx 是 var 声明的局部作用域变量（主script内），跨 script 块无法直接改写；
-        // 改为：图鉴用独立的画法，但配色/造型从局内 drawGun 的 gunLevel 派生
-      }catch(e){}
-    }
-    // 兜底：调用局内 drawGun 需全局 ctx，图鉴无法直接改全局 ctx；
-    // 这里用「调全局 drawGun 前先让主 canvas ctx 不可用」的方案不可行，
-    // 因此改用：直接复制局内 drawGun 到图鉴（见 cxDrawGunLocal）
-    cxDrawGunLocal(lv,ctx,cx,cy);
-  }
-
-  /* 局内 drawGun 的图鉴本地副本（与局内 50 级枪型 100% 一致） */
-  function cxDrawGunLocal(L,ctx,cx,cy){
     ctx.save();
     ctx.translate(cx,cy);
-    ctx.scale(1.1,1.1);
-    ctx.shadowBlur=0;
-    if(L===1){ctx.shadowColor="#ff00aa";ctx.fillStyle="#2a2f55";ctx.fillRect(2,8,16,6);ctx.fillStyle="#ff00aa";ctx.fillRect(16,9,8,3.5);ctx.fillStyle="#00f2ff";ctx.fillRect(8,3,5,5);ctx.fillStyle="#ff00aa";ctx.fillRect(4,14,4,4)}
-    else if(L===2){ctx.shadowColor="#ff00aa";ctx.fillStyle="#2a2f55";ctx.fillRect(2,8,20,7);ctx.fillStyle="#ff00aa";ctx.fillRect(20,8,12,3);ctx.fillRect(20,12,12,3);ctx.fillStyle="#00f2ff";ctx.fillRect(6,3,7,6);ctx.fillStyle="#ffe600";ctx.fillRect(24,6,4,2);ctx.fillStyle="#ff00aa";ctx.fillRect(4,14,4,5)}
-    else if(L===3){ctx.shadowColor="#00f2ff";ctx.fillStyle="#1a2040";ctx.fillRect(0,8,26,7);ctx.fillStyle="#00f2ff";ctx.fillRect(24,9.5,14,4);ctx.fillStyle="#ff00aa";ctx.fillRect(4,3,8,4);ctx.fillStyle="#ffe600";ctx.fillRect(10,6,10,2);ctx.fillStyle="rgba(0,242,255,0.8)";ctx.fillRect(12,9,8,5);ctx.fillStyle="#2a2f55";ctx.fillRect(2,14,4,5)}
-    else if(L===4){ctx.shadowColor="#ff00aa";ctx.fillStyle="#16102e";ctx.fillRect(-2,7,28,9);ctx.fillStyle="#ff00aa";ctx.fillRect(24,8,16,7);ctx.fillStyle="#b026ff";ctx.fillRect(38,9.5,6,4);ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(18,11,8,0,Math.PI*1.5);ctx.stroke();ctx.fillStyle="#00f2ff";ctx.fillRect(0,3,7,4);ctx.fillStyle="#16102e";ctx.fillRect(0,15,4,5)}
-    else if(L===5){ctx.shadowColor="#ff8a5b";ctx.fillStyle="#3a2000";ctx.fillRect(0,6,22,10);ctx.fillStyle="#ff8a5b";ctx.fillRect(20,7,12,8);ctx.fillStyle="#ffe600";ctx.fillRect(30,9,5,4);ctx.fillStyle="rgba(255,80,0,0.8)";ctx.beginPath();ctx.arc(12,11,4,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ff2a6d";ctx.fillRect(4,2,8,4);ctx.fillStyle="#3a2000";ctx.fillRect(2,15,4,5)}
-    else if(L>=6&&L<=10){ // 蓝青系速射/散射
-      ctx.shadowColor="#7fdcff";ctx.fillStyle="#0a2a3a";ctx.fillRect(0,7,24+Math.min(L,10)*2,8);
-      ctx.fillStyle="#7fdcff";ctx.fillRect(22,5,14,3);ctx.fillRect(22,13,14,3);ctx.fillStyle="#fff";ctx.fillRect(24,9,10,3);
-      ctx.fillStyle="#7fdcff";ctx.fillRect(2,14,4,5);
-    }
-    else if(L>=11&&L<=15){ // 红橙系
-      ctx.shadowColor="#ff2a6d";ctx.fillStyle="#1a0008";ctx.fillRect(-4,5,36,12);
-      ctx.fillStyle="#ff2a6d";ctx.fillRect(30,7,20,8);ctx.fillStyle="#ff8a5b";ctx.fillRect(48,9,6,4);
-      ctx.fillStyle="#ff8a5b";ctx.fillRect(2,2,6,3);ctx.fillStyle="#1a0008";ctx.fillRect(-4,16,4,5);
-    }
-    else if(L>=16&&L<=20){ // 紫系回旋
-      ctx.shadowColor="#b026ff";ctx.fillStyle="#100020";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(6,4);ctx.lineTo(18,4);ctx.lineTo(24,11);ctx.lineTo(18,18);ctx.lineTo(6,18);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(20,11);ctx.lineTo(34,7);ctx.lineTo(38,11);ctx.lineTo(34,15);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#fff";ctx.fillRect(11,10,3,3);
-    }
-    else if(L>=21&&L<=30){ // 青金分裂
-      ctx.shadowColor="#ffe600";ctx.fillStyle="#0a0800";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(8,5);ctx.lineTo(20,5);ctx.lineTo(28,11);ctx.lineTo(20,17);ctx.lineTo(8,17);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(28,7);ctx.lineTo(40,8);ctx.lineTo(42,11);ctx.lineTo(40,14);ctx.lineTo(28,15);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.arc(34,11,3,0,6.28);ctx.fill();
-    }
-    else if(L>=31&&L<=40){ // 光谱重炮
-      ctx.shadowColor="#ff00aa";ctx.fillStyle="#080004";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(7,3);ctx.lineTo(19,3);ctx.lineTo(26,11);ctx.lineTo(19,19);ctx.lineTo(7,19);ctx.closePath();ctx.fill();
-      var g=ctx.createLinearGradient(26,0,46,0);g.addColorStop(0,"#ff00aa");g.addColorStop(0.5,"#b026ff");g.addColorStop(1,"#7fdcff");
-      ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(26,7);ctx.lineTo(44,6);ctx.lineTo(48,11);ctx.lineTo(44,16);ctx.lineTo(26,15);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(13,11,4,0,6.28);ctx.fill();
-    }
-    else{ // L41-50 终极
-      ctx.shadowColor="#fff";ctx.fillStyle="#0a0010";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(10,1);ctx.lineTo(24,1);ctx.lineTo(34,11);ctx.lineTo(24,21);ctx.lineTo(10,21);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(17,11,6,0,6.28);ctx.fill();
-      ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.arc(17,11,3,0,6.28);ctx.fill();
-      ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(34,4);ctx.lineTo(48,1);ctx.lineTo(54,11);ctx.lineTo(48,21);ctx.lineTo(34,18);ctx.closePath();ctx.fill();
-    }
+    // 图鉴展示：等比放大展示全身（含枪口装置），整体居中
+    var info=wepInfo(lv);
+    var k=Math.min(2.05, 150/Math.max(1,info.len*1.55));
+    ctx.scale(k,k);
+    ctx.translate(-info.len*0.46,-2);
+    try{ wepDraw(lv,ctx,{t:Date.now()/1000}); }catch(e){}
     ctx.restore();
-  }  /* ===== 图鉴 UI ===== */
+  }
+}  /* ===== 图鉴 UI ===== */
   var cxTab=0,cxDetailId=null;
   window.openCodex=function(tab){
     cxTab=(tab===undefined?0:tab);
