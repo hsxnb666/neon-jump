@@ -121,7 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.6</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.7</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3054,8 +3054,12 @@ world.bullets=world.bullets.filter(function(b){return b.life>0});
 for(var i=0;i<world.enemies.length;i++){var e3=world.enemies[i];if(Math.abs(p.x-e3.x)<(p.w+e3.w)/2&&Math.abs(p.y-e3.y)<(p.h+e3.h)/2&&(p.inv<=0||p.shield>0)){if(p.shield>0){spawnShockRing(p.x,p.y-30,"#b026ff",60);continue}p.hp-=15;p.inv=1;cam.shake=10;p.vy=-220;p.vx=(p.x<e3.x?-1:1)*180;sHit()}}
 for(var i=0;i<world.texts.length;i++){var t=world.texts[i];t.y+=t.vy*dt;t.life-=dt;if(t.life<=0)world.texts.splice(i,1)}
 for(var i=world.rings.length-1;i>=0;i--){var rg=world.rings[i];rg.t+=rdt*3;rg.r=6+(rg.maxR-6)*Math.min(1,rg.t);if(rg.t>=1)world.rings.splice(i,1)}
-// 狂暴
-if(coinCount>=100&&rageTimer<=0){rageTimer=5;coinCount-=100;world.flash=0.3;cam.shake=10;sfx(100,"sawtooth",0.5,0.12,1000);showToast("狂暴模式!");spawnShockRing(p.x,p.y-30,"#ff2a6d",150)}
+// 狂暴：改为连击累积触发（不消耗金币，金币只用于买武器）
+try{
+  if(typeof world._rage===undefined)world._rage=0;
+  world._rage+=combo*1; // 连击越高积累越快
+  if(world._rage>=40&&rageTimer<=0){rageTimer=5;world._rage=0;world.flash=0.3;cam.shake=10;sfx(100,"sawtooth",0.5,0.12,1000);showToast("狂暴模式!");spawnShockRing(p.x,p.y-30,"#ff2a6d",150);}
+}catch(_){}
 var _oldDist=distance;
 distance=Math.max(distance,Math.floor((p.x-120)/10));
 if(smartMode&&Math.floor(distance/500)>Math.floor(_oldDist/500)){p.hp=Math.min(p.maxHp,p.hp+12);world.texts.push({x:p.x,y:p.y-80,text:"里程碑补给+12",life:1.5,vy:-40});spawnShockRing(p.x,p.y-30,"#3aff7a",120);sfx(800,"sine",0.3,0.08,1600)}
@@ -3138,13 +3142,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v4.6");
+    localStorage.setItem("njs_patch","v4.7");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v4.6"){
+    if(seen!=="v4.7"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7481,7 +7485,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.6</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.7</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7512,6 +7516,9 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 09:13:31",items:[
+      "🐛 修复金币被吞：狂暴模式不再消耗金币，改为连击累积触发，金币只用于买武器"
+    ]},
     {time:"2026-10-24 09:07:01",items:[
       "✨ 武器绘制统一：图鉴复用局内 drawGun 的 50 级枪型与配色，图鉴和手持完全一致"
     ]},
@@ -7631,7 +7638,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 09:07:01";
+    pd.textContent="更新于 2026 年 10 月 24 日 09:13:31";
   }
 })();
 </script>
