@@ -121,7 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.1</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.2</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -183,6 +183,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <div class="dist"><span id="distVal">0</span><u>m</u></div>
     <div class="score" id="scoreVal">0</div>
     <div class="wave" id="waveVal">WAVE 1</div>
+    <div id="coinVal" style="font-size:12px;font-weight:700;color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,.5);transition:transform .12s">🪙 0</div>
   </div>
 </div>
 
@@ -598,7 +599,9 @@ sExplode();sHitHeavy();
 world.texts.push({x:e.x,y:e.y-30,text:"+"+pts+(combo>2?" x"+combo:""),life:0.9,vy:-45});
 if(combo>0&&combo%5===0)showToast(combo+" 连击!");
 if(combo>0&&combo%10===0){player.hp=Math.min(player.maxHp,player.hp+8);world.texts.push({x:e.x,y:e.y-60,text:"连击回血+8",life:1.2,vy:-45});spawnShockRing(e.x,e.y,"#3aff7a",80)}
-if(Math.random()<0.35)world.coins.push({x:e.x,y:e.y-15,t:0,got:false});
+var _elite=(e.type==="shield"||e.type==="laser"||e.type==="tank"||e.type==="pylon");
+  var _ndrop=_elite?(2+Math.floor(Math.random()*3)):(Math.random()<0.35?(1+(Math.random()<0.4?1:0)):0);
+  for(var _dn=0;_dn<_ndrop;_dn++)world.coins.push({x:e.x+(Math.random()-0.5)*30,y:e.y-15-(Math.random()*20),t:0,got:false});
 if(Math.random()<(smartMode?0.08:0.18))world.pickups.push({x:e.x,y:e.y-20,t:0,kind:"heal",got:false});
 if(Math.random()<(smartMode?0.15:0.3))player.hp=Math.min(player.maxHp,player.hp+(smartMode?3:5));
 player.en=Math.min(player.maxEn,player.en+15);
@@ -2510,7 +2513,17 @@ if(cam.shake>0.5){cam.shakeX=(Math.random()-0.5)*cam.shake;cam.shakeY=(Math.rand
 // 宝石
 for(var i=0;i<world.gems.length;i++){var g=world.gems[i];g.t+=dt;if(!g.got&&Math.abs(p.x-g.x)<40&&Math.abs(p.y-g.y)<44){g.got=true;sCoin();spawnShockRing(g.x,g.y,"#ffe600",130);spawnShockRing(g.x,g.y,"#fff",80);gunLevel++;if(gunLevel<=50){world.texts.push({x:g.x,y:g.y-30,text:"武器 Lv"+gunLevel+"!",life:1.2,vy:-40});world.flash=0.25;cam.shake=8;sfx(400,"sawtooth",0.4,0.1,1600);for(var q=0;q<3;q++)spawnShockRing(p.x,p.y-30,q===1?"#ff00aa":"#ffe600",120+q*50)}else{score+=300;world.texts.push({x:g.x,y:g.y-30,text:"+300",life:1,vy:-40});gunLevel=50}}}
 // 金币
-for(var i=0;i<world.coins.length;i++){var co=world.coins[i];co.t+=dt;if(!co.got&&Math.abs(p.x-co.x)<30&&Math.abs(p.y-co.y)<34){co.got=true;coinCount++;sCoin();spawnShockRing(co.x,co.y,"#ffe600",30)}}
+for(var i=world.coins.length-1;i>=0;i--){var co=world.coins[i];co.t+=dt;
+  if(!co.got){var _cdx=p.x-co.x,_cdy=p.y-co.y,_cd=Math.sqrt(_cdx*_cdx+_cdy*_cdy)||0.001;
+    var _cr=(world.magnetT>0?150:60);
+    if(_cd<_cr){co.x+=_cdx/_cd*420*dt;co.y+=_cdy/_cd*420*dt;}
+    if(Math.abs(p.x-co.x)<30&&Math.abs(p.y-co.y)<34){co.got=true;coinCount++;sCoin();spawnShockRing(co.x,co.y,"#ffe600",30);
+      var _cv=document.getElementById("coinVal");
+      if(_cv){_cv.textContent="🪙 "+coinCount;_cv.style.transform="scale(1.35)";setTimeout(function(){var _cv2=document.getElementById("coinVal");if(_cv2)_cv2.style.transform="scale(1)"},120);}
+      world.coins.splice(i,1);
+    }
+  }
+}
 world.coins=world.coins.filter(function(c){return!c.got&&c.x>cam.x-300});
 // 血包
 for(var i=0;i<world.pickups.length;i++){var pk=world.pickups[i];pk.t+=dt;if(!pk.got&&Math.abs(p.x-pk.x)<36&&Math.abs(p.y-pk.y)<40){pk.got=true;p.hp=Math.min(p.maxHp,p.hp+25);sfx(700,"sine",0.2,0.08,1400);world.texts.push({x:pk.x,y:pk.y-20,text:"HP+25",life:0.8,vy:-40});spawnShockRing(pk.x,pk.y,"#3aff7a",50)}}
@@ -3120,13 +3133,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v4.1");
+    localStorage.setItem("njs_patch","v4.2");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v4.1"){
+    if(seen!=="v4.2"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -6976,7 +6989,7 @@ function gameOver(){
     _c.gold+=coinCount;
     localStorage.setItem("njs_codex",JSON.stringify(_c));
   }catch(_){}
-  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel;
+  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+" · 本局金币 +"+coinCount;
   saveScore(score,distance);
   lbSubmit(score,distance);
   switchBoard(smartMode?"smart":"all");
@@ -7453,7 +7466,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.1</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.2</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7484,6 +7497,10 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 08:31:11",items:[
+      "✨ 图鉴详情页重做：大图展示台 + 名字只显示一次",
+      "💰 金币系统强化：击杀掉金币/自动吸附/局内HUD金币计数/精英怪多掉"
+    ]},
     {time:"2026-10-24 08:23:01",items:[
       "✨ 图鉴图片与局内形象一致：小怪/Boss/武器全部用 Canvas 复刻局内绘制，未解锁显示剪影",
       "🐛 修复图鉴标签页滑动不了 + 公告右上角加关闭按钮"
@@ -7586,7 +7603,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 08:23:01";
+    pd.textContent="更新于 2026 年 10 月 24 日 08:31:11";
   }
 })();
 </script>
@@ -8008,11 +8025,16 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     var _w2=_wc.getContext("2d");
     if(unlocked){cxDrawWeapon(wd,_w2,70,45);}
     else{_w2.fillStyle="rgba(0,0,0,0.9)";_w2.fillRect(20,25,100,40);_w2.fillStyle="rgba(255,255,255,0.35)";_w2.font="26px sans-serif";_w2.textAlign="center";_w2.fillText("?",70,52);}
-    h.appendChild(_wc);
-    h.innerHTML+="<div style='text-align:center;font-size:16px;font-weight:700;color:#fff;margin:6px 0'>"+wd.name+"</div>"+
-      "<div style='text-align:center;font-size:16px;font-weight:700;color:#fff;margin:6px 0'>"+wd.name+"</div>"+
-      "<div style='font-size:12px;color:#9fb8e8;line-height:1.8;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px'>"+
-      "类型："+wd.type+"<br>伤害："+wd.dmg+"<br>射速："+wd.spd+"<br>弹道："+wd.bal+"<br>特性："+wd.sp+"</div>";
+    var _ped=document.createElement("div");
+    _ped.style.cssText="width:160px;height:110px;margin:4px auto 0;border-radius:16px;background:radial-gradient(ellipse at 50% 70%,rgba(255,42,109,.22),rgba(167,139,250,.08) 60%,transparent);box-shadow:0 0 26px rgba(255,42,109,.25);display:flex;align-items:center;justify-content:center";
+    _ped.appendChild(_wc);h.appendChild(_ped);
+    var _nm=document.createElement("div");
+    _nm.style.cssText="text-align:center;font-size:18px;font-weight:800;color:#ff7ba0;margin:8px 0 6px;text-shadow:0 0 12px rgba(255,42,109,.7)";
+    _nm.textContent=wd.name;h.appendChild(_nm);
+    var _info=document.createElement("div");
+    _info.style.cssText="font-size:12px;color:#9fb8e8;line-height:1.8;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px";
+    _info.innerHTML="类型："+wd.type+"<br>伤害："+wd.dmg+"<br>射速："+wd.spd+"<br>弹道："+wd.bal+"<br>特性："+wd.sp;
+    h.appendChild(_info);
     var btn=document.createElement("button");
     btn.style.cssText="width:100%;margin-top:10px;padding:10px 0;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;border:none";
     if(!unlocked){
@@ -8079,10 +8101,16 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     if(seen){cxDrawMob(k,_bc,100,88);}
     else{_bc.fillStyle="rgba(0,0,0,0.9)";_bc.beginPath();_bc.ellipse(0,0,40,36,0,0,Math.PI*2);_bc.fill();_bc.fillStyle="rgba(255,255,255,0.35)";_bc.font="26px sans-serif";_bc.textAlign="center";_bc.fillText("?",0,9);}
     h.appendChild(_big);
-    h.innerHTML+="<div style='text-align:center;font-size:16px;font-weight:700;color:#fff;margin:6px 0'>"+m.n+"</div>"+
-      "<div style='text-align:center;font-size:16px;font-weight:700;color:#fff;margin:6px 0'>"+m.n+"</div>"+
-      "<div style='font-size:12px;color:#9fb8e8;line-height:1.8;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px'>"+
-      "类型："+m.tp+"<br>生命值："+m.hp+"<br>击杀得分："+m.sc+"<br>攻击："+(seen?m.atk:"??? 遇到后解锁")+"</div>";
+    var _ped2=document.createElement("div");
+    _ped2.style.cssText="width:150px;height:130px;margin:4px auto 0;border-radius:16px;background:radial-gradient(ellipse at 50% 70%,rgba(61,255,122,.2),rgba(0,242,255,.08) 60%,transparent);box-shadow:0 0 26px rgba(61,255,122,.22);display:flex;align-items:center;justify-content:center";
+    _ped2.appendChild(_big);h.appendChild(_ped2);
+    var _nm2=document.createElement("div");
+    _nm2.style.cssText="text-align:center;font-size:18px;font-weight:800;color:#ff7ba0;margin:8px 0 6px;text-shadow:0 0 12px rgba(255,42,109,.7)";
+    _nm2.textContent=m.n;h.appendChild(_nm2);
+    var _info2=document.createElement("div");
+    _info2.style.cssText="font-size:12px;color:#9fb8e8;line-height:1.8;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px";
+    _info2.innerHTML="类型："+m.tp+"<br>生命值："+m.hp+"<br>击杀得分："+m.sc+"<br>攻击："+(seen?m.atk:"??? 遇到后解锁");
+    h.appendChild(_info2);
     var back=document.createElement("button");
     back.style.cssText="width:100%;margin-top:10px;padding:8px 0;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(160,168,255,.4);color:#b8c0ff;font-size:13px;cursor:pointer";
     back.textContent="← 返回列表";back.onclick=function(){codexRenderMobs();};
@@ -8123,11 +8151,18 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
     else{_b2.fillStyle="rgba(0,0,0,0.9)";_b2.beginPath();_b2.ellipse(0,0,40,44,0,0,Math.PI*2);_b2.fill();_b2.fillStyle="rgba(255,255,255,0.35)";_b2.font="28px sans-serif";_b2.textAlign="center";_b2.fillText("?",0,10);}
     h.appendChild(_bc2);
     var tags=(b.tags||[]).map(function(t){return "<span style='display:inline-block;margin:2px;padding:3px 8px;border-radius:10px;background:rgba(255,42,109,.15);border:1px solid rgba(255,42,109,.4);color:#ff7ba0;font-size:10px'>"+t+"</span>"}).join("");
-    h.innerHTML+="<div style='text-align:center;font-size:16px;font-weight:700;color:#fff;margin:6px 0'>"+b.n+"</div>"+
-      "<div style='text-align:center;font-size:16px;font-weight:700;color:#fff;margin:6px 0'>"+b.n+"</div>"+
-      "<div style='text-align:center;margin-bottom:6px'>"+tags+"</div>"+
-      "<div style='font-size:12px;color:#9fb8e8;line-height:1.8;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px'>"+
-      "攻击方式："+(seen?b.atk:"??? 遇到后解锁")+"</div>";
+    var _ped3=document.createElement("div");
+    _ped3.style.cssText="width:160px;height:150px;margin:4px auto 0;border-radius:16px;background:radial-gradient(ellipse at 50% 70%,rgba(176,38,255,.22),rgba(255,42,109,.08) 60%,transparent);box-shadow:0 0 26px rgba(176,38,255,.25);display:flex;align-items:center;justify-content:center";
+    _ped3.appendChild(_bc2);h.appendChild(_ped3);
+    var _nm3=document.createElement("div");
+    _nm3.style.cssText="text-align:center;font-size:18px;font-weight:800;color:#ff7ba0;margin:8px 0 6px;text-shadow:0 0 12px rgba(255,42,109,.7)";
+    _nm3.textContent=b.n;h.appendChild(_nm3);
+    var _tagd=document.createElement("div");
+    _tagd.style.cssText="text-align:center;margin-bottom:6px";_tagd.innerHTML=tags;h.appendChild(_tagd);
+var _info3=document.createElement("div");
+    _info3.style.cssText="font-size:12px;color:#9fb8e8;line-height:1.8;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px";
+    _info3.innerHTML="攻击方式："+(seen?b.atk:"??? 遇到后解锁");
+    h.appendChild(_info3);
     var back=document.createElement("button");
     back.style.cssText="width:100%;margin-top:10px;padding:8px 0;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(160,168,255,.4);color:#b8c0ff;font-size:13px;cursor:pointer";
     back.textContent="← 返回列表";back.onclick=function(){codexRenderBoss();};
