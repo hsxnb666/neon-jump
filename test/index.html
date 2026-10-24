@@ -131,7 +131,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.3</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.4</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3200,13 +3200,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v5.3");
+    localStorage.setItem("njs_patch","v5.4");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v5.3"){
+    if(seen!=="v5.4"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7045,9 +7045,19 @@ function saveScore(sc,ds){
   try{localStorage.setItem("njs_scores",JSON.stringify(arr))}catch(e){}
   return arr;
 }
+// 对账迁移：终身累计必须 ≥ 当前持有（老存档金币并入），任何路径都先对账
+function reconLifetime(){
+  try{
+    var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
+    if(typeof _c.gold!=="number")_c.gold=0;
+    if(typeof _c.lifetime!=="number")_c.lifetime=0;
+    if(_c.lifetime<_c.gold){ _c.lifetime=_c.gold; localStorage.setItem("njs_codex",JSON.stringify(_c)); }
+  }catch(_){}
+}
 // 金币结算入跨局 gold（防重复：结算后本局计数清零）
 function settleCoins(){
   try{
+    reconLifetime(); // 无论本局有无金币，先对账
     if(coinCount<=0)return;
     var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
     if(typeof _c.gold!=="number")_c.gold=0;
@@ -7440,6 +7450,7 @@ function lbFetchRich(){
 }
 
 function lbSubmit(sc,ds){
+  try{ if(typeof reconLifetime==="function")reconLifetime(); }catch(e){} // 提交前对账，保证提交最新终身累计
   // 优先用输入框当前值，其次 localStorage，最后 lbName
   var nm="";
   try{
@@ -7722,7 +7733,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.3</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.4</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7753,6 +7764,9 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 10:21:22",items:[
+      "🐛 修复提交值与本地统计不一致：结算/提交前强制对账，富豪榜显示与本机终身同源同值"
+    ]},
     {time:"2026-10-24 10:14:17",items:[
       "🐛 修复终身累计金币对账：老存档金币自动并入终身累计，终身=持有+已花 永远成立"
     ]},
@@ -7900,7 +7914,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 10:14:17";
+    pd.textContent="更新于 2026 年 10 月 24 日 10:21:22";
   }
 })();
 </script>
