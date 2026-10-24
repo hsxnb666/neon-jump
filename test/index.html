@@ -121,7 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.7</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.8</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -155,6 +155,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <div class="tb" id="lbTabSmart" onclick="switchBoard('smart')" style="padding:5px 8px;border-radius:14px;font-size:11px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none;white-space:nowrap">🧠聪明</div>
     <div class="tb" id="lbTabMe" onclick="switchBoard('me')" style="padding:5px 8px;border-radius:14px;font-size:11px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none;white-space:nowrap">📱本机</div>
     <div class="tb" id="lbTabMeSmart" onclick="switchBoard('mesmart')" style="padding:5px 8px;border-radius:14px;font-size:11px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none;white-space:nowrap">📱聪明</div>
+    <div class="tb" id="lbTabRich" onclick="switchBoard('rich')" style="padding:5px 8px;border-radius:14px;font-size:11px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(255,200,0,.35);color:#ffd54a;user-select:none;white-space:nowrap">💰富豪</div>
   </div>
   <div id="overBoard" style="width:min(90vw,480px);height:170px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;margin:0 auto;padding:6px 10px;border-radius:12px;background:rgba(0,242,255,.05);border:1px solid rgba(0,242,255,.2);color:#7fdcff;font-size:12px;text-align:left;box-sizing:border-box"></div>
   <div id="lbStatus" style="font-size:10px;color:#7fb8e0;margin-top:4px;min-height:14px;text-align:center"></div>
@@ -304,6 +305,15 @@ function sSkill(){
 function sCoin(){
   sfxH(1320,0.07,0.07,"sine",1980);
   sfxH(1980,0.09,0.05,"sine",2640);
+  coinHud();
+}
+function coinHud(){
+  try{
+    var _cv=document.getElementById("coinVal");
+    if(!_cv)return;
+    var _x2=smartMode?'<span style="font-size:9px;color:#ffd700;background:#b026ff;border-radius:5px;padding:1px 3px;vertical-align:top">×2</span> ':'';
+    _cv.innerHTML='🪙 '+_x2+coinCount;
+  }catch(_){}
 }
 function sBounce(){sfxH(280,0.16,0.09,"sine",920);noiseBurst(0.05,0.05,1400,"bandpass");}
 function sLevelUp(){fxPrismSplit(player.x,player.y-35,"#ffe600",140);fxBladeWave(player.x,player.y-35,"#fff",0);fxExplosionStar(player.x,player.y-35,"#00f2ff",120);
@@ -601,6 +611,8 @@ if(combo>0&&combo%5===0)showToast(combo+" 连击!");
 if(combo>0&&combo%10===0){player.hp=Math.min(player.maxHp,player.hp+8);world.texts.push({x:e.x,y:e.y-60,text:"连击回血+8",life:1.2,vy:-45});spawnShockRing(e.x,e.y,"#3aff7a",80)}
 var _elite=(e.type==="shield"||e.type==="laser"||e.type==="tank"||e.type==="pylon");
   var _ndrop=_elite?(2+Math.floor(Math.random()*3)):(Math.random()<0.35?(1+(Math.random()<0.4?1:0)):0);
+  if(smartMode)_ndrop*=_ndrop>0?2:0; // 聪明人模式：精英掉落×2
+  if(smartMode&&!_elite)_ndrop=(Math.random()<0.5?(1+(Math.random()<0.4?1:0)):0); // 聪明人普通怪掉落概率提升到50%
   for(var _dn=0;_dn<_ndrop;_dn++)world.coins.push({x:e.x+(Math.random()-0.5)*30,y:e.y-15-(Math.random()*20),t:0,got:false});
 if(Math.random()<(smartMode?0.08:0.18))world.pickups.push({x:e.x,y:e.y-20,t:0,kind:"heal",got:false});
 if(Math.random()<(smartMode?0.15:0.3))player.hp=Math.min(player.maxHp,player.hp+(smartMode?3:5));
@@ -608,9 +620,8 @@ player.en=Math.min(player.maxEn,player.en+15);
 if(e.type==="boss"){
   showToast("BOSS击破!丰厚奖励!");score+=15000;world.flash=0.6;cam.shake=22;bossAlive=false;
   // 丰厚奖励：金币+回血+武器升级+护盾
-  coinCount+=120;
-  var _cvb=document.getElementById("coinVal");
-  if(_cvb)_cvb.textContent="🪙 "+coinCount;
+  coinCount+=(smartMode?240:120);
+  coinHud();
   // Boss 死亡喷射金币实体（视觉爽 + 可吸附拾取）
   for(var _bc=0;_bc<20;_bc++){world.coins.push({x:e.x+(Math.random()-0.5)*120,y:e.y-(Math.random()*60),t:0,got:false});}
   player.hp=Math.min(player.maxHp,player.hp+80);
@@ -2524,7 +2535,7 @@ for(var i=world.coins.length-1;i>=0;i--){var co=world.coins[i];co.t+=dt;
     if(_cd<_cr){co.x+=_cdx/_cd*420*dt;co.y+=_cdy/_cd*420*dt;}
     if(Math.abs(p.x-co.x)<30&&Math.abs(p.y-co.y)<34){co.got=true;coinCount++;sCoin();spawnShockRing(co.x,co.y,"#ffe600",30);
       var _cv=document.getElementById("coinVal");
-      if(_cv){_cv.textContent="🪙 "+coinCount;_cv.style.transform="scale(1.35)";setTimeout(function(){var _cv2=document.getElementById("coinVal");if(_cv2)_cv2.style.transform="scale(1)"},120);}
+      coinHud();var _cv=document.getElementById("coinVal");if(_cv){_cv.style.transform="scale(1.35)";setTimeout(function(){var _cv2=document.getElementById("coinVal");if(_cv2)_cv2.style.transform="scale(1)"},120);}
       world.coins.splice(i,1);
     }
   }
@@ -3142,13 +3153,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v4.7");
+    localStorage.setItem("njs_patch","v4.8");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v4.7"){
+    if(seen!=="v4.8"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -6993,12 +7004,13 @@ function settleCoins(){
     if(coinCount<=0)return;
     var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
     if(typeof _c.gold!=="number")_c.gold=0;
+    if(typeof _c.lifetime!=="number")_c.lifetime=0;
     _c.gold+=coinCount;
+    _c.lifetime+=coinCount; // 终身累计：只增不减，买武器不扣
     localStorage.setItem("njs_codex",JSON.stringify(_c));
     try{_lastCoinGain=(typeof _lastCoinGain==="number"?_lastCoinGain:0)+coinCount;}catch(_){_lastCoinGain=coinCount;}
     coinCount=0;
-    var _cv=document.getElementById("coinVal");
-    if(_cv)_cv.textContent="🪙 0";
+    coinCount=0;coinHud();
   }catch(_){}
 }
 function gameOver(){
@@ -7006,7 +7018,7 @@ function gameOver(){
   stopBgm();
   sfx(110,"sawtooth",1,0.12,40);
   settleCoins();
-  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+" · 本局金币 +"+coinCount;
+  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+" · 本局金币 +"+coinCount+(smartMode?"（聪明人双倍加成）":"");
   saveScore(score,distance);
   lbSubmit(score,distance);
   switchBoard(smartMode?"smart":"all");
@@ -7042,7 +7054,7 @@ function doGiveUp(){
   try{localStorage.removeItem("njs_save")}catch(e){}
   sfx(110,"sawtooth",1,0.12,40);
   var rs=document.getElementById("reviveScreen");if(rs)rs.classList.add("hidden");
-  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+(smartMode?" · 🧠聪明人":"")+(typeof _lastCoinGain!=="undefined"&&_lastCoinGain>0?" · 本局金币 +"+_lastCoinGain:"");
+  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+(smartMode?" · 🧠聪明人":"")+(typeof _lastCoinGain!=="undefined"&&_lastCoinGain>0?" · 本局金币 +"+_lastCoinGain+(smartMode?"（双倍加成）":""):"");
   saveScore(score,distance);
   lbSubmit(score,distance);
   switchBoard(smartMode?"smart":"all");
@@ -7194,6 +7206,49 @@ function lbRender(){
   }
 }
 
+// ===== 富豪榜：按本机终身累计金币（只增不减，含花掉的） =====
+function lbRenderRichTo(box){
+  if(!box) return;
+  if(typeof _bindDrag==="function"){_bindDrag(box)}
+  while(box.firstChild) box.removeChild(box.firstChild);
+  // 读本机终身累计金币
+  var lifetime=0, gold=0;
+  try{
+    var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
+    if(typeof _c.lifetime==="number")lifetime=_c.lifetime;
+    if(typeof _c.gold==="number")gold=_c.gold;
+  }catch(_){}
+  var nm="";
+  try{ nm=localStorage.getItem("njs_name")||lbGetName(); }catch(e){ nm=lbGetName(); }
+  if(!nm)nm="玩家";
+  // 标题说明
+  var tip=document.createElement("div");
+  tip.style.cssText="color:#7c86c8;text-align:center;padding:6px;font-size:11px;line-height:1.5";
+  tip.innerHTML="💰 终身累计金币（含已花掉的）<br><span style='color:#ffd54a'>赚过的每一枚都算数</span>";
+  box.appendChild(tip);
+  // 本机累计行（金色大字）
+  var row=document.createElement("div");
+  row.style.cssText="display:flex;align-items:center;gap:8px;padding:10px 8px;border-radius:8px;background:rgba(255,213,74,.12);border:1px solid rgba(255,200,0,.4);margin:4px 0";
+  var s1=document.createElement("span");
+  s1.style.cssText="font-size:18px;line-height:1";
+  s1.textContent="🥇";
+  var s2=document.createElement("span");
+  s2.style.cssText="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ffd54a;font-weight:700;font-size:13px";
+  s2.textContent=nm;
+  var s3=document.createElement("span");
+  s3.style.cssText="color:#ffd700;font-weight:800;font-size:20px;text-shadow:0 0 10px rgba(255,215,0,.6);min-width:70px;text-align:right";
+  s3.textContent=String(lifetime);
+  row.appendChild(s1); row.appendChild(s2); row.appendChild(s3);
+  box.appendChild(row);
+  // 当前持有（剩余）说明
+  var sub=document.createElement("div");
+  sub.style.cssText="color:#7c86c8;text-align:center;padding:6px;font-size:11px";
+  sub.textContent="当前持有 🪙 "+gold+" · 历史已花 "+(lifetime-gold)+"（买武器）";
+  box.appendChild(sub);
+  lbStat("终身累计金币 "+lifetime);
+}
+function lbRenderRich(){ lbRenderRichTo(document.getElementById("overBoard")); }
+
 function lbFetchAll(){
   if(typeof homeRankRender==="function"){try{homeRankRender()}catch(e){}}
   lbStat("加载中…");
@@ -7297,14 +7352,14 @@ function switchBoard(v){
   lbView=v;
   var onCss="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none";
   var offCss="padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,255,.25);color:#8fb8d8;user-select:none";
-  var ids=["lbTabAll","lbTabSmart","lbTabMe","lbTabMeSmart"];
-  var vals=["all","smart","me","mesmart"];
+  var ids=["lbTabAll","lbTabSmart","lbTabMe","lbTabMeSmart","lbTabRich"];
+  var vals=["all","smart","me","mesmart","rich"];
   for(var i=0;i<ids.length;i++){
     var el=document.getElementById(ids[i]);
     if(el) el.style.cssText=(v===vals[i]?onCss:offCss);
   }
-  lbRender();
-  if(v==="all"||v==="smart") lbFetchAll(); else lbFetchMe();
+  if(v==="rich"){ lbRenderRich(); }
+  else { lbRender(); if(v==="all"||v==="smart") lbFetchAll(); else lbFetchMe(); }
   if(typeof homeRankRender==="function"){try{homeRankRender()}catch(e){}}
 }
 
@@ -7410,16 +7465,19 @@ function homeRankSwitch(v){
   lbView=v;
   var onCss="flex:1;padding:7px 0;border-radius:16px;font-size:12px;cursor:pointer;text-align:center;background:linear-gradient(135deg,#00f2ff,#b026ff);color:#06111a;font-weight:700;user-select:none";
   var offCss="flex:1;padding:7px 0;border-radius:16px;font-size:12px;cursor:pointer;text-align:center;background:rgba(255,255,255,.07);color:#8fb8d8;user-select:none";
-  var ids=["hrTabAll","hrTabSmart","hrTabMe","hrTabMeSmart"];
-  var vals=["all","smart","me","mesmart"];
+  var ids=["hrTabAll","hrTabSmart","hrTabMe","hrTabMeSmart","hrTabRich"];
+  var vals=["all","smart","me","mesmart","rich"];
   for(var i=0;i<ids.length;i++){
     var el=document.getElementById(ids[i]);
     if(el) el.style.cssText=(v===vals[i]?onCss:offCss);
   }
-  homeRankRender();
-  var st=document.getElementById("hrStatus");
-  if(v==="all"||v==="smart"){ if(st)st.textContent="加载中..."; lbFetchAll(); }
-  else { if(st)st.textContent="本机记录"; lbFetchMe(); }
+  if(v==="rich"){ homeRankRender(); var st2=document.getElementById("hrStatus"); if(st2)st2.textContent="终身累计金币"; }
+  else {
+    homeRankRender();
+    var st=document.getElementById("hrStatus");
+    if(v==="all"||v==="smart"){ if(st)st.textContent="加载中..."; lbFetchAll(); }
+    else { if(st)st.textContent="本机记录"; lbFetchMe(); }
+  }
 }
 
 /* ===== 打开/关闭浮层 ===== */
@@ -7471,6 +7529,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <div id="hrTabSmart" onclick="homeRankSwitch('smart')">🧠聪明</div>
       <div id="hrTabMe" onclick="homeRankSwitch('me')">📱本机</div>
       <div id="hrTabMeSmart" onclick="homeRankSwitch('mesmart')">📱聪明</div>
+      <div id="hrTabRich" onclick="homeRankSwitch('rich')" style="color:#ffd54a">💰富豪</div>
     </div>
     <div id="hrBoard" style="flex:1;min-height:120px;max-height:56vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:2px;touch-action:pan-y"></div>
     <div id="hrStatus" style="text-align:center;font-size:12px;color:#7c86c8;margin-top:8px">加载中...</div>
@@ -7485,7 +7544,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.7</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.8</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7516,6 +7575,11 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 09:33:46",items:[
+      "🪙 聪明人模式金币×2（掉落×2、Boss 240、HUD 角标、结算双倍提示）",
+      "💰 新增富豪榜：按终身累计金币（只增不减，含已花掉的）",
+      "🪙 终身累计金币 lifetime 字段：买武器不扣"
+    ]},
     {time:"2026-10-24 09:13:31",items:[
       "🐛 修复金币被吞：狂暴模式不再消耗金币，改为连击累积触发，金币只用于买武器"
     ]},
@@ -7638,7 +7702,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 09:13:31";
+    pd.textContent="更新于 2026 年 10 月 24 日 09:33:46";
   }
 })();
 </script>
