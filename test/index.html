@@ -121,7 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.8</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.9</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3153,13 +3153,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v4.8");
+    localStorage.setItem("njs_patch","v4.9");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v4.8"){
+    if(seen!=="v4.9"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7065,7 +7065,7 @@ function doGiveUp(){
 /* ================= 排行榜模块 v2 ================= */
 var LB_URL="https://jdsodgkigvmsczmxgggy.supabase.co";
 var LB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkc29kZ2tpZ3Ztc2N6bXhnZ2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyODY5MDcsImV4cCI6MjEwNzg2MjkwN30.VxNY8tBfYXgd89sfyY4P7LeVxBzlhBHtAZhGXM9oQMY";
-var lbCacheAll=[], lbCacheMe=[], lbView="all", lbName="", lbLast={};
+var lbCacheAll=[], lbCacheMe=[], lbCacheRich=[], lbView="all", lbName="", lbLast={};
 
 
 /* ===== 本机身份识别（F: id 精确 + D: 成绩指纹兜底） ===== */
@@ -7211,11 +7211,11 @@ function lbRenderRichTo(box){
   if(!box) return;
   if(typeof _bindDrag==="function"){_bindDrag(box)}
   while(box.firstChild) box.removeChild(box.firstChild);
-  // 读本机终身累计金币
-  var lifetime=0, gold=0;
+  // 读本机终身累计 + 昵称
+  var myLifetime=0, gold=0;
   try{
     var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
-    if(typeof _c.lifetime==="number")lifetime=_c.lifetime;
+    if(typeof _c.lifetime==="number")myLifetime=_c.lifetime;
     if(typeof _c.gold==="number")gold=_c.gold;
   }catch(_){}
   var nm="";
@@ -7223,29 +7223,43 @@ function lbRenderRichTo(box){
   if(!nm)nm="玩家";
   // 标题说明
   var tip=document.createElement("div");
-  tip.style.cssText="color:#7c86c8;text-align:center;padding:6px;font-size:11px;line-height:1.5";
-  tip.innerHTML="💰 终身累计金币（含已花掉的）<br><span style='color:#ffd54a'>赚过的每一枚都算数</span>";
+  tip.style.cssText="color:#7c86c8;text-align:center;padding:5px;font-size:11px;line-height:1.4";
+  tip.innerHTML="💰 富豪榜 · 终身累计金币<br><span style='color:#ffd54a'>赚过的每一枚都算数（含已花掉的）</span>";
   box.appendChild(tip);
-  // 本机累计行（金色大字）
-  var row=document.createElement("div");
-  row.style.cssText="display:flex;align-items:center;gap:8px;padding:10px 8px;border-radius:8px;background:rgba(255,213,74,.12);border:1px solid rgba(255,200,0,.4);margin:4px 0";
-  var s1=document.createElement("span");
-  s1.style.cssText="font-size:18px;line-height:1";
-  s1.textContent="🥇";
-  var s2=document.createElement("span");
-  s2.style.cssText="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ffd54a;font-weight:700;font-size:13px";
-  s2.textContent=nm;
-  var s3=document.createElement("span");
-  s3.style.cssText="color:#ffd700;font-weight:800;font-size:20px;text-shadow:0 0 10px rgba(255,215,0,.6);min-width:70px;text-align:right";
-  s3.textContent=String(lifetime);
-  row.appendChild(s1); row.appendChild(s2); row.appendChild(s3);
-  box.appendChild(row);
-  // 当前持有（剩余）说明
+  // 全网富豪榜列表
+  var arr=lbCacheRich||[];
+  if(!arr.length){
+    var emp=document.createElement("div");
+    emp.style.cssText="color:#7c86c8;text-align:center;padding:12px;font-size:12px";
+    emp.textContent="暂无记录";
+    box.appendChild(emp);
+    return;
+  }
+  for(var i=0;i<arr.length;i++){
+    var r=arr[i]||{};
+    var rn=r.name||"玩家";
+    var lc=(typeof r.lifetime_coins==="number")?r.lifetime_coins:0;
+    var isMe=(rn===nm);
+    var row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;margin-bottom:3px;"+(isMe?"background:rgba(255,213,74,.14);border:1px solid rgba(255,213,74,.35);":"background:rgba(255,255,255,.045);");
+    var medal=(i===0?"🥇":(i===1?"🥈":(i===2?"🥉":"")));
+    var s1=document.createElement("span");
+    s1.style.cssText="width:28px;text-align:center;font-size:"+(i<3?"16px":"12px")+";color:"+(i<3?"#ffd54a":"#6a7fb8");
+    s1.textContent=medal||String(i+1);
+    var s2=document.createElement("span");
+    s2.style.cssText="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"+(isMe?"color:#ffd54a;font-weight:700;":"color:#cfe8ff;");
+    s2.textContent=rn;
+    var s3=document.createElement("span");
+    s3.style.cssText="color:#ffd700;font-weight:800;font-size:"+(i===0?"18px":"14px")+";text-shadow:0 0 8px rgba(255,215,0,.5);min-width:64px;text-align:right";
+    s3.textContent=String(lc);
+    row.appendChild(s1); row.appendChild(s2); row.appendChild(s3);
+    box.appendChild(row);
+  }
+  // 底部：本机终身累计 + 当前持有
   var sub=document.createElement("div");
-  sub.style.cssText="color:#7c86c8;text-align:center;padding:6px;font-size:11px";
-  sub.textContent="当前持有 🪙 "+gold+" · 历史已花 "+(lifetime-gold)+"（买武器）";
+  sub.style.cssText="color:#7c86c8;text-align:center;padding:6px;font-size:11px;border-top:1px dashed rgba(255,200,0,.25);margin-top:4px";
+  sub.textContent="本机终身 "+myLifetime+" · 当前持有 🪙 "+gold+" · 历史已花 "+(myLifetime-gold);
   box.appendChild(sub);
-  lbStat("终身累计金币 "+lifetime);
 }
 function lbRenderRich(){ lbRenderRichTo(document.getElementById("overBoard")); }
 
@@ -7309,6 +7323,32 @@ function lbFetchMe(){
   lbStat("本机 "+(wantSmart?"聪明人":"普通")+" "+lbCacheMe.length+" 条");
 }
 
+// ===== 富豪榜：全网按终身累计金币 lifetime_coins 降序 =====
+function lbFetchRich(){
+  try{ if(typeof homeRankRender==="function")homeRankRender(); }catch(e){}
+  lbStat("加载富豪榜…");
+  var url=LB_URL+"/rest/v1/scores?select=id,name,lifetime_coins,created_at&order=lifetime_coins.desc&limit=50";
+  var x=new XMLHttpRequest();
+  x.open("GET",url,true);
+  x.setRequestHeader("apikey",LB_KEY);
+  x.setRequestHeader("Authorization","Bearer "+LB_KEY);
+  x.timeout=8000;
+  x.onload=function(){
+    if(x.status===200){
+      try{
+        var d=JSON.parse(x.responseText||"[]");
+        lbCacheRich=d||[];
+        lbRenderRich();
+        try{ if(typeof homeRankRender==="function")homeRankRender(); }catch(e){}
+        lbStat("富豪榜 "+lbCacheRich.length+" 条");
+      }catch(e){ lbStat("解析失败"); }
+    } else { lbStat("加载失败"); }
+  };
+  x.onerror=function(){ lbStat("无网络"); };
+  x.ontimeout=function(){ lbStat("超时"); };
+  try{ x.send(); }catch(e){ lbStat("离线"); }
+}
+
 function lbSubmit(sc,ds){
   // 优先用输入框当前值，其次 localStorage，最后 lbName
   var nm="";
@@ -7319,7 +7359,9 @@ function lbSubmit(sc,ds){
   if(!nm){ try{ nm=localStorage.getItem("njs_name")||""; }catch(e){ nm=""; } }
   if(!nm)nm=lbGetName();
   lbSetName(nm);
-  var body=JSON.stringify({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal")});
+  var _lifetime=0;
+  try{ var _c2=JSON.parse(localStorage.getItem("njs_codex")||"{}"); if(typeof _c2.lifetime==="number")_lifetime=_c2.lifetime; }catch(_){}
+  var body=JSON.stringify({name:nm,score:sc,dist:ds,lv:(typeof gunLevel!=="undefined"?gunLevel:1),gamemode:(smartMode?"smart":"normal"),lifetime_coins:_lifetime});
   var _submitT=Date.now();
   var x=new XMLHttpRequest();
   x.open("POST",LB_URL+"/rest/v1/scores",true);
@@ -7358,7 +7400,7 @@ function switchBoard(v){
     var el=document.getElementById(ids[i]);
     if(el) el.style.cssText=(v===vals[i]?onCss:offCss);
   }
-  if(v==="rich"){ lbRenderRich(); }
+  if(v==="rich"){ lbFetchRich(); }
   else { lbRender(); if(v==="all"||v==="smart") lbFetchAll(); else lbFetchMe(); }
   if(typeof homeRankRender==="function"){try{homeRankRender()}catch(e){}}
 }
@@ -7471,7 +7513,7 @@ function homeRankSwitch(v){
     var el=document.getElementById(ids[i]);
     if(el) el.style.cssText=(v===vals[i]?onCss:offCss);
   }
-  if(v==="rich"){ homeRankRender(); var st2=document.getElementById("hrStatus"); if(st2)st2.textContent="终身累计金币"; }
+  if(v==="rich"){ var st2=document.getElementById("hrStatus"); if(st2)st2.textContent="加载富豪榜…"; lbFetchRich(); }
   else {
     homeRankRender();
     var st=document.getElementById("hrStatus");
@@ -7544,7 +7586,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.8</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.9</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7575,6 +7617,10 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 09:40:20",items:[
+      "💰 富豪榜升级为全网排名：按终身累计金币 lifetime_coins 降序",
+      "🪙 成绩提交时同步上传终身累计金币"
+    ]},
     {time:"2026-10-24 09:33:46",items:[
       "🪙 聪明人模式金币×2（掉落×2、Boss 240、HUD 角标、结算双倍提示）",
       "💰 新增富豪榜：按终身累计金币（只增不减，含已花掉的）",
@@ -7702,7 +7748,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 09:33:46";
+    pd.textContent="更新于 2026 年 10 月 24 日 09:40:20";
   }
 })();
 </script>
