@@ -2703,7 +2703,7 @@ function wepDraw(L,c2,opt){
   if(gen===4){ c.fillStyle=pal.m;c.globalAlpha=0.95; c.beginPath();c.moveTo(-8,-bh*1.5);c.lineTo(bw*0.35,-bh*1.75);c.lineTo(bw*0.35,-bh*1.15);c.lineTo(-8,-bh*1.0);c.closePath();c.fill(); c.beginPath();c.moveTo(-8,bh*1.5);c.lineTo(bw*0.35,bh*1.75);c.lineTo(bw*0.35,bh*1.15);c.lineTo(-8,bh*1.0);c.closePath();c.fill(); c.globalAlpha=1; c.strokeStyle=pal.e;c.globalAlpha=0.5;c.lineWidth=1;c.stroke();c.globalAlpha=1; }
 
   c.restore();
-  return {muzzleX:mx0*sc, muzzleY:0, len:bw*sc};
+  return {muzzleX:mx0*sc, muzzleY:0, len:bw*sc, pal:pal, gen:gen};
 }
 
 /* 抓取当前等级武器数据（供其他地方查枪口位置） */
