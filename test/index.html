@@ -170,6 +170,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   </div>
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
+    <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
   <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v7.1</div>
   
@@ -247,6 +248,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 <div id="taunt"></div>
 <div id="hint" class="hidden">左半屏拖动移动 · 右下四键操作</div>
 
+</div>
+<div id="attrPanel" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(4,6,14,.92);backdrop-filter:blur(8px);overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="font-size:17px;font-weight:800;color:#7dffa0;letter-spacing:1px">⚡ 属性总览</div>
+      <button onclick="document.getElementById('attrPanel').style.display='none'" style="margin-left:auto;padding:6px 16px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(160,168,255,.4);color:#b8c0ff;font-size:12px;cursor:pointer">✕ 关闭</button>
+    </div>
+    <div id="attrEquipLine" style="font-size:11px;color:#8a94b8;margin-bottom:10px;line-height:1.7"></div>
+    <div id="attrBars" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div style="margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(160,168,255,.15);font-size:10px;color:#6a7498;line-height:1.8">
+      属性来源：<b style="color:#c08bff">枪皮</b> + <b style="color:#ff7ad1">角色皮肤</b>，两者叠加生效。<br>
+      在 📚 图鉴 的「🎨 枪皮」和「👤 角色」标签页装备后回到游戏即可生效。
+    </div>
+  </div>
 </div>
 <script>
 window.onerror=function(m,s,l,c,e){
@@ -518,7 +533,9 @@ var smartMode=false;
 function resetGame(){
   bgStageIdx=-1;bgCur={top:[22,10,58],bot:[10,14,70],glow:[90,60,255],hill:[26,12,62]};
 setCL();combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;try{input.move=0;stick.active=false;stick.id=-1;}catch(_){}var _cxEq=1,_cxTy=0;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;if(_cx.eqType&&_cx.eqType>=0&&_cx.eqType<=7)_cxTy=_cx.eqType;}catch(_){}gunLevel=_cxEq;gunType=_cxTy;_lastCoinGain=0;
-player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:100,maxHp:100,en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
+loadEquip();
+_attrApplied=totalAttr();
+player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:Math.round(100*attrMul("hp")),maxHp:Math.round(100*attrMul("hp")),en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
 world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
 score=0;distance=0;wave=1;bossSpawned=0;bossWave=0;bossAlive=false;skillCd=0;timeScale=1;slowTimer=0;
@@ -728,7 +745,7 @@ player.en=Math.min(player.maxEn,player.en+15);
 if(e.type==="boss"){
   showToast("BOSS击破!丰厚奖励!");score+=15000;world.flash=0.6;cam.shake=22;bossAlive=false;
   // 丰厚奖励：金币+回血+武器升级+护盾
-  coinCount+=(smartMode?240:120);
+  coinCount+=Math.round((smartMode?240:120)*attrMul("coin"));
   coinHud();
   // Boss 死亡喷射金币实体（视觉爽 + 可吸附拾取）
   for(var _bc=0;_bc<20;_bc++){world.coins.push({x:e.x+(Math.random()-0.5)*120,y:e.y-(Math.random()*60),t:0,got:false});}
@@ -5380,6 +5397,419 @@ function drawWeaponSkin(c, weaponType, skinId, level, x, y, scale, flip, animTim
 /* 当前装备皮肤（全局） */
 var currentSkin="basicWhite";
 
+
+/* ==================================================================
+   角色皮肤绘制（图鉴用）—— 与局内角色共用配色方案
+   drawRoleSkin(ctx, heroIdx, skinId, x, y, scale, animTime)
+   ================================================================== */
+var ROLE_PAL={
+  rk_steel :{body:"#8a94a8", trim:"#c8d0dc", accent:"#5a6270", glow:"#a0b0c8", eye:"#7fd8ff"},
+  rk_titan :{body:"#5a6a8a", trim:"#9ab0d8", accent:"#2a3450", glow:"#4a90d8", eye:"#00e0ff"},
+  rk_flame :{body:"#3a1a10", trim:"#ff8a30", accent:"#1a0a04", glow:"#ff5a10", eye:"#ffe040"},
+  rk_school:{body:"#f0f4ff", trim:"#3a5aaa", accent:"#1a2a5a", glow:"#7fb0ff", eye:"#4060c0"},
+  rk_star  :{body:"#e8d8ff", trim:"#a050ff", accent:"#2a1050", glow:"#c070ff", eye:"#ff70d0"},
+  rk_angel :{body:"#ffffff", trim:"#ffe070", accent:"#c0a030", glow:"#fff0a0", eye:"#88d0ff"},
+  rk_gi    :{body:"#f4f0e8", trim:"#3a3a3a", accent:"#1a1a1a", glow:"#ffd040", eye:"#202020"},
+  rk_oni   :{body:"#7a1a1a", trim:"#e0c060", accent:"#2a0a0a", glow:"#ff3020", eye:"#ffe020"},
+  rk_rust  :{body:"#6a5a48", trim:"#a08868", accent:"#2a2018", glow:"#c08040", eye:"#ff6020"},
+  rk_neon  :{body:"#1a1a2a", trim:"#ff2a9a", accent:"#0a0a14", glow:"#ff2a9a", eye:"#00f0ff"},
+  rk_shogun:{body:"#2a1a1a", trim:"#f0c040", accent:"#100808", glow:"#ff4020", eye:"#ffe020"},
+  rk_maid  :{body:"#f0f8ff", trim:"#3a6a9a", accent:"#1a3a5a", glow:"#80d0ff", eye:"#40a0ff"},
+  rk_abyss :{body:"#1a2a3a", trim:"#4080c0", accent:"#0a1420", glow:"#40c0ff", eye:"#00ffff"},
+  rk_levi  :{body:"#0a1a2a", trim:"#60e0ff", accent:"#04101a", glow:"#40d0ff", eye:"#ffffff"}
+};
+function drawRoleSkin(c, heroIdx, skinId, x, y, scale, T){
+  var pal=ROLE_PAL[skinId]||ROLE_PAL.rk_steel;
+  var sk=null;
+  var list=ROLE_SKIN_DEF[heroIdx]||[];
+  for(var i=0;i<list.length;i++) if(list[i].id===skinId) sk=list[i];
+  var rar=sk?(SKIN_RAR[sk.rar]||SKIN_RAR.white):SKIN_RAR.white;
+
+  c.save();
+  c.translate(x,y);
+  c.scale(scale,scale);
+
+  var breathe=Math.sin(T*2.2)*0.04;
+  var bob=Math.sin(T*2.2)*1.2;
+
+  /* 光环（传说/神话才有） */
+  if(sk && (sk.rar==="gold"||sk.rar==="red")){
+    skinGlowAt(c,0,0,58,pal.glow,0.20);
+    skinGlowAt(c,0,0,34,pal.glow,0.28);
+    // 光柱
+    var beam=c.createLinearGradient(0,-140,0,60);
+    beam.addColorStop(0,"rgba(0,0,0,0)");
+    beam.addColorStop(0.4,pal.glow.replace("#","rgba(").length? "rgba(255,255,255,0.12)":"rgba(255,255,255,0.12)");
+    beam.addColorStop(0.6,"rgba(255,255,255,0.20)");
+    beam.addColorStop(1,"rgba(0,0,0,0)");
+    c.fillStyle=beam;
+    c.fillRect(-22,-140,44,200);
+  }
+
+  /* 各英雄体型差异 */
+  var bodyW,bodyH,headR,legLen;
+  if(heroIdx===0){ bodyW=22;bodyH=34;headR=11;legLen=22; }      // 机甲战士
+  else if(heroIdx===1){ bodyW=18;bodyH=30;headR=12;legLen=24; }  // 二次元少女
+  else if(heroIdx===2){ bodyW=24;bodyH=34;headR=10;legLen=22; }  // 写实格斗家
+  else if(heroIdx===3){ bodyW=20;bodyH=34;headR=10;legLen=23; }  // 赛博武士
+  else { bodyW=20;bodyH=32;headR=11;legLen=23; }                 // 女仆鲸娘
+
+  /* ===== 腿 ===== */
+  c.fillStyle=pal.accent;
+  c.fillRect(-bodyW*0.34, 10+bodyH*0.5, bodyW*0.28, legLen);
+  c.fillRect(bodyW*0.06, 10+bodyH*0.5, bodyW*0.28, legLen);
+  // 腿高光
+  c.fillStyle="rgba(255,255,255,0.24)";
+  c.fillRect(-bodyW*0.32, 10+bodyH*0.5, 2, legLen*0.9);
+  c.fillRect(bodyW*0.08, 10+bodyH*0.5, 2, legLen*0.9);
+  // 靴
+  c.fillStyle=pal.trim;
+  c.fillRect(-bodyW*0.38, 10+bodyH*0.5+legLen, bodyW*0.36, 5);
+  c.fillRect(bodyW*0.02, 10+bodyH*0.5+legLen, bodyW*0.36, 5);
+
+  /* ===== 躯干（带渐变+高光） ===== */
+  var ty=-bodyH*0.5+bob;
+  var bg=c.createLinearGradient(-bodyW,ty,bodyW,ty+bodyH);
+  bg.addColorStop(0,pal.accent);
+  bg.addColorStop(0.22,pal.body);
+  bg.addColorStop(0.52,pal.trim);
+  bg.addColorStop(0.78,pal.body);
+  bg.addColorStop(1,pal.accent);
+  c.fillStyle=bg;
+  // 梯形躯干（肩宽腰窄）
+  c.beginPath();
+  c.moveTo(-bodyW*0.5-4, ty);
+  c.lineTo(bodyW*0.5+4, ty);
+  c.lineTo(bodyW*0.5-2, ty+bodyH);
+  c.lineTo(-bodyW*0.5+2, ty+bodyH);
+  c.closePath(); c.fill();
+  // 躯干描边
+  c.strokeStyle="rgba(0,0,0,0.4)"; c.lineWidth=0.8; c.stroke();
+  // 胸甲高光
+  c.fillStyle="rgba(255,255,255,0.28)";
+  c.beginPath();
+  c.moveTo(-bodyW*0.42+2, ty+3);
+  c.lineTo(-bodyW*0.05, ty+3);
+  c.lineTo(-bodyW*0.1, ty+bodyH*0.36);
+  c.lineTo(-bodyW*0.42+3, ty+bodyH*0.32);
+  c.closePath(); c.fill();
+  // 腰部色带
+  c.fillStyle=pal.accent;
+  c.fillRect(-bodyW*0.48, ty+bodyH*0.72, bodyW*0.96, bodyH*0.16);
+  // 腰带扣发光
+  c.fillStyle=pal.glow; c.globalAlpha=0.9;
+  c.fillRect(-3, ty+bodyH*0.74, 6, 6);
+  c.globalAlpha=1;
+  skinGlowAt(c,0,ty+bodyH*0.78,10,pal.glow,0.5,true);
+  // 胸口能量核（呼吸）
+  c.globalAlpha=0.55+0.35*Math.sin(T*3);
+  skinGlowAt(c,0,ty+bodyH*0.28,14,pal.glow,0.8,true);
+  c.globalAlpha=1;
+  c.fillStyle="#ffffff"; c.globalAlpha=0.85;
+  c.beginPath(); c.arc(0,ty+bodyH*0.28,3.2,0,6.2832); c.fill();
+  c.globalAlpha=1;
+
+  /* ===== 手臂 ===== */
+  for(var sd=-1;sd<=1;sd+=2){
+    c.save();
+    c.translate(sd*(bodyW*0.5+3), ty+bodyH*0.1);
+    c.rotate(sd*0.12);
+    var ag=c.createLinearGradient(0,0,sd*8,0);
+    ag.addColorStop(0,pal.body); ag.addColorStop(0.5,pal.trim); ag.addColorStop(1,pal.accent);
+    c.fillStyle=ag;
+    c.beginPath();
+    c.moveTo(0,0); c.lineTo(sd*8,2); c.lineTo(sd*7,bodyH*0.62); c.lineTo(-sd*1,bodyH*0.6);
+    c.closePath(); c.fill();
+    c.strokeStyle="rgba(0,0,0,0.34)"; c.lineWidth=0.6; c.stroke();
+    // 肩甲
+    c.fillStyle=pal.trim;
+    c.beginPath(); c.ellipse(sd*3, 0, 8, 6, 0, 0, 6.2832); c.fill();
+    c.strokeStyle="rgba(255,255,255,0.34)"; c.lineWidth=0.6; c.stroke();
+    // 手
+    c.fillStyle=pal.accent;
+    c.beginPath(); c.arc(sd*4, bodyH*0.62, 4.2, 0, 6.2832); c.fill();
+    c.restore();
+  }
+
+  /* ===== 头 ===== */
+  var hy=ty-headR*1.5;
+  // 颈
+  c.fillStyle=pal.accent;
+  c.fillRect(-3.6, ty-headR*0.5, 7.2, headR*0.6);
+  // 头（带渐变）
+  var hg=c.createRadialGradient(-headR*0.32, hy-headR*0.32, headR*0.1, 0, hy, headR*1.2);
+  hg.addColorStop(0,"#ffffff");
+  hg.addColorStop(0.32,pal.trim);
+  hg.addColorStop(0.72,pal.body);
+  hg.addColorStop(1,pal.accent);
+  c.fillStyle=hg;
+  c.beginPath(); c.ellipse(0, hy, headR*0.92, headR, 0, 0, 6.2832); c.fill();
+  c.strokeStyle="rgba(0,0,0,0.36)"; c.lineWidth=0.7; c.stroke();
+  // 面部暗区（让眼睛有底）
+  c.fillStyle="rgba(0,0,0,0.3)";
+  c.beginPath(); c.ellipse(0, hy+headR*0.18, headR*0.66, headR*0.5, 0, 0, 6.2832); c.fill();
+  // 眼睛（发光）
+  for(var sd2=-1;sd2<=1;sd2+=2){
+    c.fillStyle=pal.eye;
+    c.beginPath(); c.ellipse(sd2*headR*0.36, hy+headR*0.1, headR*0.18, headR*0.1, 0, 0, 6.2832); c.fill();
+  }
+  // 眼发光
+  skinGlowAt(c,0,hy+headR*0.1,headR*0.9,pal.eye,0.55,true);
+
+  /* ===== 各角色专属头饰/装饰 ===== */
+  if(heroIdx===0){
+    // 机甲：头盔天线 + 面罩
+    c.strokeStyle=pal.trim; c.lineWidth=1.8; c.lineCap="round";
+    c.beginPath(); c.moveTo(-headR*0.5,hy-headR*0.7); c.lineTo(-headR*1.1,hy-headR*2.0); c.stroke();
+    c.strokeStyle="#ffffff"; c.lineWidth=0.6;
+    c.beginPath(); c.moveTo(-headR*0.5,hy-headR*0.7); c.lineTo(-headR*1.1,hy-headR*2.0); c.stroke();
+    c.lineCap="butt";
+    skinGlowAt(c,-headR*1.1,hy-headR*2.0,headR*0.5,pal.glow,0.8,true);
+    // 面罩
+    c.fillStyle="rgba(0,0,0,0.55)";
+    c.beginPath(); c.ellipse(0,hy+headR*0.5,headR*0.8,headR*0.4,0,0,6.2832); c.fill();
+    c.strokeStyle=pal.trim; c.lineWidth=0.7; c.stroke();
+  }else if(heroIdx===1){
+    // 少女：双马尾 + 蝴蝶结
+    for(var sd3=-1;sd3<=1;sd3+=2){
+      c.fillStyle=pal.trim;
+      c.beginPath();
+      c.moveTo(sd3*headR*0.75, hy-headR*0.4);
+      c.quadraticCurveTo(sd3*headR*1.9, hy+headR*0.2, sd3*headR*1.7, hy+headR*1.5);
+      c.quadraticCurveTo(sd3*headR*1.2, hy+headR*0.7, sd3*headR*0.75, hy+headR*0.3);
+      c.closePath(); c.fill();
+      c.strokeStyle="rgba(255,255,255,0.4)"; c.lineWidth=0.5; c.stroke();
+    }
+    // 蝴蝶结
+    c.fillStyle=pal.eye;
+    for(var sd4=-1;sd4<=1;sd4+=2){
+      c.beginPath();
+      c.moveTo(0,hy-headR*0.85);
+      c.quadraticCurveTo(sd4*headR*0.9, hy-headR*1.5, sd4*headR*0.7, hy-headR*0.6);
+      c.quadraticCurveTo(sd4*headR*0.3, hy-headR*0.75, 0, hy-headR*0.85);
+      c.closePath(); c.fill();
+    }
+    c.fillStyle="#ffffff";
+    c.beginPath(); c.arc(0,hy-headR*0.85,headR*0.2,0,6.2832); c.fill();
+  }else if(heroIdx===2){
+    // 格斗家：头带
+    c.fillStyle=pal.trim;
+    c.fillRect(-headR*0.95, hy-headR*0.5, headR*1.9, headR*0.34);
+    c.strokeStyle="rgba(255,255,255,0.4)"; c.lineWidth=0.5; c.stroke();
+    // 带头飘尾
+    c.beginPath();
+    c.moveTo(-headR*0.95, hy-headR*0.42);
+    c.quadraticCurveTo(-headR*2.0, hy-headR*0.2+Math.sin(T*4)*3, -headR*2.4, hy+headR*0.5);
+    c.strokeStyle=pal.trim; c.lineWidth=2; c.stroke();
+  }else if(heroIdx===3){
+    // 赛博武士：头盔角 + 发光面甲
+    for(var sd5=-1;sd5<=1;sd5+=2){
+      c.beginPath();
+      c.moveTo(sd5*headR*0.4, hy-headR*0.7);
+      c.quadraticCurveTo(sd5*headR*1.5, hy-headR*1.5, sd5*headR*1.1, hy-headR*2.3);
+      c.strokeStyle=pal.trim; c.lineWidth=2.2; c.lineCap="round"; c.stroke();
+      c.strokeStyle="#ffffff"; c.lineWidth=0.7; c.stroke();
+      c.lineCap="butt";
+    }
+    // 面甲光带
+    c.strokeStyle=pal.glow; c.globalAlpha=0.9; c.lineWidth=1.4;
+    c.beginPath(); c.moveTo(-headR*0.7,hy+headR*0.14); c.lineTo(headR*0.7,hy+headR*0.14); c.stroke();
+    c.globalAlpha=1;
+    skinGlowAt(c,0,hy+headR*0.14,headR*1.1,pal.glow,0.5);
+  }else{
+    // 鲸娘：女仆头饰 + 鲸尾
+    c.fillStyle="#ffffff";
+    c.beginPath();
+    c.moveTo(-headR*0.85, hy-headR*0.6);
+    c.quadraticCurveTo(0, hy-headR*1.25, headR*0.85, hy-headR*0.6);
+    c.quadraticCurveTo(0, hy-headR*0.85, -headR*0.85, hy-headR*0.6);
+    c.closePath(); c.fill();
+    c.strokeStyle=pal.trim; c.lineWidth=0.6; c.stroke();
+    // 鲸尾
+    c.save();
+    c.translate(headR*1.3, hy-headR*1.0);
+    c.rotate(Math.sin(T*2.4)*0.2);
+    c.fillStyle=pal.trim;
+    c.beginPath();
+    c.moveTo(0,0);
+    c.quadraticCurveTo(headR*0.7,-headR*0.7, headR*1.1,-headR*0.4);
+    c.quadraticCurveTo(headR*0.6,-headR*0.1, headR*1.1,headR*0.4);
+    c.quadraticCurveTo(headR*0.6,headR*0.2, 0,0);
+    c.closePath(); c.fill();
+    c.restore();
+  }
+
+  /* ===== 稀有度外框光 ===== */
+  if(sk && sk.rar==="red"){
+    for(var i=0;i<6;i++){
+      var a6=T*0.8+i*1.0472;
+      var rr=44+Math.sin(T*2+i)*4;
+      skinGlowAt(c,Math.cos(a6)*rr,Math.sin(a6)*rr*0.8,7,"#ffffff",0.55,true);
+    }
+  }
+
+  c.restore();
+  return {rar:rar, pal:pal};
+}
+
+/* ==================================================================
+   属性系统 —— 枪皮/角色皮肤/词条 统一加成
+   ================================================================== */
+/* 六维属性定义 */
+var ATTR_DEF={
+  dmg :{n:"伤害",   ic:"⚔",  fmt:function(v){return "+"+v+"%"},  unit:"%", max:120},
+  rate:{n:"攻速",   ic:"⚡", fmt:function(v){return "+"+v+"%"},  unit:"%", max:80},
+  crit:{n:"暴击率", ic:"🎯", fmt:function(v){return "+"+v+"%"},  unit:"%", max:60},
+  hp  :{n:"生命",   ic:"❤",  fmt:function(v){return "+"+v+"%"},  unit:"%", max:100},
+  spd :{n:"移速",   ic:"💨", fmt:function(v){return "+"+v+"%"},  unit:"%", max:50},
+  coin:{n:"金币",   ic:"💰", fmt:function(v){return "+"+v+"%"},  unit:"%", max:100},
+  luck:{n:"运气",   ic:"🍀", fmt:function(v){return "+"+v+"%"},  unit:"%", max:80},
+  pie :{n:"穿透",   ic:"🔹", fmt:function(v){return "+"+v+"%"},  unit:"%", max:60}
+};
+var ATTR_KEYS=["dmg","rate","crit","hp","spd","coin","luck","pie"];
+
+/* 稀有度 → 属性条数与总强度 */
+var RAR_ATTR_POWER={
+  white :{slots:1, mul:0.5},
+  green :{slots:2, mul:0.85},
+  blue  :{slots:2, mul:1.25},
+  purple:{slots:3, mul:1.75},
+  gold  :{slots:4, mul:2.5},
+  red   :{slots:5, mul:3.4}
+};
+
+/* 由 skinId 稳定生成属性（同一皮肤永远同样属性） */
+function skinAttrOf(skinId){
+  var sk=SKIN_DEF[skinId]; if(!sk) return [];
+  var rp=RAR_ATTR_POWER[sk.rar]||RAR_ATTR_POWER.white;
+  // 以 id 字符和作种子，保证稳定
+  var seed=0; for(var i=0;i<skinId.length;i++) seed=(seed*31+skinId.charCodeAt(i))%9973;
+  var pool=ATTR_KEYS.slice();
+  var out=[];
+  for(var i=0;i<rp.slots && pool.length;i++){
+    var idx=(seed+i*37)%pool.length;
+    var key=pool.splice(idx,1)[0];
+    var s2=(seed*7+i*131)%100;
+    var base;
+    if(key==="dmg")      base=Math.round((3+s2*0.09)*rp.mul*10)/10;
+    else if(key==="rate")base=Math.round((2.5+s2*0.07)*rp.mul*10)/10;
+    else if(key==="crit")base=Math.round((1.5+s2*0.045)*rp.mul*10)/10;
+    else if(key==="hp")  base=Math.round((3.5+s2*0.11)*rp.mul*10)/10;
+    else if(key==="spd") base=Math.round((1.2+s2*0.038)*rp.mul*10)/10;
+    else if(key==="coin")base=Math.round((2.5+s2*0.075)*rp.mul*10)/10;
+    else if(key==="luck")base=Math.round((1.5+s2*0.05)*rp.mul*10)/10;
+    else                 base=Math.round((1.0+s2*0.032)*rp.mul*10)/10;
+    out.push({k:key, v:base});
+  }
+  return out;
+}
+
+/* ===== 角色皮肤配置 ===== */
+var ROLE_SKIN_DEF={
+  /* --- 角色 0：机甲战士 --- */
+  0:[
+    {id:"rk_steel",  name:"钢铁原色", rar:"white",  desc:"出厂标准涂装",
+      attr:[{k:"hp",v:3}]},
+    {id:"rk_titan",  name:"泰坦重装", rar:"blue",   desc:" thickened 装甲板",
+      attr:[{k:"hp",v:12},{k:"dmg",v:5}]},
+    {id:"rk_flame",  name:"烈焰战神", rar:"gold",   desc:"熔岩核心过载",
+      attr:[{k:"dmg",v:22},{k:"hp",v:18},{k:"crit",v:8},{k:"rate",v:6}]},
+  ],
+  /* --- 角色 1：二次元少女 --- */
+  1:[
+    {id:"rk_school", name:"水手服",   rar:"white",  desc:"校园日常",
+      attr:[{k:"spd",v:3}]},
+    {id:"rk_star",   name:"星光偶像", rar:"blue",   desc:"舞台应援",
+      attr:[{k:"coin",v:12},{k:"spd",v:5}]},
+    {id:"rk_angel",  name:"天使圣咏", rar:"red",    desc:"羽翼与圣光",
+      attr:[{k:"luck",v:26},{k:"coin",v:24},{k:"crit",v:12},{k:"rate",v:10},{k:"spd",v:9}]},
+  ],
+  /* --- 角色 2：写实格斗家 --- */
+  2:[
+    {id:"rk_gi",     name:"道服",     rar:"white",  desc:"训练日",
+      attr:[{k:"dmg",v:3}]},
+    {id:"rk_oni",    name:"鬼面武者", rar:"purple", desc:"赤鬼面具",
+      attr:[{k:"dmg",v:14},{k:"crit",v:10},{k:"hp",v:8}]},
+  ],
+  /* --- 角色 3：赛博武士 --- */
+  3:[
+    {id:"rk_rust",   name:"锈蚀装甲", rar:"white",  desc:"旧战场遗留",
+      attr:[{k:"rate",v:3}]},
+    {id:"rk_neon",   name:"霓虹刃",   rar:"purple", desc:"等离子刃",
+      attr:[{k:"rate",v:16},{k:"dmg",v:12},{k:"pie",v:10}]},
+    {id:"rk_shogun", name:"电子幕府", rar:"gold",   desc:"将军级义体",
+      attr:[{k:"rate",v:24},{k:"dmg",v:20},{k:"crit",v:10},{k:"pie",v:14}]},
+  ],
+  /* --- 角色 4：女仆鲸娘 --- */
+  4:[
+    {id:"rk_maid",   name:"鲸娘女仆", rar:"white",  desc:"深海执事",
+      attr:[{k:"coin",v:3}]},
+    {id:"rk_abyss",  name:"深渊执事", rar:"purple", desc:"深潜装甲",
+      attr:[{k:"coin",v:18},{k:"hp",v:12},{k:"luck",v:10}]},
+    {id:"rk_levi",   name:"利维坦",   rar:"red",    desc:"巨鲸之魂",
+      attr:[{k:"hp",v:40},{k:"coin",v:30},{k:"luck",v:20},{k:"dmg",v:15},{k:"rate",v:10}]},
+  ]
+};
+
+/* ===== 当前装备 ===== */
+var currentRoleSkin=null;   // 角色皮肤 id
+
+/* 从存档加载装备 */
+function loadEquip(){
+  try{
+    var c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
+    if(c.skin && SKIN_DEF[c.skin]) currentSkin=c.skin;
+    if(c.roleSkin) currentRoleSkin=c.roleSkin;
+  }catch(e){}
+}
+/* 保存装备 */
+function saveEquip(){
+  try{
+    var c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
+    c.skin=currentSkin;
+    c.roleSkin=currentRoleSkin;
+    localStorage.setItem("njs_codex",JSON.stringify(c));
+  }catch(e){}
+}
+
+/* ===== 汇总所有加成 ===== */
+function totalAttr(){
+  var sum={};
+  for(var i=0;i<ATTR_KEYS.length;i++) sum[ATTR_KEYS[i]]=0;
+  // 枪皮
+  var sa=skinAttrOf(currentSkin);
+  for(var i=0;i<sa.length;i++) sum[sa[i].k]+=sa[i].v;
+  // 角色皮肤
+  var list=ROLE_SKIN_DEF[HERO]||[];
+  for(var i=0;i<list.length;i++){
+    if(list[i].id===currentRoleSkin){
+      for(var j=0;j<list[i].attr.length;j++) sum[list[i].attr[j].k]+=list[i].attr[j].v;
+      break;
+    }
+  }
+  // 四舍五入到 1 位
+  for(var k in sum) sum[k]=Math.round(sum[k]*10)/10;
+  return sum;
+}
+
+/* ===== 应用加成到游戏数值（每次重生/装备变更调用） ===== */
+var _attrApplied=null;
+function applyAttr(){
+  var a=totalAttr();
+  _attrApplied=a;
+  return a;
+}
+/* 便捷取值（带 %） */
+function attrMul(key){
+  var a=_attrApplied||totalAttr();
+  return 1+(a[key]||0)/100;
+}
+function attrPct(key){
+  var a=_attrApplied||totalAttr();
+  return (a[key]||0);
+}
+
+
 var FAM_DRAW={pistol:famPistol,rifle:famRifle,sniper:famSniper,shotgun:famShotgun,
               gatling:famGatling,staff:famStaff,cannon:famCannon,drone:famDrone};
 
@@ -5536,7 +5966,7 @@ if(keys.KeyD||keys.ArrowRight)move=1;
 if(world._rev||world._revCtrl)move=-move;
 if((keys.Space||keys.KeyW||keys.ArrowUp)&&!keys._jh)tryJump();
 keys._jh=keys.Space||keys.KeyW||keys.ArrowUp;
-var speed=240,fr=12;
+var speed=240*attrMul("spd"),fr=12;
 if(Math.abs(move)>0.1){p.vx+=(move*speed-p.vx)*10*dt;p.facing=move>0?1:-1}else{p.vx*=Math.max(0,1-fr*dt)}
 p.dashCd=Math.max(0,p.dashCd-rdt);
 if(p.shield>0)p.shield-=rdt;
@@ -5581,7 +6011,7 @@ if(p.clones&&p.clones.length>0){
 }
 if(world._bhDomain){world._bhDomain.t-=rdt;world._bhDomain.y=p.y-40;if(world._bhDomain.t<=0)world._bhDomain=null}
 if(rageTimer>0){rageTimer-=rdt;if(rageTimer<=0)rageTimer=0}
-if(input.shoot&&p.shootCd<=(rageTimer>0?0.04:0.13)&&(rageTimer>0||p.en>=8)){shoot();if(rageTimer>0)p.en=100}
+if(input.shoot&&p.shootCd<=(rageTimer>0?0.04:0.13/Math.max(0.3,attrMul("rate")))&&(rageTimer>0||p.en>=8)){shoot();if(rageTimer>0)p.en=100}
 cam.x+=(p.x-W*0.3-cam.x)*3.5*dt;
 cam.y+=(p.y-H*0.55-cam.y)*2.0*dt;
 // 打击停顿：几乎冻结时间，仅保留极慢推进
@@ -5624,7 +6054,7 @@ for(var li=0;li<world.lasers.length;li++){var lz=world.lasers[li];lz.t+=dt;lz.cd
 for(var bi2=0;bi2<world.blackholes.length;bi2++){var bh=world.blackholes[bi2];bh.t+=dt;bh.life-=dt;bh.r=(bh.giant?45:20)+Math.sin(bh.t*2)*4;var dxBH=p.x-bh.x,dyBH=p.y-bh.y,distBH=Math.sqrt(dxBH*dxBH+dyBH*dyBH);if(distBH<160&&distBH>5){var pullBH=120/distBH/distBH;p.vx-=(dxBH/distBH)*pullBH*60*dt;p.vy-=(dyBH/distBH)*pullBH*60*dt}if(distBH<bh.r&&p.inv<=0&&!(p.shield>0)){p.hp-=8;p.inv=0.5;cam.shake=4;spawnShockRing(p.x,p.y,"#b026ff",50)}}
 world.blackholes=world.blackholes.filter(function(bh){return bh.x>cam.x-300&&bh.life>0});
 // 护送
-if(world.escort){var es=world.escort;es.t+=dt;if(!es.got&&Math.abs(p.x-es.x)<40&&Math.abs(p.y-es.y)<50){es.got=true;sfx(700,"sine",0.15,0.05,1200);showToast("护送物资!带到前方!")}if(es.got&&!es.delivered){es.x=p.x;es.y=p.y-60;if(p.x>es.startX+800){es.delivered=true;score+=500;coinCount+=20;sfx(900,"sine",0.3,0.1,1800);showToast("护送成功!+500分+20金币");spawnShockRing(p.x,p.y-30,"#ffe600",100);world.flash=0.2}}if(es.got)es.startX=es.startX||p.x-10}
+if(world.escort){var es=world.escort;es.t+=dt;if(!es.got&&Math.abs(p.x-es.x)<40&&Math.abs(p.y-es.y)<50){es.got=true;sfx(700,"sine",0.15,0.05,1200);showToast("护送物资!带到前方!")}if(es.got&&!es.delivered){es.x=p.x;es.y=p.y-60;if(p.x>es.startX+800){es.delivered=true;score+=500;coinCount+=Math.round(20*attrMul("coin"));sfx(900,"sine",0.3,0.1,1800);showToast("护送成功!+500分+20金币");spawnShockRing(p.x,p.y-30,"#ffe600",100);world.flash=0.2}}if(es.got)es.startX=es.startX||p.x-10}
 world.poisons=world.poisons.filter(function(z){return z.x>cam.x-300});
 world.ices=world.ices.filter(function(z){return z.x>cam.x-300});
 world.chests=world.chests.filter(function(z){return z.x>cam.x-300});
@@ -5634,7 +6064,7 @@ world.ghosts=world.ghosts.filter(function(z){return z.x>cam.x-300&&!(z.touched&&
 // 毒云
 for(var i=world.poisons.length-1;i>=0;i--){var pz=world.poisons[i];pz.t+=dt;pz.life-=dt;if(pz.life<=0){world.poisons.splice(i,1);continue}if(Math.abs(p.x-pz.x)<pz.r&&Math.abs(p.y-pz.y)<pz.r&&p.inv<=0&&!(p.shield>0)){p.hp-=6;p.inv=0.3}}
 // 宝箱
-for(var i=world.chests.length-1;i>=0;i--){var ch=world.chests[i];ch.t+=dt;if(Math.abs(p.x-ch.x)<40&&Math.abs(p.y-ch.y)<45){world.chests.splice(i,1);for(var ci=0;ci<3;ci++)world.gems.push({x:ch.x+(ci-1)*30,y:ch.y-40,t:Math.random()*7,got:false});coinCount+=50;sfx(900,"sine",0.4,0.1,1800);spawnShockRing(ch.x,ch.y,"#ffe600",120);world.texts.push({x:ch.x,y:ch.y-40,text:"宝箱!",life:1.5,vy:-40});world.flash=0.2}}
+for(var i=world.chests.length-1;i>=0;i--){var ch=world.chests[i];ch.t+=dt;if(Math.abs(p.x-ch.x)<40&&Math.abs(p.y-ch.y)<45){world.chests.splice(i,1);for(var ci=0;ci<3;ci++)world.gems.push({x:ch.x+(ci-1)*30,y:ch.y-40,t:Math.random()*7,got:false});coinCount+=Math.round(50*attrMul("coin"));sfx(900,"sine",0.4,0.1,1800);spawnShockRing(ch.x,ch.y,"#ffe600",120);world.texts.push({x:ch.x,y:ch.y-40,text:"宝箱!",life:1.5,vy:-40});world.flash=0.2}}
 // 能量井
 for(var i=0;i<world.wells.length;i++){var wl=world.wells[i];wl.t+=dt;if(Math.abs(p.x-wl.x)<40&&Math.abs(p.y-wl.y)<60){p.en=Math.min(p.maxEn,p.en+40*dt);p.hp=Math.min(p.maxHp,p.hp+8*dt)}}
 // 时间结晶
@@ -6104,8 +6534,12 @@ for(var i=0;i<world.bullets.length;i++){
   var b=world.bullets[i];
   if(b.home&&b.owner==="player"){var tg2b=null,td3=99999;for(var j=0;j<world.enemies.length;j++){var en2=world.enemies[j];var dd3=(en2.x-b.x)*(en2.x-b.x)+(en2.y-b.y)*(en2.y-b.y);if(dd3<td3){td3=dd3;tg2b=en2}}if(tg2b&&td3<1440000){var ta2=Math.atan2(tg2b.y-b.y,tg2b.x-b.x);var ca2=Math.atan2(b.vy,b.vx);var diff2=ta2-ca2;while(diff2>Math.PI)diff2-=6.28;while(diff2<-Math.PI)diff2+=6.28;var turn2=Math.max(-22*dt,Math.min(22*dt,diff2));var sp3=Math.sqrt(b.vx*b.vx+b.vy*b.vy);b.vx=Math.cos(ca2+turn2)*sp3;b.vy=Math.sin(ca2+turn2)*sp3}}
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
-  if(b.owner==="player"){for(var j=0;j<world.enemies.length;j++){var e2=world.enemies[j];if(Math.abs(b.x-e2.x)<e2.w/2+b.r&&Math.abs(b.y-e2.y)<e2.h/2+b.r){var _dmgMul=1;if(e2.type==="boss"){var _dxp=(player?player.x:120)-e2.x,_dyp=(player?player.y:H-220)-e2.y;var _dp=Math.sqrt(_dxp*_dxp+_dyp*_dyp);if(_dp<150)_dmgMul=2.0;else if(_dp<300)_dmgMul=1.5;else if(_dp<450)_dmgMul=1.2;}e2.hp-=(b.dmg||12)*_dmgMul;if(!b.pierce)b.life=0;
-var _dmg=b.dmg||12;
+  if(b.owner==="player"){for(var j=0;j<world.enemies.length;j++){var e2=world.enemies[j];if(Math.abs(b.x-e2.x)<e2.w/2+b.r&&Math.abs(b.y-e2.y)<e2.h/2+b.r){var _dmgMul=1;if(e2.type==="boss"){var _dxp=(player?player.x:120)-e2.x,_dyp=(player?player.y:H-220)-e2.y;var _dp=Math.sqrt(_dxp*_dxp+_dyp*_dyp);if(_dp<150)_dmgMul=2.0;else if(_dp<300)_dmgMul=1.5;else if(_dp<450)_dmgMul=1.2;}var _atk=_attrApplied||totalAttr();
+            var _isCrit=Math.random()<((_atk.crit||0)/100);
+            var _critMul=_isCrit?1.8:1;
+            var _baseDmg=(b.dmg||12)*_dmgMul*(1+(_atk.dmg||0)/100)*_critMul;
+            e2.hp-=_baseDmg;if(!b.pierce)b.life=0;
+var _dmg=Math.round(_baseDmg);
 var _heavy=_dmg>=60;
 // 命中停顿：轻击1帧感，重击3帧感
 if(HITSTOP_ENABLED)hitStop=Math.max(hitStop,_heavy?0.075:0.028);
@@ -10119,7 +10553,7 @@ function loadGame(){try{return JSON.parse(localStorage.getItem("njs_save")||"nul
 function doRevive(){
   if(revives<=0){doGiveUp();return}
   revives--;
-  player.hp=player.maxHp;player.en=player.maxEn;player.dead=false;player.inv=2.5;
+  _attrApplied=totalAttr();player.maxHp=Math.round(100*attrMul("hp"));player.hp=player.maxHp;player.en=player.maxEn;player.dead=false;player.inv=2.5;
   player.vx=0;player.vy=0;
   player.x=Math.max(cam.x+W*0.3,120);player.y=H-260;
   world.bullets=[];
@@ -11419,6 +11853,46 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   }
   /* ===== 图鉴 UI ===== */
   var cxTab=0,cxDetailId=null;
+  window.openAttrPanel=function(){
+    loadEquip(); _attrApplied=totalAttr();
+    var a=_attrApplied;
+    var p=document.getElementById("attrPanel");
+    var line=document.getElementById("attrEquipLine");
+    var bars=document.getElementById("attrBars");
+    if(!p||!bars) return;
+    // 装备行
+    var sk=SKIN_DEF[currentSkin]||SKIN_DEF.basicWhite;
+    var skRar=SKIN_RAR[sk.rar]||SKIN_RAR.white;
+    var rsName="未装备";
+    var rlist=ROLE_SKIN_DEF[HERO]||[];
+    for(var i=0;i<rlist.length;i++){ if(rlist[i].id===currentRoleSkin){ rsName=rlist[i].name; break; } }
+    line.innerHTML='🎨 枪皮：<b style="color:'+skRar.col+'">'+sk.name+'</b>　'+
+                   '👤 角色皮肤：<b style="color:#ff7ad1">'+rsName+'</b>';
+    // 属性条
+    bars.innerHTML="";
+    var any=false;
+    for(var i=0;i<ATTR_KEYS.length;i++){
+      var k=ATTR_KEYS[i], d=ATTR_DEF[k], v=a[k]||0;
+      if(v<=0.01) continue;
+      any=true;
+      var pct=Math.min(100,(v/(d.max||100))*100);
+      var row=document.createElement("div");
+      row.style.cssText="padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.045);border:1px solid rgba(125,255,160,.18)";
+      row.innerHTML=
+        '<div style="display:flex;align-items:center;font-size:12px;color:#d8e4ff;margin-bottom:5px">'+
+          '<span style="font-size:14px;margin-right:6px">'+d.ic+'</span>'+d.n+
+          '<span style="margin-left:auto;font-weight:800;color:#7dffa0;font-size:13px">'+d.fmt(v)+'</span>'+
+        '</div>'+
+        '<div style="height:5px;border-radius:3px;background:rgba(0,0,0,.45);overflow:hidden">'+
+          '<div style="height:100%;width:'+pct.toFixed(1)+'%;border-radius:3px;background:linear-gradient(90deg,#3aff7a,#00f2ff)"></div>'+
+        '</div>';
+      bars.appendChild(row);
+    }
+    if(!any){
+      bars.innerHTML='<div style="padding:20px;text-align:center;font-size:12px;color:#6a7498">还没有任何属性加成<br>去图鉴装备枪皮或角色皮肤</div>';
+    }
+    p.style.display="block";
+  };
   window.openCodex=function(tab){
     cxTab=(tab===undefined?0:tab);
     cxDetailId=null;
