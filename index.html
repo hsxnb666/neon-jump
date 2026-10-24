@@ -22,6 +22,43 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 #startScreen::-webkit-scrollbar{display:none}
 #startScreen::before{content:"";margin:auto;flex-shrink:0}
 #startScreen::after{content:"";margin:auto;flex-shrink:0}
+
+/* ===== 结算/复活页霓虹大标题 ===== */
+.neon-title{
+  font-size:clamp(26px,7.6vw,40px)!important;
+  font-weight:900;letter-spacing:1px;line-height:1.22;
+  margin:0 0 8px;padding:0 8px;
+  width:100%;max-width:min(92vw,520px);box-sizing:border-box;
+  word-break:break-word;overflow-wrap:break-word;white-space:normal;
+  text-align:center;transform-origin:50% 50%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  background-size:200% 100%;
+  animation:titleFlow 3.2s linear infinite;
+  will-change:transform,background-position;
+}
+.neon-title.tPop{animation:titleFlow 3.2s linear infinite, titlePop .34s cubic-bezier(.18,1.6,.42,1) both}
+@keyframes titlePop{
+  0%{transform:scale(.42);opacity:0}
+  60%{transform:scale(1.12);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+@keyframes titleFlow{
+  0%{background-position:0% 50%}
+  100%{background-position:200% 50%}
+}
+/* 三组配色：红橙 / 青紫 / 金红 */
+.neon-title.c1{
+  background-image:linear-gradient(100deg,#ff2a6d,#ff8a00,#ffe600,#ff2a6d);
+  filter:drop-shadow(0 0 5px rgba(255,90,40,.95)) drop-shadow(0 0 13px rgba(255,42,109,.8)) drop-shadow(0 0 22px rgba(255,42,109,.45));
+}
+.neon-title.c2{
+  background-image:linear-gradient(100deg,#00f2ff,#8b5cff,#ff00aa,#00f2ff);
+  filter:drop-shadow(0 0 5px rgba(0,242,255,.95)) drop-shadow(0 0 13px rgba(176,38,255,.8)) drop-shadow(0 0 22px rgba(0,242,255,.45));
+}
+.neon-title.c3{
+  background-image:linear-gradient(100deg,#ffe600,#ff2a6d,#ffd700,#ffe600);
+  filter:drop-shadow(0 0 5px rgba(255,215,0,.95)) drop-shadow(0 0 13px rgba(255,42,109,.75)) drop-shadow(0 0 22px rgba(255,215,0,.4));
+}
 .logo{
   font-size:clamp(34px,11vw,64px);font-weight:900;letter-spacing:6px;
   background:linear-gradient(100deg,#00f2ff 0%,#ff00aa 50%,#ffe600 100%);
@@ -134,7 +171,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.7</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v6.0</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -160,7 +197,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 </div>
 
 <div id="overScreen" class="panel hidden">
-  <div class="logo" style="font-size:clamp(26px,8vw,42px)">游戏结束</div>
+  <div class="logo neon-title" id="overTitle"></div>
   <div id="finalScore" style="color:#a0a8ff;margin-top:12px;font-size:14px">得分 0</div>
   <div id="board" style="display:none"></div>
     <div id="lbTabs" style="display:flex;gap:5px;justify-content:center;margin:8px 0 5px;flex-wrap:nowrap">
@@ -182,7 +219,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
 </div>
 
 <div id="reviveScreen" class="panel hidden">
-  <div class="logo" style="font-size:clamp(26px,8vw,42px)">你倒下了</div>
+  <div class="logo neon-title" id="reviveTitle"></div>
   <div id="reviveInfo" style="color:#a0a8ff;margin-top:12px;font-size:15px">剩余复活 3 次</div>
   <button class="btn btn-revive" onclick="doRevive()">复活继续</button>
   <button class="btn btn-ghost" onclick="doGiveUp()">放弃</button>
@@ -586,20 +623,20 @@ function showToast(m){if(!ui.toast)return;ui.toast.textContent=m;ui.toast.classL
 
 /* ========== 嘲讽文案库（失败/复活各30句，不重复抽取） ========== */
 var TAUNT_DEAD=[
-"就这？","死得还挺快。","手残就别玩高难度。","你的操作，配不上这把枪。","菜是原罪。",
-"再来十次，结果也一样。","这分数，狗看了都摇头。","你以为换把武器就能赢？","下一局，我会手下留情的……骗你的。","复活了也是接着送。",
-"就这点水平，还敢选这个模式？","子弹都躲不过去，怎么混的。","你的反应速度，是龟速吗？","这波操作，我都没眼看。","死了也好，省的丢人。",
-"键盘上撒把米，鸡都比你强。","别人是打不过，你是压根不会打。","这分数，创下新低了吧。","你是在玩，还是在表演送死？","枪是好枪，人是真菜。",
-"我见过菜的，没见过这么菜的。","这局你认真玩了吗？","手是租来的吗？这么急着还。","再打下去，怪物都要同情你了。","你的走位，还不如原地不动。",
-"这一死，教科书级别的反面教材。","天赋不够，努力也白搭。","建议换个简单点的游戏。","这成绩，我都不好意思给你存档。","别难过，菜不是一天练成的。"
+"废物，滚。","你他妈也配玩这个？","打得跟屎一样，恶心。","菜成这样，怎么还有脸活着。","垃圾操作，垃圾人。",
+"你的手是废了吗？连狗都不如。","就你这水平，早点卸载吧。","看你这操作，我他妈想吐。","你活着就是浪费空气。","蠢货，死得真他妈难看。",
+"打得这么烂，你妈知道吗？","垃圾一个，别玩了。","你这脑子装的是屎吗？","菜狗，滚回去吃奶。","你全家都比你玩得好。",
+"就这？我奶奶闭着眼都比你强。","废物点心，死一百次也白搭。","你这操作，狗都嫌。","打得跟抽筋一样，难看死了。","丢人现眼的玩意，滚远点。",
+"你他妈是来搞笑的吧？","这点分也配截图？","蠢得我头皮发麻。","你的技术已经烂到恶心了。","垃圾就该待在垃圾堆里。",
+"菜鸡，闭嘴。","你这种人活着就是笑话。","打得像坨屎，还敢上传。","我真他妈替你丢人。","滚，别脏了我的榜。"
 ];
 var TAUNT_REVIVE=[
-"还真敢回来啊。","复活了，然后呢？接着送？","续命是吧？有用吗？","这次能撑过 30 秒吗？","多死一次而已。",
-"给你机会，你也不中用。","这波复活，浪费了。","再来一次，死得一样难看。","欢迎回来送人头。","命是续上了，脸呢？",
-"复活药都救不了你。","又回来了？急着再死一次？","这次记得看子弹，别光看枪。","复活是给你第二次送死的机会。","我赌你撑不过这一波。",
-"起来吧，地板还没凉。","续命续了个寂寞。","复活次数快用完了吧。","这条命，算是白给了。","你是不是对「复活」有什么误解。",
-"又满血了，又可以躺了。","这次能躲过一个弹幕吗？","复活的钱，花得真冤。","起来继续挨打。","我都不忍心看下去了。",
-"这次死得慢点，算我输。","复活不是万能的，尤其对你。","又站起来了，又能倒下了。","命可以续，操作续不了。","恭喜复活，继续送分。"
+"还敢起来？不要脸。","又来送死，贱不贱啊。","起来干什么，找打？","废物复活了还是废物。","你这命，狗都不吃。",
+"爬起来继续丢人现眼？","你他妈是真不怕死。","复活？浪费。","再死一次，我看着爽。","贱骨头，打不死。",
+"起来啊，垃圾。","你的命比屎还贱。","真他妈有脸点复活。","多活十秒，多丢十秒人。","死一次不够，还得再死一次。",
+"滚回去躺着吧，别动了。","你复活，我恶心。","这点血给你，够你再烂一次。","又来？烦不烦。","菜狗爬起来了。",
+"站起来继续挨打，挺好的。","你他妈就是欠收拾。","废物才需要复活。","别撑了，你撑不住的。","活着也是浪费服务器。",
+"跟你玩真是浪费时间。","这次死快点，别磨蹭。","你越复活越难看。","不要脸到了极点。","行行行，你最菜。"
 ];
 var _tauntUsedDead=[], _tauntUsedRevive=[];
 function tauntPick(arr, used){
@@ -611,6 +648,27 @@ function tauntPick(arr, used){
   used.push(idx);
   return arr[idx];
 }
+/* 结算/复活页大标题：随机嘲讽 + 换配色 + 弹入 + 轻震屏 */
+var _titleColor=0;
+function setPanelTitle(elId, pool, used){
+  var el=document.getElementById(elId);
+  if(!el)return;
+  var txt="";
+  try{ txt=tauntPick(pool,used); }catch(e){ txt=""; }
+  if(!txt)return;
+  el.textContent=txt;
+  // 每次换一组配色（不连续重复）
+  var next=_titleColor;
+  while(next===_titleColor)next=1+Math.floor(Math.random()*3);
+  _titleColor=next;
+  el.className="logo neon-title c"+next;
+  // 重放弹入动画
+  void el.offsetWidth;
+  el.classList.add("tPop");
+  // 轻微震屏
+  try{ cam.shake=Math.max(cam.shake||0,9); }catch(e){}
+}
+
 function showTaunt(text){
   var el=document.getElementById("taunt");
   if(!el)return;
@@ -3134,7 +3192,7 @@ if(smartMode)updateSmartTraps(dt,rdt);
 world._dark=Math.max(0,(world._dark||0)-rdt*2);
 world._blind=Math.max(0,(world._blind||0)-rdt*2);
 // 死亡
-if(p.hp<=0&&!p.dead){p.dead=true;if(revives>0){gameState="revive";var ri=document.getElementById("reviveInfo");if(ri)ri.textContent="剩余复活 "+revives+"次 得分"+score+" 距离"+distance+"m"+(smartMode?" · 🧠聪明人模式":"");var rs=document.getElementById("reviveScreen");if(rs)rs.classList.remove("hidden");ui.hud.classList.add("hidden");sfx(80,"sawtooth",0.5,0.1,40)}else{doGiveUp()}}
+if(p.hp<=0&&!p.dead){p.dead=true;if(revives>0){gameState="revive";try{setPanelTitle("reviveTitle",TAUNT_DEAD,_tauntUsedDead);}catch(e){}var ri=document.getElementById("reviveInfo");if(ri)ri.textContent="剩余复活 "+revives+"次 得分"+score+" 距离"+distance+"m"+(smartMode?" · 🧠聪明人模式":"");var rs=document.getElementById("reviveScreen");if(rs)rs.classList.remove("hidden");ui.hud.classList.add("hidden");sfx(80,"sawtooth",0.5,0.1,40)}else{doGiveUp()}}
 ensureWorld();spawnEnemies()}
 
 /* 头像 */
@@ -3203,13 +3261,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v5.7");
+    localStorage.setItem("njs_patch","v6.0");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v5.7"){
+    if(seen!=="v6.0"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7111,11 +7169,13 @@ function doRevive(){
   world.texts.push({x:player.x,y:player.y-70,text:"复活!",life:1.2,vy:-40});
   sfx(700,"sine",0.4,0.1,1600);
   try{ showTaunt(tauntPick(TAUNT_REVIVE,_tauntUsedRevive)); }catch(e){}
+  try{ setPanelTitle("reviveTitle",TAUNT_REVIVE,_tauntUsedRevive); }catch(e){}
 }
 function doGiveUp(){
   gameState="over";stopBgm();
   settleCoins();
   try{ showTaunt(tauntPick(TAUNT_DEAD,_tauntUsedDead)); }catch(e){}
+  try{ setPanelTitle("overTitle",TAUNT_DEAD,_tauntUsedDead); }catch(e){}
   try{localStorage.removeItem("njs_save")}catch(e){}
   sfx(110,"sawtooth",1,0.12,40);
   var rs=document.getElementById("reviveScreen");if(rs)rs.classList.add("hidden");
@@ -7810,7 +7870,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.7</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v6.0</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7841,6 +7901,18 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 12:24:04",items:[
+      "🔧 结算标题字号回调：「你倒下了」的 1.1 倍，不再挡住排行榜",
+      "🔥 嘲讽文案再升级：更脏更狠，直接骂（30+30 句全换）"
+    ]},
+    {time:"2026-10-24 12:17:50",items:[
+      "🔥 嘲讽文案全部加码：更难听、更刻薄、更恶心人（30+30 句全部重写）"
+    ]},
+    {time:"2026-10-24 12:11:36",items:[
+      "😂 结算大标题改为随机嘲讽（30+30 句不重复）",
+      "✨ 标题炸裂升级：字号更大 + 三重霓虹光晕 + 0.34 秒弹入 + 轻震屏",
+      "🎨 每死一次随机换配色（红橙 / 青紫 / 金红）"
+    ]},
     {time:"2026-10-24 11:44:33",items:[
       "⏱ 修复榜单时间不对：更新成绩时同步刷新为本次打出的真实时间"
     ]},
@@ -8002,7 +8074,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 11:44:33";
+    pd.textContent="更新于 2026 年 10 月 24 日 12:24:04";
   }
 })();
 </script>
