@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v7.5</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v8.0</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -719,6 +719,11 @@ function doDash(){var p=player;if(gameState!=="playing"||p.dashCd>0)return;p.das
   fxOrbitalRings(p.x,p.y-30,"#7c3aed",90);sfx(600,"sine",0.5,0.1,1200);spawnShockRing(p.x,p.y-30,"#b026ff",90);p.clones=[];for(var ci=0;ci<3;ci++){p.clones.push({a:ci*2.094,t:0,life:4,shootCd:0,x:0,y:0})}world.flash=0.35;spawnShockRing(p.x,p.y-30,"#00f2ff",100);spawnShockRing(p.x,p.y-30,"#ff00aa",80);spawnShockRing(p.x,p.y-30,"#fff",140);sfx(900,"sine",0.4,0.08,2400);world.texts.push({x:p.x,y:p.y-70,text:"护盾·分身幻影!",life:1.2,vy:-40})}
 
 function killEnemy(e,idx){
+  /* 击杀特效：按当前皮肤 kill 分派 */
+  try{
+    var _kf=curSkinFx();
+    if(_kf.kill && _kf.kill!=="plain") spawnKillFxAt(e.x, e.y, _kf.kill, _kf.pal);
+  }catch(_ke){}
 combo++;comboT=3;var mult=1+Math.min(Math.floor(combo/3),5)*0.5;var pts=Math.floor(e.score*mult);
 score+=pts*(world.doubleT>0?2:1);
 // 击杀：强停顿 + 强震 + 缩放冲击
@@ -1740,7 +1745,9 @@ var muzzleFlash=[];      // 枪口闪光 {x,y,ang,t,life,size,color}
 function spawnMuzzle(x,y,ang,color,power){
   power=power||1;
   // 枪口闪光
-  muzzleFlash.push({x:x,y:y,ang:ang,t:0,life:0.09,size:22*power,color:color||"#fff"});
+  var _mfx=curSkinFx();
+  muzzleFlash.push({x:x,y:y,ang:ang,t:0,life:0.09,size:22*power,color:color||"#fff",
+    fx:_mfx.muzzle, pal:_mfx.pal});
   // 喷出的粒子（沿子弹方向呈锥形散开）
   var n=Math.round(6*power)+3;
   for(var i=0;i<n;i++){
@@ -1895,6 +1902,1023 @@ function spikeBullet(b,scale){
   }
 }
 
+
+/* ==================================================================
+   皮肤特效系统 —— 每个 key 一个独立形状，禁止"一个形状+换色"
+   四层分派：枪口 / 弹道 / 命中 / 击杀 + 拖尾
+   ================================================================== */
+
+/* ===== 特效几何工具（一次性 Path，合批友好） ===== */
+/* 花瓣：贝塞尔弧边，非直线三角 */
+function fxPetalPath(c,x,y,ang,len,wid,curl){
+  var ca=Math.cos(ang),sa=Math.sin(ang);
+  var px=-sa,py=ca;                    // 垂直方向
+  c.moveTo(x,y);
+  c.bezierCurveTo(
+    x+ca*len*0.42+px*wid*curl, y+sa*len*0.42+py*wid*curl,
+    x+ca*len*0.96+px*wid*0.55, y+sa*len*0.96+py*wid*0.55,
+    x+ca*len, y+sa*len
+  );
+  c.bezierCurveTo(
+    x+ca*len*0.94-px*wid*0.7, y+sa*len*0.94-py*wid*0.7,
+    x+ca*len*0.38-px*wid*curl, y+sa*len*0.38-py*wid*curl,
+    x, y
+  );
+  c.closePath();
+}
+/* 羽片：尖端 + 两侧弧度 */
+function fxFeatherPath(c,x,y,ang,len,wid){
+  var ca=Math.cos(ang),sa=Math.sin(ang);
+  var px=-sa,py=ca;
+  c.moveTo(x,y);
+  c.bezierCurveTo(x+ca*len*0.3+px*wid, y+sa*len*0.3+py*wid,
+                  x+ca*len*0.78+px*wid*0.62, y+sa*len*0.78+py*wid*0.62,
+                  x+ca*len, y+sa*len);
+  c.bezierCurveTo(x+ca*len*0.78-px*wid*0.5, y+sa*len*0.78-py*wid*0.5,
+                  x+ca*len*0.3-px*wid*0.34, y+sa*len*0.3-py*wid*0.34,
+                  x, y);
+  c.closePath();
+}
+/* 菱形晶体（前尖后宽） */
+function fxCrystalPath(c,x,y,ang,len,wid){
+  var ca=Math.cos(ang),sa=Math.sin(ang);
+  var px=-sa,py=ca;
+  c.moveTo(x+ca*len,y+sa*len);                        // 前尖
+  c.lineTo(x+ca*len*0.32+px*wid, y+sa*len*0.32+py*wid);
+  c.lineTo(x-ca*len*0.28, y-sa*len*0.28);             // 后尖
+  c.lineTo(x+ca*len*0.32-px*wid, y+sa*len*0.32-py*wid);
+  c.closePath();
+}
+/* 尖刺（锐利三角，两头收） */
+function fxSpikePath(c,x,y,ang,len,wid){
+  var ca=Math.cos(ang),sa=Math.sin(ang);
+  var px=-sa,py=ca;
+  c.moveTo(x+ca*len, y+sa*len);
+  c.lineTo(x+ca*len*0.1+px*wid, y+sa*len*0.1+py*wid);
+  c.lineTo(x-ca*len*0.22, y-sa*len*0.22);
+  c.lineTo(x+ca*len*0.1-px*wid, y+sa*len*0.1-py*wid);
+  c.closePath();
+}
+/* 爱心 */
+function fxHeartPath(c,x,y,s,rot){
+  var ca=Math.cos(rot||0),sa=Math.sin(rot||0);
+  function P(a,b){ return [x+(a*ca-b*sa)*s, y+(a*sa+b*ca)*s]; }
+  var p=P(0,0.6); c.moveTo(p[0],p[1]);
+  var q=P(-1.05,-0.32); var r=P(-0.42,-1.1); var t=P(0,-0.34);
+  c.bezierCurveTo(q[0],q[1],r[0],r[1],t[0],t[1]);
+  var q2=P(0.42,-1.1); var r2=P(1.05,-0.32); var t2=P(0,0.6);
+  c.bezierCurveTo(q2[0],q2[1],r2[0],r2[1],t2[0],t2[1]);
+  c.closePath();
+}
+/* 六芒星 */
+function fxHexStarPath(c,x,y,r,rot){
+  c.moveTo(x+Math.cos(rot)*r, y+Math.sin(rot)*r);
+  for(var i=1;i<6;i++){
+    var a=rot+i*1.0472;
+    c.lineTo(x+Math.cos(a)*r, y+Math.sin(a)*r);
+  }
+  c.closePath();
+}
+/* 方框环（不是圆环） */
+function fxSquareRing(c,x,y,r,w){
+  c.rect(x-r,y-r,w*2===0?r*2:w*2===0?r*2:r*2, r*2);
+}
+/* 羽翼弧（扇形张开） */
+function fxWingFan(c,x,y,ang,side,len,spread,n){
+  for(var i=0;i<n;i++){
+    var t=i/(n-1);
+    var a=ang+side*(spread*0.35+t*spread*0.65);
+    var l=len*(1-t*0.34);
+    fxFeatherPath(c,x,y,a,l,l*0.24);
+  }
+}
+
+
+/* ================= 弹道形状 =================
+   每颗子弹在发射时写入 fx 字段，渲染读自己的 fx，不读全局 currentSkin
+*/
+function drawBulletShapeFx(type,x,y,ang,pal,seed){
+  var ca=Math.cos(ang), sa=Math.sin(ang);
+  var px=-sa, py=ca;
+
+  if(!type||type==="plain"){
+    ctx.beginPath(); ctx.arc(x,y,3.2,0,6.2832); ctx.fill();
+    return;
+  }
+
+  if(type==="icecrystal"){
+    /* 冰晶弹：菱形晶体 + 尾部分叉碎冰 */
+    ctx.beginPath(); fxCrystalPath(ctx,x,y,ang,10,3.4); ctx.fill();
+    /* 分叉小碎冰 3 枚 */
+    for(var i=0;i<3;i++){
+      var d=(5+i*4);
+      var ax=x-ca*d, ay=y-sa*d;
+      var sgn=i%2?1:-1;
+      ctx.beginPath();
+      fxSpikePath(ctx, ax+px*sgn*(1.5+i*0.6), ay+py*sgn*(1.5+i*0.6), ang+sgn*0.6, 4.2, 1.2);
+      ctx.fill();
+    }
+  }
+  else if(type==="goldspiral"){
+    /* 双股螺旋：两条交错短线绕弹轴 */
+    ctx.beginPath();
+    for(var k=0;k<2;k++){
+      for(var i=0;i<7;i++){
+        var t=i/6;
+        var off=Math.sin(t*9+k*3.14)*3.2;
+        var d=-(6+t*13);
+        var bx=x+ca*d+px*off, by=y+sa*d+py*off;
+        ctx.moveTo(bx,by);
+        ctx.lineTo(bx+ca*2.4, by+sa*2.4);
+      }
+    }
+    ctx.stroke();
+    /* 弹头 */
+    ctx.beginPath(); fxCrystalPath(ctx,x,y,ang,8.5,2.8); ctx.fill();
+  }
+  else if(type==="flame"){
+    /* 火焰长羽：羽毛形弹体 + 尾焰 */
+    ctx.beginPath(); fxFeatherPath(ctx,x,y,ang,11,3.6); ctx.fill();
+    /* 尾焰 3 道火舌 */
+    for(var i=0;i<3;i++){
+      var off2=(i-1)*2.2;
+      ctx.beginPath();
+      fxFeatherPath(ctx, x-ca*7+px*off2, y-sa*7+py*off2, ang+Math.PI, 7-i*1.6, 1.8);
+      ctx.fill();
+    }
+  }
+  else if(type==="stardust"){
+    /* 星尘弹：柔边圆球 + 星点尾 */
+    ctx.beginPath(); ctx.arc(x,y,4.2,0,6.2832); ctx.fill();
+    ctx.beginPath();
+    for(var i=0;i<5;i++){
+      var t2=(i+1)/6;
+      var d2=-(6+t2*12);
+      var sx=x+ca*d2+px*Math.sin(i*2.2+seed)*3;
+      var sy=y+sa*d2+py*Math.sin(i*2.2+seed)*3;
+      ctx.moveTo(sx+1.6,sy); ctx.lineTo(sx,sy+1.6);
+      ctx.lineTo(sx-1.6,sy); ctx.lineTo(sx,sy-1.6);
+      ctx.closePath();
+    }
+    ctx.fill();
+  }
+  else if(type==="void"){
+    /* 虚空弹：黑球 + 紫边旋涡 */
+    ctx.beginPath(); ctx.arc(x,y,4.6,0,6.2832); ctx.fill();
+    ctx.beginPath();
+    for(var i=0;i<=10;i++){
+      var t3=i/10, a3=t3*11+seed;
+      var r3=t3*8;
+      var vx2=x+Math.cos(a3)*r3, vy2=y+Math.sin(a3)*r3;
+      if(i===0)ctx.moveTo(vx2,vy2); else ctx.lineTo(vx2,vy2);
+    }
+    ctx.stroke();
+  }
+  else if(type==="holo"){
+    /* 全息弹：菱形 + 横向扫描线 */
+    ctx.beginPath(); fxCrystalPath(ctx,x,y,ang,9,3.0); ctx.fill();
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var d4=-(4+i*4);
+      var lx=x+ca*d4, ly=y+sa*d4;
+      ctx.moveTo(lx+px*4.5, ly+py*4.5);
+      ctx.lineTo(lx-px*4.5, ly-py*4.5);
+    }
+    ctx.stroke();
+  }
+  else if(type==="heart"){
+    /* 爱心弹 + 粉色小尾心 */
+    ctx.beginPath(); fxHeartPath(ctx,x,y,4.4,ang); ctx.fill();
+    ctx.globalAlpha*=0.6;
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var d5=-(6+i*5);
+      fxHeartPath(ctx,x+ca*d5,y+sa*d5,1.6-i*0.3,ang);
+    }
+    ctx.fill();
+  }
+  else if(type==="rune"){
+    /* 符文弹：球体 + 环绕 3 个小符文 */
+    ctx.beginPath(); ctx.arc(x,y,3.8,0,6.2832); ctx.fill();
+    for(var i=0;i<3;i++){
+      var a6=seed*3+i*2.094;
+      var rx=x+Math.cos(a6)*6.4, ry2=y+Math.sin(a6)*6.4;
+      ctx.beginPath();
+      ctx.moveTo(rx-2,ry2-2); ctx.lineTo(rx+2,ry2-2); ctx.lineTo(rx,ry2+2.4);
+      ctx.closePath();
+    }
+    ctx.fill();
+  }
+  else if(type==="holyComet"){
+    /* 圣彗星弹：拉长菱形晶体 + 三条平行金线 + 尾端小三角羽片 */
+    ctx.beginPath(); fxCrystalPath(ctx,x,y,ang,12,3.6); ctx.fill();
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var off3=(i-1)*2.4;
+      var wave=Math.sin(seed*5+i*1.4)*1.2;
+      var sxp=x-ca*6+px*(off3+wave), syp=y-sa*6+py*(off3+wave);
+      var exp=x-ca*16+px*(off3-wave*0.6), eyp=y-sa*16+py*(off3-wave*0.6);
+      ctx.moveTo(sxp,syp); ctx.lineTo(exp,eyp);
+      /* 尾端小三角羽片 */
+      ctx.lineTo(exp-ca*1.2+px*1.4, eyp-sa*1.2+py*1.4);
+      ctx.lineTo(exp-ca*1.2-px*1.4, eyp-sa*1.2-py*1.4);
+      ctx.closePath();
+    }
+    ctx.fill();
+  }
+  else if(type==="spearStreak"){
+    /* 矛刺光轨：细长针形（长宽比 8:1）+ 断续针影 */
+    ctx.beginPath(); fxSpikePath(ctx,x,y,ang,16,2.0); ctx.fill();
+    ctx.globalAlpha*=0.45;
+    ctx.beginPath();
+    for(var i=1;i<=3;i++){
+      var d6=-(i*7);
+      var hx=x+ca*d6, hy=y+sa*d6;
+      ctx.moveTo(hx+ca*5,hy+sa*5);
+      ctx.lineTo(hx,hy);
+    }
+    ctx.stroke();
+  }
+  else if(type==="silkOrb"){
+    /* 纱芯光球：柔边圆球 + 3 片波浪飘带 */
+    var rg=ctx.createRadialGradient(x,y,0.5,x,y,6.2);
+    rg.addColorStop(0,"#ffffff");
+    rg.addColorStop(0.45,ctx.fillStyle||"#fff");
+    rg.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.fillStyle=rg;
+    ctx.beginPath(); ctx.arc(x,y,6.2,0,6.2832); ctx.fill();
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var off4=(i-1)*3.4;
+      var w1=Math.sin(seed*4+i)*2.6;
+      ctx.moveTo(x-ca*3+px*off4, y-sa*3+py*off4);
+      ctx.bezierCurveTo(
+        x-ca*9+px*(off4+w1), y-sa*9+py*(off4+w1),
+        x-ca*15+px*(off4-w1), y-sa*15+py*(off4-w1),
+        x-ca*22+px*off4, y-sa*22+py*off4);
+      ctx.bezierCurveTo(
+        x-ca*15+px*(off4-w1+1.6), y-sa*15+py*(off4-w1+1.6),
+        x-ca*9+px*(off4+w1+1.6), y-sa*9+py*(off4+w1+1.6),
+        x-ca*3+px*off4, y-sa*3+py*off4);
+      ctx.closePath();
+    }
+    ctx.fill();
+  }
+  else if(type==="novaCore"){
+    /* 核球炮弹：明暗球体 + 跟随冲击环 + 衰减碎尾 */
+    ctx.beginPath(); ctx.arc(x,y,5.4,0,6.2832); ctx.fill();
+    /* 高光点 */
+    ctx.globalAlpha*=0.85;
+    ctx.beginPath(); ctx.arc(x-1.8,y-1.8,1.8,0,6.2832); ctx.fill();
+    /* 跟随冲击环 */
+    ctx.beginPath(); ctx.arc(x,y,11.5,0,6.2832); ctx.stroke();
+    /* 衰减碎尾 */
+    ctx.beginPath();
+    for(var i=0;i<5;i++){
+      var d7=-(7+i*5);
+      var r7=3.4-i*0.55;
+      if(r7<0.4)break;
+      ctx.moveTo(x+ca*d7+r7, y+sa*d7);
+      ctx.arc(x+ca*d7, y+sa*d7, r7, 0, 6.2832);
+    }
+    ctx.fill();
+  }
+  else {
+    /* 通用：菱形（不与 plain 相同） */
+    ctx.beginPath(); fxCrystalPath(ctx,x,y,ang,8,2.6); ctx.fill();
+  }
+}
+
+/* ================= 命中特效 ================= */
+function drawHitFx(type,x,y,ang,pal,t){
+  var mf=1-t;
+  if(!type||type==="dot"){
+    ctx.globalAlpha=mf;
+    ctx.beginPath(); ctx.arc(x,y,3+4*mf,0,6.2832); ctx.fill();
+    ctx.globalAlpha=1; return;
+  }
+
+  if(type==="crack"){
+    /* 裂痕：不规则闪电状分叉（非圆） */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=1.6*mf;
+    ctx.beginPath();
+    for(var b=0;b<5;b++){
+      var a=b*1.2566+ang, L=(9+Math.random()*4)*mf;
+      ctx.moveTo(x,y);
+      var cx2=x, cy2=y;
+      for(var i=1;i<=3;i++){
+        var tt=i/3;
+        var jx=(Math.random()-0.5)*4*mf, jy=(Math.random()-0.5)*4*mf;
+        cx2=x+Math.cos(a)*L*tt+jx; cy2=y+Math.sin(a)*L*tt+jy;
+        ctx.lineTo(cx2,cy2);
+      }
+    }
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="starmark"){
+    /* 星芒：6 条放射短刺（留空隙）+ 中心 */
+    ctx.globalAlpha=mf;
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath();
+    for(var i=0;i<6;i++){
+      var a2=i*1.047+ang;
+      var L2=(7+6*mf);
+      var W2=1.7*mf;
+      var nx=-Math.sin(a2), ny=Math.cos(a2);
+      ctx.moveTo(x+Math.cos(a2)*L2, y+Math.sin(a2)*L2);
+      ctx.lineTo(x+nx*W2, y+ny*W2);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x-nx*W2, y-ny*W2);
+      ctx.closePath();
+    }
+    ctx.fill();
+    ctx.globalAlpha=mf*0.8;
+    ctx.beginPath(); ctx.arc(x,y,2.4,0,6.2832); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="petal"){
+    /* 花瓣溅落：4 片不同形态小花瓣 + 光尘 */
+    ctx.globalAlpha=mf;
+    ctx.fillStyle=pal.main;
+    ctx.beginPath();
+    fxPetalPath(ctx,x,y,ang+0.2,10*mf,3.4*mf,0.6);
+    fxPetalPath(ctx,x,y,ang+1.7,8*mf,3.0*mf,0.5);
+    fxPetalPath(ctx,x,y,ang+3.1,9.5*mf,3.2*mf,0.55);
+    fxPetalPath(ctx,x,y,ang+4.5,7.5*mf,2.8*mf,0.5);
+    ctx.fill();
+    /* 光尘 6 颗下沉 */
+    ctx.globalAlpha=mf*0.6;
+    ctx.beginPath();
+    for(var i=0;i<6;i++){
+      var a3=i*1.047+0.3;
+      var d3=(6+i%3*3)*(1+t*0.6);
+      ctx.moveTo(x+Math.cos(a3)*d3+1.2, y+Math.sin(a3)*d3+t*8);
+      ctx.arc(x+Math.cos(a3)*d3, y+Math.sin(a3)*d3+t*8, 1.2, 0, 6.2832);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="hexagram"){
+    /* 六芒星印记：中心六芒 + 外环 */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=1.5*mf;
+    ctx.beginPath(); fxHexStarPath(ctx,x,y,10*mf,ang); ctx.stroke();
+    ctx.beginPath(); fxHexStarPath(ctx,x,y,6.5*mf,ang+0.52); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="heart"){
+    /* 心形光斑 */
+    ctx.globalAlpha=mf;
+    ctx.beginPath(); fxHeartPath(ctx,x,y,7*mf,0); ctx.fill();
+    ctx.globalAlpha=mf*0.7;
+    ctx.beginPath();
+    for(var i=0;i<4;i++){
+      var a4=i*1.57+0.4;
+      fxHeartPath(ctx,x+Math.cos(a4)*11*mf,y+Math.sin(a4)*11*mf,2.4*mf,a4);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="slash"){
+    /* 斜切刀痕：两头尖中间粗 + 端点菱形火花 */
+    ctx.globalAlpha=mf;
+    var ca=Math.cos(ang),sa=Math.sin(ang);
+    ctx.beginPath();
+    ctx.moveTo(x-ca*14*mf, y-sa*14*mf);
+    ctx.lineTo(x-Math.sin(ang)*2.6*mf, y+Math.cos(ang)*2.6*mf);
+    ctx.lineTo(x+ca*14*mf, y+sa*14*mf);
+    ctx.lineTo(x+Math.sin(ang)*2.6*mf, y-Math.cos(ang)*2.6*mf);
+    ctx.closePath(); ctx.fill();
+    /* 两端各 3 枚小菱形火花 */
+    ctx.beginPath();
+    for(var e=0;e<2;e++){
+      var ex=x+ca*(e?13:-13)*mf, ey=y+sa*(e?13:-13)*mf;
+      for(var i=0;i<3;i++){
+        var a5=i*1.1+e*2.4;
+        fxCrystalPath(ctx, ex+Math.cos(a5)*6*mf, ey+Math.sin(a5)*6*mf, a5, 4.5*mf, 1.6*mf);
+      }
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="holyMark"){
+    /* 圣徽印记：6 条断开短刺 + 三角徽记 */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=1.8*mf;
+    ctx.beginPath();
+    for(var i=0;i<6;i++){
+      var a6=i*1.047;
+      ctx.moveTo(x+Math.cos(a6)*8*mf, y+Math.sin(a6)*8*mf);
+      ctx.lineTo(x+Math.cos(a6)*14*mf, y+Math.sin(a6)*14*mf);
+    }
+    ctx.stroke();
+    /* 三角徽记 */
+    ctx.beginPath();
+    ctx.moveTo(x, y-7*mf);
+    ctx.lineTo(x+6*mf, y+4*mf);
+    ctx.lineTo(x-6*mf, y+4*mf);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="silkPetal"){
+    /* 纱质花瓣：4 片不同形状（心形/水滴/柳叶/扇形） */
+    ctx.globalAlpha=mf*0.85;
+    ctx.fillStyle=pal.main;
+    ctx.beginPath();
+    fxHeartPath(ctx, x-5*mf, y-4*mf, 4.2*mf, -0.5);
+    fxPetalPath(ctx, x+5*mf, y-3*mf, 0.7, 9*mf, 2.4*mf, 0.4);
+    fxPetalPath(ctx, x-4*mf, y+5*mf, 2.4, 8*mf, 2.2*mf, 0.45);
+    fxFeatherPath(ctx, x+4*mf, y+5*mf, 3.7, 8.5*mf, 2.0*mf);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="novaBurst"){
+    /* 星芒爆点：12 条不等长射线 + 中心白点 + 外环 */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=1.4*mf;
+    ctx.beginPath();
+    for(var i=0;i<12;i++){
+      var a7=(i/12)*6.2832+ang;
+      var L7=(7+(i%3)*5+5*mf);
+      ctx.moveTo(x,y);
+      ctx.lineTo(x+Math.cos(a7)*L7, y+Math.sin(a7)*L7);
+    }
+    ctx.stroke();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(x,y,2.6*mf,0,6.2832); ctx.fill();
+    ctx.globalAlpha=mf*0.6;
+    ctx.beginPath(); ctx.arc(x,y,16*mf,0,6.2832); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  else {
+    ctx.globalAlpha=mf;
+    ctx.beginPath(); ctx.arc(x,y,4*mf+2,0,6.2832); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+}
+
+/* ================= 击杀特效 ================= */
+function drawKillFx(type,x,y,pal,t){
+  var mf=1-t;
+  if(!type||type==="plain"){
+    ctx.globalAlpha=mf;
+    ctx.beginPath(); ctx.arc(x,y,10+22*(1-mf),0,6.2832); ctx.fill();
+    ctx.globalAlpha=1; return;
+  }
+
+  if(type==="icephoenix"){
+    /* 冰凤凰：三层 + 冰羽 8 片 + 冰晶碎 */
+    ctx.globalAlpha=mf*0.6;
+    ctx.beginPath(); ctx.arc(x,y,10+30*t,0,6.2832); ctx.fill();
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=2*mf;
+    ctx.beginPath(); ctx.arc(x,y,14+34*t,0,6.2832); ctx.stroke();
+    /* 冰羽 8 片向上飘 */
+    ctx.beginPath();
+    for(var i=0;i<8;i++){
+      var a=i*0.785, d=(12+i*2)*(1+t*1.2);
+      fxFeatherPath(ctx, x+Math.cos(a)*d, y+Math.sin(a)*d - t*22, a-1.57, 9*mf+3, 2.6*mf);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="dragon"){
+    /* 龙首虚影 + 金色爆散 */
+    ctx.globalAlpha=mf*0.55;
+    ctx.beginPath(); ctx.arc(x,y,16+40*t,0,6.2832); ctx.fill();
+    /* 龙首轮廓（三角+角） */
+    ctx.globalAlpha=mf*0.9;
+    ctx.beginPath();
+    ctx.moveTo(x+18*mf, y);
+    ctx.lineTo(x-6*mf, y-14*mf);
+    ctx.lineTo(x-14*mf, y-6*mf);
+    ctx.lineTo(x-14*mf, y+6*mf);
+    ctx.lineTo(x-6*mf, y+14*mf);
+    ctx.closePath(); ctx.fill();
+    /* 龙鳞碎屑 10 片 */
+    ctx.beginPath();
+    for(var i=0;i<10;i++){
+      var a2=i*0.628+t*2, d2=(10+i*2.4)*(1+t);
+      fxCrystalPath(ctx, x+Math.cos(a2)*d2, y+Math.sin(a2)*d2, a2, 6*mf, 2.2*mf);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="phoenix"){
+    /* 凤凰：羽翼张开 + 火焰冲天 */
+    ctx.globalAlpha=mf;
+    ctx.fillStyle=pal.ene;
+    ctx.beginPath();
+    fxWingFan(ctx,x,y,-Math.PI/2,1,26*mf,1.5,4);
+    fxWingFan(ctx,x,y,-Math.PI/2,-1,26*mf,1.5,4);
+    ctx.fill();
+    /* 火焰冲天 4 道 */
+    ctx.beginPath();
+    for(var i=0;i<4;i++){
+      var off=(i-1.5)*5;
+      fxFeatherPath(ctx, x+off, y-t*20, -1.5708, 20*mf+8, 3.2*mf);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="nova"){
+    /* 三层：白实心圆 → 青白环 → 碎片 */
+    if(t<0.35){ ctx.globalAlpha=(1-t/0.35)*0.95;
+      ctx.beginPath(); ctx.arc(x,y,8+18*(t/0.35),0,6.2832); ctx.fill(); }
+    ctx.globalAlpha=mf*0.8;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=2.4*mf;
+    ctx.beginPath(); ctx.arc(x,y,12+46*t,0,6.2832); ctx.stroke();
+    ctx.beginPath();
+    for(var i=0;i<22;i++){
+      var a3=i*0.2856, d3=(14+i%5*4)*(1+t*1.4);
+      fxCrystalPath(ctx, x+Math.cos(a3)*d3, y+Math.sin(a3)*d3, a3, 7*mf, 2.4*mf);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="inkdragon"){
+    /* 墨龙盘绕 + 紫黑爆散 */
+    ctx.globalAlpha=mf*0.5;
+    ctx.beginPath(); ctx.arc(x,y,20+38*t,0,6.2832); ctx.fill();
+    ctx.globalAlpha=mf;
+    ctx.beginPath();
+    for(var i=0;i<=20;i++){
+      var t2=i/20, a4=t2*12+t*3;
+      var r4=(10+t2*20)*(1+t*0.7);
+      var px2=x+Math.cos(a4)*r4, py2=y+Math.sin(a4)*r4;
+      if(i===0)ctx.moveTo(px2,py2); else ctx.lineTo(px2,py2);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    for(var i=0;i<12;i++){
+      var a5=i*0.523+t*2, d5=(11+i*2)*(1+t);
+      fxSpikePath(ctx, x+Math.cos(a5)*d5, y+Math.sin(a5)*d5, a5, 8*mf, 2.2*mf);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="seadragon"){
+    /* 海龙腾起 + 巨浪环 */
+    ctx.globalAlpha=mf*0.55;
+    ctx.beginPath(); ctx.arc(x,y,18+36*t,0,6.2832); ctx.fill();
+    ctx.globalAlpha=mf;
+    /* 浪环（波浪状） */
+    ctx.beginPath();
+    for(var i=0;i<=24;i++){
+      var a6=i/24*6.2832;
+      var r6=(14+30*t)+Math.sin(i*2.1)*4;
+      var wx=x+Math.cos(a6)*r6, wy=y+Math.sin(a6)*r6;
+      if(i===0)ctx.moveTo(wx,wy); else ctx.lineTo(wx,wy);
+    }
+    ctx.closePath(); ctx.stroke();
+    /* 水柱 */
+    ctx.beginPath();
+    fxFeatherPath(ctx, x, y-t*24, -1.5708, 28*mf+10, 5*mf);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="magiccat"){
+    /* 法阵全屏 + 灵猫虚影 */
+    ctx.globalAlpha=mf*0.7;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=1.8*mf;
+    ctx.beginPath(); fxHexStarPath(ctx,x,y,26+30*t,t*1.2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,20+40*t,0,6.2832); ctx.stroke();
+    /* 猫耳轮廓 */
+    ctx.globalAlpha=mf*0.9;
+    ctx.beginPath();
+    ctx.moveTo(x-11*mf,y-4*mf); ctx.lineTo(x-7*mf,y-18*mf); ctx.lineTo(x-2*mf,y-6*mf);
+    ctx.moveTo(x+11*mf,y-4*mf); ctx.lineTo(x+7*mf,y-18*mf); ctx.lineTo(x+2*mf,y-6*mf);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="holyAscend"){
+    /* 三层同心方框 + 羽翼光片 + 竖直光柱 */
+    ctx.globalAlpha=mf*0.8;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=2*mf;
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var s2=(10+i*8)+t*(26+i*10);
+      ctx.rect(x-s2,y-s2,s2*2,s2*2);
+    }
+    ctx.stroke();
+    /* 光柱 */
+    ctx.globalAlpha=mf*0.5;
+    var gr=c.createLinearGradient(x,y-60,x,y+10);
+    gr.addColorStop(0,"rgba(255,255,255,0)");
+    gr.addColorStop(0.5,"rgba(255,255,255,0.55)");
+    gr.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.fillStyle=gr;
+    ctx.fillRect(x-7,y-60,14,70);
+    /* 羽翼光片 */
+    ctx.globalAlpha=mf*0.85;
+    ctx.beginPath();
+    fxWingFan(ctx,x,y-t*14,-1.5708,1,20*mf,1.3,3);
+    fxWingFan(ctx,x,y-t*14,-1.5708,-1,20*mf,1.3,3);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="shatter"){
+    /* 双反向三角环 + 12 片碎三角 */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=1.8*mf;
+    for(var i=0;i<6;i++){
+      var a7=i*1.047+t*1.4, a8=i*1.047-t*1.4;
+      var r7=10+28*t, r8=8+22*t;
+      var p1x=x+Math.cos(a7)*r7, p1y=y+Math.sin(a7)*r7;
+      var p2x=x+Math.cos(a8)*r8, p2y=y+Math.sin(a8)*r8;
+      ctx.beginPath();
+      ctx.moveTo(p1x,p1y);
+      ctx.lineTo(x+Math.cos(a7+1.047)*r7, y+Math.sin(a7+1.047)*r7);
+      ctx.lineTo(x+Math.cos(a7+0.52)*r7*0.7, y+Math.sin(a7+0.52)*r7*0.7);
+      ctx.closePath(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(p2x,p2y);
+      ctx.lineTo(x+Math.cos(a8-1.047)*r8, y+Math.sin(a8-1.047)*r8);
+      ctx.lineTo(x+Math.cos(a8-0.52)*r8*0.7, y+Math.sin(a8-0.52)*r8*0.7);
+      ctx.closePath(); ctx.stroke();
+    }
+    ctx.beginPath();
+    for(var i=0;i<12;i++){
+      var a9=i*0.523, d9=(10+i%4*5)*(1+t);
+      fxCrystalPath(ctx, x+Math.cos(a9)*d9, y+Math.sin(a9)*d9, a9, 8*mf, 2.6*mf);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="veilBurst"){
+    /* 4 层断口环 + 8 条飘带 */
+    for(var i=0;i<4;i++){
+      var off=i*0.4;
+      ctx.globalAlpha=mf*(0.42-i*0.08);
+      ctx.strokeStyle=pal.main; ctx.lineWidth=3*mf;
+      ctx.beginPath();
+      ctx.arc(x,y,(12+i*9)+t*(24+i*12), off, off+4.6);
+      ctx.stroke();
+    }
+    ctx.globalAlpha=mf*0.5;
+    ctx.beginPath();
+    for(var i=0;i<8;i++){
+      var a10=i*0.785+t;
+      var d10=(14+i%3*6)*(1+t*1.1);
+      fxPetalPath(ctx, x+Math.cos(a10)*d10, y+Math.sin(a10)*d10, a10, 13*mf, 4*mf, 0.6);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="novaBlast"){
+    /* 球形爆闪三层 + 星环 */
+    ctx.globalAlpha=mf*0.9;
+    ctx.beginPath(); ctx.arc(x,y,12+50*t,0,6.2832); ctx.fill();
+    ctx.globalAlpha=mf*0.65;
+    ctx.strokeStyle=pal.ene; ctx.lineWidth=2.6*mf;
+    ctx.beginPath(); ctx.arc(x,y,16+44*t,0,6.2832); ctx.stroke();
+    /* 星环（10 片小碎片椭圆） */
+    ctx.beginPath();
+    for(var i=0;i<10;i++){
+      var a11=i*0.628+t*2;
+      var rx2=34+14*t, ry2=(34+14*t)*0.42;
+      fxCrystalPath(ctx, x+Math.cos(a11)*rx2, y+Math.sin(a11)*ry2, a11, 6*mf, 2.2*mf);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else {
+    ctx.globalAlpha=mf;
+    ctx.beginPath(); ctx.arc(x,y,12+24*(1-mf),0,6.2832); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+}
+
+/* ================= 拖尾 ================= */
+function drawTrailFx(type,x,y,ang,pal,alpha){
+  if(!type||type==="none") return;
+  ctx.globalAlpha=alpha;
+
+  if(type==="frost"){
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var off=(i-1)*2.4;
+      fxSpikePath(ctx,
+        x+Math.cos(ang)*6-Math.sin(ang)*off,
+        y+Math.sin(ang)*6+Math.cos(ang)*off,
+        ang+Math.PI, 9, 1.2);
+    }
+    ctx.fill();
+  }
+  else if(type==="flame"){
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var off2=(i-1)*2.8;
+      fxFeatherPath(ctx,
+        x-Math.cos(ang)*4-Math.sin(ang)*off2,
+        y-Math.sin(ang)*4+Math.cos(ang)*off2,
+        ang+Math.PI, 10-i*2, 2.4);
+    }
+    ctx.fill();
+  }
+  else if(type==="star"){
+    ctx.beginPath();
+    for(var i=0;i<4;i++){
+      var d=(5+i*3.5);
+      var sx=x-Math.cos(ang)*d, sy=y-Math.sin(ang)*d;
+      ctx.moveTo(sx+1.4,sy); ctx.lineTo(sx,sy+1.4);
+      ctx.lineTo(sx-1.4,sy); ctx.lineTo(sx,sy-1.4);
+      ctx.closePath();
+    }
+    ctx.fill();
+  }
+  else if(type==="voidflame"){
+    ctx.beginPath();
+    for(var i=0;i<=8;i++){
+      var t2=i/8, a2=t2*5+ang;
+      var r2=t2*9;
+      var vx=x-Math.cos(ang)*r2+Math.cos(a2)*r2*0.5;
+      var vy=y-Math.sin(ang)*r2+Math.sin(a2)*r2*0.5;
+      if(i===0)ctx.moveTo(vx,vy); else ctx.lineTo(vx,vy);
+    }
+    ctx.stroke();
+  }
+  else if(type==="holyTrail"){
+    ctx.beginPath();
+    for(var i=0;i<2;i++){
+      var off3=(i-0.5)*2.2;
+      ctx.moveTo(x-Math.sin(ang)*off3, y+Math.cos(ang)*off3);
+      ctx.lineTo(x-Math.cos(ang)*14-Math.sin(ang)*off3, y-Math.sin(ang)*14+Math.cos(ang)*off3);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var d3=(6+i*4);
+      ctx.rect(x-Math.cos(ang)*d3-0.8, y-Math.sin(ang)*d3-0.8, 1.6, 1.6);
+    }
+    ctx.fill();
+  }
+  else if(type==="raceTrail"){
+    ctx.beginPath();
+    for(var i=1;i<=3;i++){
+      var d4=i*6;
+      ctx.moveTo(x-Math.cos(ang)*d4, y-Math.sin(ang)*d4);
+      ctx.lineTo(x-Math.cos(ang)*d4-Math.cos(ang)*1.2, y-Math.sin(ang)*d4-Math.sin(ang)*1.2);
+    }
+    ctx.stroke();
+  }
+  else if(type==="silkWisp"){
+    ctx.beginPath();
+    fxPetalPath(ctx, x-Math.cos(ang)*6, y-Math.sin(ang)*6, ang+Math.PI, 10, 4.5, 0.6);
+    ctx.fill();
+  }
+  else if(type==="heartTrail"){
+    /* 粉色小尾心 */
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var d=-(5+i*5);
+      fxHeartPath(ctx, x-Math.cos(ang)*d, y-Math.sin(ang)*d, 2.4-i*0.5, ang);
+    }
+    ctx.fill();
+  }
+  else if(type==="novaTail"){
+    ctx.beginPath();
+    for(var i=0;i<4;i++){
+      var d5=(5+i*4), r5=2.6-i*0.5;
+      if(r5<0.3)break;
+      ctx.moveTo(x-Math.cos(ang)*d5+r5, y-Math.sin(ang)*d5);
+      ctx.arc(x-Math.cos(ang)*d5, y-Math.sin(ang)*d5, r5, 0, 6.2832);
+    }
+    ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+/* ================= 枪口焰 ================= */
+function drawMuzzleFx(type,x,y,ang,pal,t){
+  /* t: 0→1 生命进度 */
+  if(!type||type==="plain"){
+    var r=6*(1-t*0.4);
+    ctx.fillStyle=pal.ene; ctx.globalAlpha=1-t*0.5;
+    ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.globalAlpha=(1-t)*0.9;
+    ctx.beginPath(); ctx.arc(x,y,r*0.45,0,6.2832); ctx.fill();
+    ctx.globalAlpha=1; return;
+  }
+  var mf=1-t;
+
+  if(type==="frostburst"){
+    /* 冰棱爆破：8 向锐利星芒 + 碎冰 */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=2.2*mf;
+    ctx.beginPath();
+    for(var i=0;i<8;i++){
+      var a=i*0.7852+ang, L=(i%2?9:17)*mf;
+      ctx.moveTo(x,y); ctx.lineTo(x+Math.cos(a)*L, y+Math.sin(a)*L);
+    }
+    ctx.stroke();
+    ctx.fillStyle=pal.ene;
+    ctx.beginPath();
+    for(var i=0;i<6;i++){
+      var a2=i*1.047+ang*0.5, d=10*mf;
+      var cx2=x+Math.cos(a2)*d, cy2=y+Math.sin(a2)*d;
+      fxSpikePath(ctx,cx2,cy2,a2+1.57,4.5*mf,1.8*mf);
+    }
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="dragonbreath"){
+    /* 龙口喷息：锥形 + 齿状边 */
+    ctx.globalAlpha=mf;
+    ctx.fillStyle=pal.sub;
+    var ca=Math.cos(ang),sa=Math.sin(ang);
+    ctx.beginPath();
+    ctx.moveTo(x,y-3.6*mf);
+    for(var i=0;i<=8;i++){
+      var tt=i/8;
+      var w=(3.6-7.2*tt*0.35)+Math.sin(i*1.9)*1.4;
+      var dx2=x+ca*17*tt*mf, dy2=y+sa*17*tt*mf;
+      ctx.lineTo(dx2 - sa*w*mf, dy2 + ca*w*mf);
+    }
+    ctx.lineTo(x,y+3.6*mf); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=pal.ene; ctx.globalAlpha=0.9*mf;
+    ctx.beginPath();
+    ctx.moveTo(x,y-1.7*mf);
+    ctx.lineTo(x+ca*19*mf, y+sa*19*mf);
+    ctx.lineTo(x,y+1.7*mf); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="voidrift"){
+    /* 虚空裂口：一条不规则黑色裂缝 + 紫边 */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle=pal.ene; ctx.lineWidth=2.6*mf;
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    for(var i=0;i<=6;i++){
+      var tt=i/6, off=(Math.sin(i*3.1)*1.9)*mf;
+      ctx.lineTo(x+ca*16*tt*mf - sa*off, y+sa*16*tt*mf + ca*off);
+    }
+    ctx.stroke();
+    ctx.strokeStyle="#05030a"; ctx.lineWidth=1.5*mf;
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    for(var i=0;i<=6;i++){
+      var tt=i/6, off=(Math.sin(i*3.1)*1.9)*mf;
+      ctx.lineTo(x+ca*15*tt*mf - sa*off, y+sa*15*tt*mf + ca*off);
+    }
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="petalburst"){
+    /* 花瓣绽开：5 片半透花瓣，逐个透明度不同，贝塞尔弧边 */
+    var alphas=[0.15,0.22,0.30,0.35,0.42];
+    for(var i=0;i<5;i++){
+      ctx.globalAlpha=alphas[i]*mf;
+      ctx.fillStyle=i%2?pal.main:pal.ene;
+      ctx.beginPath();
+      fxPetalPath(ctx,x,y,ang-0.9+i*0.45,(11+i*1.6)*mf,(4.6+i*0.5)*mf,0.55);
+      ctx.fill();
+    }
+    ctx.globalAlpha=mf*0.9;
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(x,y,2.4*mf,0,6.2832); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="heartburst"){
+    /* 爱心爆闪：心形光斑 + 小心心四散 */
+    ctx.globalAlpha=mf;
+    ctx.fillStyle=pal.ene;
+    ctx.beginPath(); fxHeartPath(ctx,x+ca*7*mf,y+sa*7*mf,4.2*mf,ang); ctx.fill();
+    for(var i=0;i<5;i++){
+      var a3=-1.2+i*0.6+ang;
+      var d3=9+mf*7;
+      ctx.globalAlpha=mf*0.75;
+      ctx.beginPath();
+      fxHeartPath(ctx,x+Math.cos(a3)*d3,y+Math.sin(a3)*d3,2.2*mf,a3);
+      ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  else if(type==="pulse"){
+    /* 能量脉冲：同心方框（不是圆） */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle=pal.ene; ctx.lineWidth=1.7*mf;
+    ctx.beginPath();
+    for(var i=0;i<3;i++){
+      var r=(3.4+i*4.2)*mf*1.6;
+      ctx.rect(x-r,y-r,r*2,r*2);
+    }
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="magicflash"){
+    /* 法阵闪现：六芒星短暂显形 + 符文环 */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle=pal.ene; ctx.lineWidth=1.8*mf;
+    ctx.beginPath();
+    for(var s2=0;s2<2;s2++){
+      var rot=s2*1.0472+t*0.6;
+      ctx.moveTo(x+Math.cos(rot)*13*mf, y+Math.sin(rot)*13*mf);
+      for(var i=1;i<3;i++){
+        var a4=rot+i*2.0944;
+        ctx.lineTo(x+Math.cos(a4)*13*mf, y+Math.sin(a4)*13*mf);
+      }
+      ctx.closePath();
+    }
+    ctx.stroke();
+    ctx.globalAlpha=mf*0.8;
+    ctx.strokeStyle=pal.hi; ctx.lineWidth=1.0*mf;
+    ctx.beginPath(); ctx.arc(x,y,15*mf,t*4,t*4+4.4); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="holyCross"){
+    /* 圣十字爆闪：十字光刃（宽头窄尾）+ 羽翼扇形 */
+    ctx.globalAlpha=mf;
+    ctx.fillStyle=pal.hi;
+    /* 十字四向光刃 */
+    ctx.beginPath();
+    for(var i=0;i<4;i++){
+      var a5=i*1.5708;
+      var L=15*mf, W=2.6*mf;
+      var nx=-Math.sin(a5), ny=Math.cos(a5);
+      ctx.moveTo(x+Math.cos(a5)*L, y+Math.sin(a5)*L);
+      ctx.lineTo(x+nx*W, y+ny*W);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x-nx*W, y-ny*W);
+      ctx.closePath();
+    }
+    ctx.fill();
+    /* 中心 */
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(x,y,3.2*mf,0,6.2832); ctx.fill();
+    /* 羽翼弧光（左右各 3 片） */
+    ctx.fillStyle=pal.ene; ctx.globalAlpha=mf*0.72;
+    ctx.beginPath();
+    fxWingFan(ctx,x,y,ang-Math.PI,1,12*mf,1.1,3);
+    fxWingFan(ctx,x,y,ang,1,12*mf,1.1,3);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="spearFlash"){
+    /* 矛尖闪光：长三角 + 内亮三角 + 侧斜切 */
+    ctx.globalAlpha=mf;
+    ctx.fillStyle=pal.ene;
+    ctx.beginPath(); fxSpikePath(ctx,x,y,ang,22*mf,5.2*mf); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); fxSpikePath(ctx,x,y,ang,15*mf,2.0*mf); ctx.fill();
+    /* 侧斜切光条 2 道 */
+    ctx.strokeStyle=pal.hi; ctx.lineWidth=1.6*mf;
+    ctx.beginPath();
+    ctx.moveTo(x-Math.sin(ang)*7*mf, y+Math.cos(ang)*7*mf);
+    ctx.lineTo(x+Math.cos(ang)*9*mf-Math.sin(ang)*2*mf, y+Math.sin(ang)*9*mf+Math.cos(ang)*2*mf);
+    ctx.moveTo(x+Math.sin(ang)*7*mf, y-Math.cos(ang)*7*mf);
+    ctx.lineTo(x+Math.cos(ang)*9*mf+Math.sin(ang)*2*mf, y+Math.sin(ang)*9*mf-Math.cos(ang)*2*mf);
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="novaRing"){
+    /* 环形冲击：白核 + 完整环 + 更淡外环 */
+    ctx.globalAlpha=mf;
+    var rr=4+16*(1-mf);
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=2.4*mf;
+    ctx.beginPath(); ctx.arc(x,y,rr,0,6.2832); ctx.stroke();
+    ctx.strokeStyle=pal.ene; ctx.globalAlpha=mf*0.6; ctx.lineWidth=1.6*mf;
+    ctx.beginPath(); ctx.arc(x,y,rr*1.55,0,6.2832); ctx.stroke();
+    ctx.globalAlpha=mf;
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(x,y,3.4*(1-mf*0.6),0,6.2832); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  else if(type==="silkkBloom"){
+    /* 纱华绽开：多层半透纱片 */
+    for(var i=0;i<4;i++){
+      ctx.globalAlpha=(0.14+i*0.09)*mf;
+      ctx.fillStyle=i%2?pal.main:pal.sub;
+      ctx.beginPath();
+      fxPetalPath(ctx,x,y,ang-0.7+i*0.42,(9+i*2.2)*mf,(5.5+i*0.7)*mf,0.7);
+      ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  else if(type==="axeCleave"){
+    /* 斧劈闪：扇形切割痕 */
+    ctx.globalAlpha=mf;
+    ctx.strokeStyle=pal.hi; ctx.lineWidth=3.0*mf;
+    ctx.beginPath();
+    ctx.arc(x,y,14*mf,ang-0.9,ang+0.9);
+    ctx.stroke();
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=1.2*mf;
+    ctx.beginPath();
+    ctx.arc(x,y,11*mf,ang-0.75,ang+0.75);
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  else {
+    /* 未定义 key：用通用尖刺（但不与 plain 相同） */
+    ctx.globalAlpha=mf;
+    ctx.fillStyle=pal.ene;
+    ctx.beginPath(); fxSpikePath(ctx,x,y,ang,13*mf,3.2*mf); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+}
+
 function drawBulletFx(){
   var i,l;
 
@@ -1927,15 +2951,13 @@ function drawBulletFx(){
         ctx.fill();
       }
 
-      ctx.fillStyle=mcol;ctx.globalAlpha=0.95;
-      ctx.beginPath();
-      for(i=0;i<marr.length;i++) muzzleStar(marr[i],1.0);
-      ctx.fill();
-
-      ctx.fillStyle="#ffffff";ctx.globalAlpha=0.9;
-      ctx.beginPath();
-      for(i=0;i<marr.length;i++) muzzleStar(marr[i],0.45);
-      ctx.fill();
+      /* 按皮肤分派枪口焰（14 种独立几何） */
+      for(i=0;i<marr.length;i++){
+        var mm=marr[i];
+        var mt=mm.t/mm.life;
+        var mpal=mm.pal||{ene:mcol,hi:"#ffffff",main:mcol,sub:mcol};
+        drawMuzzleFx(mm.fx||"plain", mm.x, mm.y, mm.ang||0, mpal, mt);
+      }
     }
     ctx.globalAlpha=1;
   }
@@ -2485,7 +3507,9 @@ var rd=rageTimer>0?2:1;
 function mk(a,off,col,r,dmg,home){
   var _fx=(p.facing||1);
   var _mx=p.x+_fx*36,_my=p.y-31+off;
-  world.bullets.push({x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:dmg*rd,home:home});
+  var _sf=curSkinFx();
+  world.bullets.push({x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:dmg*rd,home:home,
+    fx:_sf.bullet, trailFx:_sf.trail, fxPal:_sf.pal});
   // 枪口喷射粒子（每次开火都喷）
   spawnMuzzle(_mx,_my,a,col,r>=8?1.8:1.1);
 }
@@ -3746,7 +4770,7 @@ var SKIN_DEF={
     baseMat:"pearl", shell:"petal", extend:"butterfly",
     floaters:["spark","rune"], trail:"star",
     glow:3, dyn:"pulse",
-    muzzle:"petalburst", bullet:"stardust", hit:"petal", kill:"nova"
+    muzzle:"novaRing", bullet:"novaCore", hit:"novaBurst", kill:"novaBlast"
   },
   /* ===== T1 传说 · 深渊王权（墨龙九天） ===== */
   inkDragon:{
@@ -3764,7 +4788,7 @@ var SKIN_DEF={
     baseMat:"crystal", shell:"scaledragon", extend:"dragon",
     floaters:["crystal","spark","rune"], trail:"frost",
     glow:3, dyn:"flow",
-    muzzle:"frostburst", bullet:"icecrystal", hit:"crack", kill:"seadragon"
+    muzzle:"dragonbreath", bullet:"icecrystal", hit:"crack", kill:"seadragon"
   },
   /* ===== T2 史诗 · 星舰幻游（梦幻火箭） ===== */
   rocketDream:{
@@ -3780,7 +4804,7 @@ var SKIN_DEF={
     name:"火箭少女", rar:"blue", fam:"粉心甜梦",
     pal:{main:"#ffd0e8", sub:"#ff5a98", hi:"#ffffff", ene:"#ff80b8", dark:"#3a0a20"},
     baseMat:"matte", shell:"plate", extend:"ribbon",
-    floaters:["spark"], trail:null,
+    floaters:["spark"], trail:"heartTrail",
     glow:1, dyn:"pulse",
     muzzle:"heartburst", bullet:"heart", hit:"heart", kill:"plain"
   },
@@ -3798,7 +4822,7 @@ var SKIN_DEF={
     name:"女娲灵识", rar:"blue", fam:"冰晶神谕",
     pal:{main:"#c8e8ff", sub:"#5a9ac8", hi:"#ffffff", ene:"#80d8ff", dark:"#0a1e30"},
     baseMat:"crystal", shell:"ice", extend:null,
-    floaters:["crystal"], trail:null,
+    floaters:["crystal"], trail:"frost",
     glow:1, dyn:"pulse",
     muzzle:"frostburst", bullet:"icecrystal", hit:"dot", kill:"plain"
   },
@@ -3807,15 +4831,42 @@ var SKIN_DEF={
     name:"无垠阁", rar:"blue", fam:"星舰幻游",
     pal:{main:"#b0c8f0", sub:"#3a5a9a", hi:"#ffffff", ene:"#50a0ff", dark:"#080e1e"},
     baseMat:"brushed", shell:"mechplate", extend:"mechwing",
-    floaters:["spark"], trail:null,
+    floaters:["spark"], trail:"raceTrail",
     glow:1, dyn:"rotate",
     muzzle:"pulse", bullet:"holo", hit:"dot", kill:"plain"
+  },
+  /* ===== T0 神话 · 炎羽天启（百变纱华 ACE32） ===== */
+  veilBloom:{
+    name:"百变纱华", rar:"red", fam:"炎羽天启",
+    pal:{main:"#f0e0f4", sub:"#c8a8ff", hi:"#ffffff", ene:"#ff6ec7", dark:"#221826"},
+    baseMat:"porcelain", shell:"petal", extend:"ribbon",
+    floaters:["petal","spark"], trail:"star",
+    glow:3, dyn:"float",
+    muzzle:"silkkBloom", bullet:"silkOrb", hit:"silkPetal", kill:"veilBurst"
+  },
+  /* ===== T0 神话 · 星舰幻游（终焉极影 PEL夏季赛） ===== */
+  finalShadow:{
+    name:"终焉极影", rar:"red", fam:"星舰幻游",
+    pal:{main:"#2a2e38", sub:"#5a6478", hi:"#c8d4e8", ene:"#38f0ff", dark:"#14161c"},
+    baseMat:"brushed", shell:"mechplate", extend:"mechwing",
+    floaters:["shard","spark"], trail:"voidflame",
+    glow:3, dyn:"flow",
+    muzzle:"spearFlash", bullet:"spearStreak", hit:"slash", kill:"shatter"
+  },
+  /* ===== T0 神话 · 深渊王权（诸神破晓 蜜獾） ===== */
+  dawnGod:{
+    name:"诸神破晓", rar:"red", fam:"深渊王权",
+    pal:{main:"#e8dcc0", sub:"#a08850", hi:"#fffbe8", ene:"#7fe4ff", dark:"#1a1610"},
+    baseMat:"lightmetal", shell:"runeplate", extend:"crown",
+    floaters:["rune","crystal","spark"], trail:"star",
+    glow:3, dyn:"pulse",
+    muzzle:"holyCross", bullet:"holyComet", hit:"holyMark", kill:"holyAscend"
   },
   /* ===== 基础档 ===== */
   basicWhite:{
     name:"素白涂装", rar:"white", fam:"战甲英雄",
     pal:{main:"#c8d0dc", sub:"#8a94a8", hi:"#e8eef8", ene:"#ffffff", dark:"#2a2e38"},
-    baseMat:"matte", shell:null, extend:null, floaters:[], trail:null,
+    baseMat:"matte", shell:null, extend:null, floaters:[], trail:"none",
     glow:0, dyn:"static",
     muzzle:"plain", bullet:"plain", hit:"dot", kill:"plain"
   }
@@ -5433,6 +6484,43 @@ function drawWeaponSkin(c, weaponType, skinId, level, x, y, scale, flip, animTim
 /* 当前装备皮肤（全局） */
 var currentSkin="basicWhite";
 var _gunLenPx=44, _gunHalfH=6;   // 局内枪尺寸（供前手/枪口定位）
+/* 当前皮肤特效身份快照（开火时写入子弹，避免换皮肤导致场上子弹突变） */
+function curSkinFx(){
+  var sk=SKIN_DEF[currentSkin]||SKIN_DEF.basicWhite;
+  return {muzzle:sk.muzzle||"plain", bullet:sk.bullet||"plain",
+          hit:sk.hit||"dot", kill:sk.kill||"plain", trail:sk.trail||"none", pal:sk.pal};
+}
+/* ===== 命中/击杀特效池（固定上限，环形复用，不无限堆积） ===== */
+var HITFX=[], KILLFX=[];
+var HITFX_MAX=64, KILLFX_MAX=32;
+function spawnHitFxAt(x,y,type,pal){
+  if(HITFX.length>=HITFX_MAX) HITFX.shift();
+  HITFX.push({x:x,y:y,t:0,life:0.36,fx:type||"dot",pal:pal});
+}
+function spawnKillFxAt(x,y,type,pal){
+  if(KILLFX.length>=KILLFX_MAX) KILLFX.shift();
+  KILLFX.push({x:x,y:y,t:0,life:0.62,fx:type||"plain",pal:pal});
+}
+function updateSkinFx(dt2){
+  for(var i=HITFX.length-1;i>=0;i--){ HITFX[i].t+=dt2; if(HITFX[i].t>=HITFX[i].life) HITFX.splice(i,1); }
+  for(var i=KILLFX.length-1;i>=0;i--){ KILLFX[i].t+=dt2; if(KILLFX[i].t>=KILLFX[i].life) KILLFX.splice(i,1); }
+}
+function drawSkinFx(){
+  var i,fx;
+  for(i=0;i<HITFX.length;i++){
+    fx=HITFX[i];
+    var p=fx.t/fx.life;
+    ctx.globalAlpha=1;
+    drawHitFx(fx.fx, fx.x, fx.y, 0, fx.pal||{main:"#fff"}, p);
+  }
+  for(i=0;i<KILLFX.length;i++){
+    fx=KILLFX[i];
+    var p2=fx.t/fx.life;
+    ctx.globalAlpha=1;
+    drawKillFx(fx.fx, fx.x, fx.y, fx.pal||{ene:"#fff",main:"#fff"}, p2);
+  }
+  ctx.globalAlpha=1;
+}
 
 
 /* ==================================================================
@@ -6082,6 +7170,7 @@ cam.y+=(p.y-H*0.55-cam.y)*2.0*dt;
 if(HITSTOP_ENABLED&&hitStop>0){hitStop-=rdt;dt*=0.06;}
 updateFx(dt);
 updateBulletFx(dt);
+updateSkinFx(rdt);
 // 每颗子弹持续喷拖尾粒子
 for(var _bi=0;_bi<world.bullets.length;_bi++){
   var _bb=world.bullets[_bi];
@@ -6602,7 +7691,14 @@ for(var i=0;i<world.bullets.length;i++){
             var _isCrit=Math.random()<((_atk.crit||0)/100);
             var _critMul=_isCrit?1.8:1;
             var _baseDmg=(b.dmg||12)*_dmgMul*(1+(_atk.dmg||0)/100)*_critMul;
-            e2.hp-=_baseDmg;if(!b.pierce)b.life=0;
+            e2.hp-=_baseDmg;
+            /* 命中特效：按皮肤 hit 分派 */
+            try{
+              if(b.owner==="player"){
+                var _hf=curSkinFx();
+                spawnHitFxAt(b.x, b.y, _hf.hit, _hf.pal);
+              }
+            }catch(_he){}if(!b.pierce)b.life=0;
 var _dmg=Math.round(_baseDmg);
 var _heavy=_dmg>=60;
 // 命中停顿：轻击1帧感，重击3帧感
@@ -6722,13 +7818,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v7.5");
+    localStorage.setItem("njs_patch","v8.0");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v7.5"){
+    if(seen!=="v8.0"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -10207,44 +11303,44 @@ function draw(){
   for(var i=0;i<world.bullets.length;i++){
     var b=world.bullets[i];
     if(b.laser)continue;
-    var g=_bGroups[b.color];
-    if(!g){g=_bGroups[b.color]=[];_bOrder.push(b.color);}
+    var _gk=(b.fx||"plain")+"|"+b.color;
+    var g=_bGroups[_gk];
+    if(!g){g=_bGroups[_gk]=[];_bOrder.push(_gk);}
     g.push(b);
   }
   for(var gi=0;gi<_bOrder.length;gi++){
-    var col=_bOrder[gi],gg=_bGroups[col];
+    var _key=_bOrder[gi],gg=_bGroups[_key];
+    var _first=gg[0];
+    var ftype=_first.fx||"plain";
+    var fpal=_first.fxPal||{ene:_first.color,hi:"#ffffff",main:_first.color,sub:_first.color};
+    var trailType=_first.trailFx||"none";
 
-    /* ---- 1) 拖尾：短促光束 ---- */
-    ctx.globalAlpha=0.32;ctx.strokeStyle=col;ctx.lineWidth=2.5;
-    ctx.beginPath();
-    for(var ti=0;ti<gg.length;ti++){
-      var tb=gg[ti];
-      ctx.moveTo(tb.x-tb.vx*0.016,tb.y-tb.vy*0.016);
-      ctx.lineTo(tb.x,tb.y);
-    }
-    ctx.stroke();
-    ctx.globalAlpha=1;
-
-    /* ---- 2) 子弹本体：尖刺（外晕）---- */
-    if(FQ>0){
-      ctx.fillStyle=col;ctx.globalAlpha=0.22;
-      ctx.beginPath();
-      for(var oi=0;oi<gg.length;oi++) spikeBullet(gg[oi],2.0);
-      ctx.fill();
+    /* ---- 拖尾：按皮肤分派 ---- */
+    if(trailType!=="none"){
+      ctx.strokeStyle=_first.color;
+      ctx.fillStyle=_first.color;
+      ctx.lineWidth=1.6;
+      for(var ti=0;ti<gg.length;ti++){
+        var tb=gg[ti];
+        var ta=Math.atan2(tb.vy,tb.vx);
+        drawTrailFx(trailType, tb.x, tb.y, ta, fpal, 0.42);
+      }
+      ctx.globalAlpha=1;
     }
 
-    /* ---- 3) 子弹本体：尖刺（主体）---- */
-    ctx.fillStyle=col;ctx.globalAlpha=1;
-    ctx.beginPath();
-    for(var mi=0;mi<gg.length;mi++) spikeBullet(gg[mi],1.0);
-    ctx.fill();
-
-    /* ---- 4) 白色尖芯 ---- */
-    ctx.fillStyle="#ffffff";ctx.globalAlpha=0.9;
-    ctx.beginPath();
-    for(var ci=0;ci<gg.length;ci++) spikeBullet(gg[ci],0.4);
-    ctx.fill();
-    ctx.globalAlpha=1;
+    /* ---- 子弹本体：按皮肤分派独立形状 ---- */
+    ctx.fillStyle=_first.color;
+    ctx.strokeStyle=_first.color;
+    ctx.lineWidth=1.4;
+    for(var mi=0;mi<gg.length;mi++){
+      var bb=gg[mi];
+      var ba=Math.atan2(bb.vy,bb.vx);
+      var bseed=(bb.x*0.017+bb.y*0.023)%6.283;
+      ctx.globalAlpha=0.28;
+      drawBulletShapeFx(ftype, bb.x, bb.y, ba, fpal, bseed);
+      ctx.globalAlpha=1;
+      drawBulletShapeFx(ftype, bb.x, bb.y, ba, fpal, bseed);
+    }
   }
 
   /* ===== 危险区域可视化：给范围型子弹画半透明红圈 ===== */
@@ -10378,6 +11474,7 @@ function draw(){
   if(smartMode&&world.smartTraps&&world.smartTraps.length){drawSmartTraps()}
 drawFx();
 drawBulletFx();
+drawSkinFx();   /* 命中/击杀特效（按皮肤分派） */
   // 分身幻影绘制
   if(player&&player.clones&&player.clones.length>0){
     for(var ci=0;ci<player.clones.length;ci++){
@@ -11387,7 +12484,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v7.5</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v8.0</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -11418,6 +12515,17 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 22:21:53",items:[
+      "🎆 特效系统彻底重做：从『1套特效+10种颜色』改为『每套皮肤独立视觉语言』",
+      "🔫 枪口焰 13 种独立形状：圣十字/矛尖/花瓣/环形冲击/龙口喷息/虚空裂口/法阵/爱心/方框脉冲…",
+      "💫 弹道 13 种独立形状：圣彗星/矛刺/纱芯光球/核球炮弹/冰晶/火焰长羽/双股螺旋/星尘…",
+      "💥 命中 10 种：斜切刀痕/冰裂痕/圣徽印记/花瓣溅落/六芒星/星芒爆点…",
+      "☠ 击杀 12 种三层结构：冰凤凰/龙首虚影/凤凰羽翼/墨龙盘绕/海龙巨浪/法阵灵猫/圣光升腾…",
+      "🌈 拖尾 10 种：金丝/赛道残影/纱雾/衰减碎尾/火焰/冰棱/星点…",
+      "✨ 共 58 种独立几何形状，15 套皮肤 5 层全部唯一无撞款",
+      "⚡ 子弹发射时携带特效身份，换皮肤不会让场上子弹突变",
+      "🚀 新增 4 套红装：诸神破晓/终焉极影/百变纱华/超新星（照搬和平精英素材）"
+    ]},
     {time:"2026-10-24 20:06:11",items:[
       "🔫 枪尺寸精确校准：按手臂长 18px 反推，可见枪身 24-31px（手臂 1.3-1.7 倍）",
       "✋ 前手从 58% 移到 38%（枪身中段），露出更长枪管，不再'短把'",
@@ -11671,7 +12779,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 20:06:11";
+    pd.textContent="更新于 2026 年 10 月 24 日 22:21:53";
   }
 })();
 </script>
