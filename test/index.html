@@ -121,7 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.3</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -456,7 +456,7 @@ var smartMode=false;
 
 function resetGame(){
   bgStageIdx=-1;bgCur={top:[22,10,58],bot:[10,14,70],glow:[90,60,255],hill:[26,12,62]};
-setCL();combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;var _cxEq=1;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;}catch(_){}gunLevel=_cxEq;
+setCL();combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;var _cxEq=1;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;}catch(_){}gunLevel=_cxEq;_lastCoinGain=0;
 player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:100,maxHp:100,en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
 world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
@@ -3133,13 +3133,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v4.2");
+    localStorage.setItem("njs_patch","v4.3");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v4.2"){
+    if(seen!=="v4.3"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -6978,17 +6978,25 @@ function saveScore(sc,ds){
   try{localStorage.setItem("njs_scores",JSON.stringify(arr))}catch(e){}
   return arr;
 }
-function gameOver(){
-  gameState="over";
-  stopBgm();
-  sfx(110,"sawtooth",1,0.12,40);
-  // 图鉴：本局金币结算入跨局 gold
+// 金币结算入跨局 gold（防重复：结算后本局计数清零）
+function settleCoins(){
   try{
+    if(coinCount<=0)return;
     var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");
     if(typeof _c.gold!=="number")_c.gold=0;
     _c.gold+=coinCount;
     localStorage.setItem("njs_codex",JSON.stringify(_c));
+    try{_lastCoinGain=(typeof _lastCoinGain==="number"?_lastCoinGain:0)+coinCount;}catch(_){_lastCoinGain=coinCount;}
+    coinCount=0;
+    var _cv=document.getElementById("coinVal");
+    if(_cv)_cv.textContent="🪙 0";
   }catch(_){}
+}
+function gameOver(){
+  gameState="over";
+  stopBgm();
+  sfx(110,"sawtooth",1,0.12,40);
+  settleCoins();
   ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+" · 本局金币 +"+coinCount;
   saveScore(score,distance);
   lbSubmit(score,distance);
@@ -7021,10 +7029,11 @@ function doRevive(){
 }
 function doGiveUp(){
   gameState="over";stopBgm();
+  settleCoins();
   try{localStorage.removeItem("njs_save")}catch(e){}
   sfx(110,"sawtooth",1,0.12,40);
   var rs=document.getElementById("reviveScreen");if(rs)rs.classList.add("hidden");
-  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+(smartMode?" · 🧠聪明人":"");
+  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+(smartMode?" · 🧠聪明人":"")+(typeof _lastCoinGain!=="undefined"&&_lastCoinGain>0?" · 本局金币 +"+_lastCoinGain:"");
   saveScore(score,distance);
   lbSubmit(score,distance);
   switchBoard(smartMode?"smart":"all");
@@ -7296,6 +7305,7 @@ function closeHomeRank(){ try{ closeHomeRankFixed(); }catch(e){} }
 
 function backToHome(){
   try{ if(typeof stopBgm==="function") stopBgm(); }catch(e){}
+  settleCoins();
   gameState="start";
   var ov=document.getElementById("overScreen"); if(ov) ov.classList.add("hidden");
   var rv=document.getElementById("reviveScreen"); if(rv) rv.classList.add("hidden");
@@ -7466,7 +7476,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.2</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.3</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7497,6 +7507,9 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 08:37:42",items:[
+      "🐛 修复金币丢失：死亡/放弃/回主页三条路径都会正确结算金币入账，不再清零丢失"
+    ]},
     {time:"2026-10-24 08:31:11",items:[
       "✨ 图鉴详情页重做：大图展示台 + 名字只显示一次",
       "💰 金币系统强化：击杀掉金币/自动吸附/局内HUD金币计数/精英怪多掉"
@@ -7603,7 +7616,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 08:31:11";
+    pd.textContent="更新于 2026 年 10 月 24 日 08:37:42";
   }
 })();
 </script>
