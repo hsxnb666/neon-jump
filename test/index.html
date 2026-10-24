@@ -171,7 +171,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   <div style="display:flex;gap:8px;justify-content:center;margin:6px auto 0">
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.8</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v5.9</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -623,20 +623,20 @@ function showToast(m){if(!ui.toast)return;ui.toast.textContent=m;ui.toast.classL
 
 /* ========== 嘲讽文案库（失败/复活各30句，不重复抽取） ========== */
 var TAUNT_DEAD=[
-"就这？","死得还挺快。","手残就别玩高难度。","你的操作，配不上这把枪。","菜是原罪。",
-"再来十次，结果也一样。","这分数，狗看了都摇头。","你以为换把武器就能赢？","下一局，我会手下留情的……骗你的。","复活了也是接着送。",
-"就这点水平，还敢选这个模式？","子弹都躲不过去，怎么混的。","你的反应速度，是龟速吗？","这波操作，我都没眼看。","死了也好，省的丢人。",
-"键盘上撒把米，鸡都比你强。","别人是打不过，你是压根不会打。","这分数，创下新低了吧。","你是在玩，还是在表演送死？","枪是好枪，人是真菜。",
-"我见过菜的，没见过这么菜的。","这局你认真玩了吗？","手是租来的吗？这么急着还。","再打下去，怪物都要同情你了。","你的走位，还不如原地不动。",
-"这一死，教科书级别的反面教材。","天赋不够，努力也白搭。","建议换个简单点的游戏。","这成绩，我都不好意思给你存档。","别难过，菜不是一天练成的。"
+"废物，连新手都比你有种。","你这种水平也敢点开始？","菜得我恶心，滚去玩泥巴。","你的手是猪蹄吗？按都按不准。","打得跟屎一样，还敢选这模式。",
+"丢人现眼的东西，死得真脏。","你活着就是浪费服务器。","这操作，看一眼都嫌脏眼睛。","就这点本事？给你十辈子也练不出来。","你妈生你的时候是不是头被夹了。",
+"猪都比你会躲子弹。","建议你把手机砸了，省得继续丢人。","打死你都是便宜你了。","废物一个，死一百次也学不会。","你这脑子和你的手，都该回炉重造。",
+"别人打游戏，你是来献丑的。","菜得像条落水狗，还喘什么气。","这种成绩也配上传？滚。","你的存在就是对玩家的侮辱。","打得这么烂，还有脸复活？",
+"看你这操作，我替屏幕感到恶心。","死得毫无尊严，跟条死狗一样。","够蠢的，蠢得我都不想骂你了。","你的技术，恶心到我想关机。","就你这德行，还不如一开始就别玩。",
+"烂泥扶不上墙，说的就是你。","这点小场面都慌，将来能干成什么？","打得像一坨糊在墙上的屎。","丢人丢到全服都知道了。","你可真行，行行行行行，全是烂的。"
 ];
 var TAUNT_REVIVE=[
-"还真敢回来啊。","复活了，然后呢？接着送？","续命是吧？有用吗？","这次能撑过 30 秒吗？","多死一次而已。",
-"给你机会，你也不中用。","这波复活，浪费了。","再来一次，死得一样难看。","欢迎回来送人头。","命是续上了，脸呢？",
-"复活药都救不了你。","又回来了？急着再死一次？","这次记得看子弹，别光看枪。","复活是给你第二次送死的机会。","我赌你撑不过这一波。",
-"起来吧，地板还没凉。","续命续了个寂寞。","复活次数快用完了吧。","这条命，算是白给了。","你是不是对「复活」有什么误解。",
-"又满血了，又可以躺了。","这次能躲过一个弹幕吗？","复活的钱，花得真冤。","起来继续挨打。","我都不忍心看下去了。",
-"这次死得慢点，算我输。","复活不是万能的，尤其对你。","又站起来了，又能倒下了。","命可以续，操作续不了。","恭喜复活，继续送分。"
+"还敢爬起来？脸都不要了。","又来送死，你是有多贱。","复活占用资源，你就是浪费。","起来干什么？再死一次让我笑笑。","你续的不是命，是丢人的次数。",
+"你这种人怎么有脸再站起来的。","上去也是死，别浪费时间了。","命给你了，你能撑过十秒算我输。","继续吧，反正你也就这点出息。","又活过来了，跟蟑螂一样恶心。",
+"复活？你确定不是想被再打一遍？","够不要脸的，还敢点复活。","这次死得利索点，别磨蹭。","你的命真不值钱，白送都不要。","站起来，然后继续丢人。",
+"就这还想翻盘？做梦都别想。","多活一分钟，多丢一分钟的人。","再来一次，让我看看你能有多烂。","你复活了，我的失望也复活了。","又是个不甘心的废物。",
+"别撑了，你撑不住的。","每次复活都在证明你的无能。","跟个打不死的小强一样，恶心。","你还不如躺平，省得恶心人。","这点血给你，够你再丢一次脸。",
+"起来啊废物，起来继续挨打。","你这条命，狗都不稀罕要。","复活完，结果还是一样——死。","有种别死，没种就继续。","看着你复活，我就想吐。"
 ];
 var _tauntUsedDead=[], _tauntUsedRevive=[];
 function tauntPick(arr, used){
@@ -3261,13 +3261,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v5.8");
+    localStorage.setItem("njs_patch","v5.9");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v5.8"){
+    if(seen!=="v5.9"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7870,7 +7870,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.8</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v5.9</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7901,6 +7901,9 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 12:17:50",items:[
+      "🔥 嘲讽文案全部加码：更难听、更刻薄、更恶心人（30+30 句全部重写）"
+    ]},
     {time:"2026-10-24 12:11:36",items:[
       "😂 结算大标题改为随机嘲讽（30+30 句不重复）",
       "✨ 标题炸裂升级：字号更大 + 三重霓虹光晕 + 0.34 秒弹入 + 轻震屏",
@@ -8067,7 +8070,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 12:11:36";
+    pd.textContent="更新于 2026 年 10 月 24 日 12:17:50";
   }
 })();
 </script>
