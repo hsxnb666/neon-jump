@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v8.3</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v9.0</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -5158,37 +5158,752 @@ function curveOutline(c, pts){
    通用绘制基元 —— 浮雕/镶边/圆柱 都是"有厚度"的
    ================================================================== */
 /* 浮雕块：填色 + 顶面亮边 + 侧面暗边 + 外描金边。pts=[x,y,x,y,...] */
+
+/* ==================================================================================
+   材质基元 MAT05 —— 五种材质各自的绘制算法
+   原则：
+     1. 轮廓有曲率（禁止直线折角）
+     2. 表面有厚度（禁平面填充）
+     3. 边缘有虚实（禁等宽描边）
+     4. 至少 4 个明暗区（亮/灰/暗/环境反光）
+     5. 高光落在形体转折上，不贴轮廓
+   全程无 shadowBlur，全部用路径+渐变，渐变按 key 缓存
+   ================================================================================== */
+
+/* 渐变缓存：禁止每帧新建渐变对象 */
+var _matGradCache={};
+function matGrad(c, key, x0,y0,x1,y1, stops){
+  var k=key;
+  var g=_matGradCache[k];
+  if(!g){
+    g=c.createLinearGradient(x0,y0,x1,y1);
+    for(var i=0;i<stops.length;i++) g.addColorStop(stops[i][0], stops[i][1]);
+    _matGradCache[k]=g;
+  }
+  return g;
+}
+function matGradR(c, key, x,y,r0,r1, stops){
+  var g=_matGradCache[key];
+  if(!g){
+    g=c.createRadialGradient(x,y,r0,x,y,r1);
+    for(var i=0;i<stops.length;i++) g.addColorStop(stops[i][0], stops[i][1]);
+    _matGradCache[key]=g;
+  }
+  return g;
+}
+/* 颜色工具 */
+function mShade(hex, f){
+  var h=hex.replace('#','');
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  var r=parseInt(h.substr(0,2),16), g=parseInt(h.substr(2,2),16), b=parseInt(h.substr(4,2),16);
+  if(f<0){ r=r*(1+f); g=g*(1+f); b=b*(1+f); }
+  else { r=r+(255-r)*f; g=g+(255-g)*f; b=b+(255-b)*f; }
+  r=Math.max(0,Math.min(255,Math.round(r)));
+  g=Math.max(0,Math.min(255,Math.round(g)));
+  b=Math.max(0,Math.min(255,Math.round(b)));
+  return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+
+/* ======================================================================
+   材质 1：熔过的金属 molten
+   特征：边缘微融圆钝 / 转折积光 / 表面流纹 / 端部略下垂
+   ====================================================================== */
+function matMolten(c, pts, pal, opt){
+  opt=opt||{};
+  var i, n=pts.length;
+  var main=pal.main||"#8a95a8", sub=pal.sub||"#2b3242", hi=pal.hi||"#ffffff", ene=pal.ene||"#60e0ff";
+
+  /* 计算包围盒与受光方向 */
+  var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  for(i=0;i<n;i++){ var p=pts[i]; if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0]; if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1]; }
+  var H=maxY-minY; if(H<0.001)H=1;
+
+  /* --- 1) 融边轮廓：每段中点向内推 0.6，形成圆钝边缘 --- */
+  c.beginPath();
+  var mx=(pts[0][0]+pts[n-1][0])*0.5, my=(pts[0][1]+pts[n-1][1])*0.5;
+  c.moveTo(mx,my);
+  for(i=0;i<n;i++){
+    var a=pts[i], b=pts[(i+1)%n];
+    var nx=(a[0]+b[0])*0.5, ny=(a[1]+b[1])*0.5;
+    /* 二次贝塞尔让转角融化 */
+    c.quadraticCurveTo(a[0],a[1], nx,ny);
+  }
+  c.closePath();
+
+  /* 主体渐变：上亮下暗（垂直受光） */
+  c.fillStyle=matGrad(c,'mo'+main+minY.toFixed(0),
+    minX,minY,maxX,maxY,[
+      [0,mShade(main,0.34)],
+      [0.28,main],
+      [0.62,mShade(main,-0.22)],
+      [1,mShade(sub,0.05)]
+    ]);
+  c.fill();
+
+  /* --- 2) 转折积光：沿上缘 1/4 处一道更亮的带，不是描边 --- */
+  c.save();
+  c.clip();
+  c.beginPath();
+  for(i=0;i<n;i++){
+    var q=pts[i];
+    if(i===0) c.moveTo(q[0], q[1]+H*0.10);
+    else c.lineTo(q[0], q[1]+H*0.10);
+  }
+  for(i=n-1;i>=0;i--){
+    var q2=pts[i];
+    c.lineTo(q2[0], q2[1]+H*0.34);
+  }
+  c.closePath();
+  c.fillStyle=matGrad(c,'mh'+hi+minY.toFixed(0),
+    minX,minY+H*0.10,maxX,minY+H*0.36,[
+      [0,mShade(hi,0.0)+''],
+      [0.5,hi],
+      [1,'rgba(255,255,255,0)']
+    ]);
+  c.globalAlpha=0.5;
+  c.fill();
+  c.globalAlpha=1;
+
+  /* --- 3) 环境反光：下缘一层冷色回光 --- */
+  c.beginPath();
+  for(i=0;i<n;i++){
+    var r3=pts[i];
+    if(i===0) c.moveTo(r3[0], r3[1]-H*0.06);
+    else c.lineTo(r3[0], r3[1]-H*0.06);
+  }
+  for(i=n-1;i>=0;i--){
+    var r4=pts[i];
+    c.lineTo(r4[0], r4[1]-H*0.22);
+  }
+  c.closePath();
+  c.fillStyle=mShade(ene,0.55);
+  c.globalAlpha=0.28;
+  c.fill();
+  c.globalAlpha=1;
+
+  /* --- 4) 流纹：沿形体走向的细流线，不均匀，集中在受光侧 --- */
+  c.strokeStyle=mShade(hi,0.15);
+  c.globalAlpha=0.16;
+  c.lineWidth=0.55;
+  var seedLine=[0.18,0.31,0.44,0.69,0.81];
+  for(i=0;i<seedLine.length;i++){
+    var fy=minY+H*seedLine[i];
+    var wave=H*0.015;
+    c.beginPath();
+    c.moveTo(minX-1, fy);
+    for(var xx=minX; xx<maxX; xx+=3){
+      c.lineTo(xx, fy+Math.sin((xx-minX)*0.32+i*1.7)*wave);
+    }
+    c.stroke();
+  }
+  c.globalAlpha=1;
+
+  c.restore();
+
+  /* --- 5) 边缘：粗细与虚实变化（禁等宽） --- */
+  c.beginPath();
+  c.moveTo(mx,my);
+  for(i=0;i<n;i++){
+    var a5=pts[i], b5=pts[(i+1)%n];
+    c.quadraticCurveTo(a5[0],a5[1],(a5[0]+b5[0])*0.5,(a5[1]+b5[1])*0.5);
+  }
+  c.closePath();
+  /* 上缘亮、下缘暗，用两段不同宽度的描边模拟 */
+  c.lineWidth=1.15; c.strokeStyle=mShade(main,-0.42); c.stroke();
+  c.lineWidth=0.6;  c.strokeStyle=mShade(hi,0.1); c.globalAlpha=0.55; c.stroke(); c.globalAlpha=1;
+}
+
+/* ======================================================================
+   材质 2：风中的布与纱 silk
+   特征：多层 / 层间透明度不同 / 边缘渐隐 / 明暗带表示褶
+   ====================================================================== */
+function matSilk(c, pts, pal, opt){
+  opt=opt||{};
+  var i,n=pts.length;
+  var main=pal.main||"#f0d8f8", sub=pal.sub||"#7a4a9a", hi=pal.hi||"#ffffff", ene=pal.ene||"#e080ff";
+  var layers=opt.layers||3;
+  var wind=opt.wind||1;
+
+  var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  for(i=0;i<n;i++){ var p=pts[i]; if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0]; if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1]; }
+  var W=maxX-minX, H=maxY-minY; if(H<0.001)H=1;
+
+  /* 多层：每层错开角度 + 不同透明度，最外层最淡 */
+  for(var L=layers-1; L>=0; L--){
+    var t=L/(layers-1||1);
+    var offX=W*0.07*t*wind;
+    var offY=H*0.10*t;
+    var skew=H*0.09*t*wind;
+
+    c.beginPath();
+    for(i=0;i<n;i++){
+      var a=pts[i];
+      var nx=a[0]+offX+Math.sin((a[1]-minY)/H*2.4+L)*skew;
+      var ny=a[1]+offY;
+      if(i===0) c.moveTo(nx,ny);
+      else {
+        /* 用贝塞尔连接，形成柔软褶边 */
+        var pr=pts[i-1];
+        var cpx=(pr[0]+a[0])*0.5+offX, cpy=(pr[1]+a[1])*0.5+offY;
+        c.quadraticCurveTo(cpx, cpy+Math.sin(i*1.3+L)*H*0.09, nx, ny);
+      }
+    }
+    c.closePath();
+
+    /* 层透明度：内实外虚 */
+    c.globalAlpha = 0.30 + (1-t)*0.52;
+    c.fillStyle = matGrad(c,'sk'+main+L+minY.toFixed(0),
+      minX,minY,maxX,maxY,[
+        [0, mShade(main,0.22)],
+        [0.34, main],
+        [0.70, mShade(main,-0.18)],
+        [1, mShade(sub,0.12)]
+      ]);
+    c.fill();
+
+    /* 边缘渐隐：用径向渐变擦掉外缘（不画边界） */
+    c.globalAlpha=0.22*(1-t*0.5);
+    c.fillStyle=matGradR(c,'skf'+main+L,
+      (minX+maxX)*0.5,(minY+maxY)*0.5, 0, Math.max(W,H)*0.62,[
+        [0.55,'rgba(255,255,255,0)'],
+        [1,'rgba(255,255,255,1)']
+      ]);
+    c.globalCompositeOperation='destination-out';
+    c.fill();
+    c.globalCompositeOperation='source-over';
+    c.globalAlpha=1;
+  }
+
+  /* 褶皱：明暗带，不画线 */
+  var foldN=5;
+  for(i=0;i<foldN;i++){
+    var fxp=minX + W*(i+0.5)/foldN + Math.sin(i*2.1)*W*0.04;
+    c.beginPath();
+    c.moveTo(fxp, minY);
+    for(var yy=minY; yy<=maxY; yy+=4){
+      var ph=(yy-minY)/H;
+      c.lineTo(fxp + Math.sin(ph*3.6+i*1.9)*W*0.075*wind, yy);
+    }
+    for(var yy2=maxY; yy2>=minY; yy2-=4){
+      var ph2=(yy2-minY)/H;
+      c.lineTo(fxp + W*0.045 + Math.sin(ph2*3.6+i*1.9)*W*0.075*wind, yy2);
+    }
+    c.closePath();
+    c.fillStyle=(i%2===0)?mShade(hi,0.3):mShade(sub,0.3);
+    c.globalAlpha=0.13;
+    c.fill();
+    c.globalAlpha=1;
+  }
+
+  /* 透光：光从薄处渗出 */
+  c.beginPath();
+  for(i=0;i<n;i++){
+    var a6=pts[i];
+    if(i===0) c.moveTo(a6[0],a6[1]);
+    else c.lineTo(a6[0],a6[1]);
+  }
+  c.closePath();
+  c.fillStyle=ene;
+  c.globalAlpha=0.10;
+  c.fill();
+  c.globalAlpha=1;
+}
+
+/* ======================================================================
+   材质 3：液体与胶质 liquid
+   特征：顺形体走的高光带 / 边缘发暗显厚度 / 内部缓流混色
+   ====================================================================== */
+function matLiquid(c, pts, pal, opt){
+  opt=opt||{};
+  var i,n=pts.length;
+  var main=pal.main||"#40d8e8", sub=pal.sub||"#0a3a5a", hi=pal.hi||"#ffffff", ene=pal.ene||"#80ffff";
+  var t=opt.t||0;
+
+  var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  for(i=0;i<n;i++){ var p=pts[i]; if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0]; if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1]; }
+  var W=maxX-minX, H=maxY-minY; if(H<0.001)H=1;
+
+  /* 主体：圆润玻璃体（重力让它下垂一点） */
+  c.beginPath();
+  var sag=H*0.06;
+  c.moveTo(pts[0][0], pts[0][1]);
+  for(i=1;i<n;i++){
+    var a=pts[i], b=pts[i-1];
+    var mx=(a[0]+b[0])*0.5, my=(a[1]+b[1])*0.5 + (b[1]>minY+H*0.5? sag:0);
+    c.quadraticCurveTo(b[0],b[1],mx,my);
+  }
+  c.closePath();
+
+  /* 内部混色：径向渐变+缓慢流动的色相偏移 */
+  var flow=Math.sin(t*1.3)*0.08;
+  c.fillStyle=matGrad(c,'lq'+main+(flow*100).toFixed(0),
+    minX,minY,maxX,maxY,[
+      [0, mShade(main,0.30+flow)],
+      [0.40, main],
+      [0.76, mShade(main,-0.30)],
+      [1, mShade(sub,0.0)]
+    ]);
+  c.fill();
+
+  c.save(); c.clip();
+
+  /* 边缘发暗：内侧一圈暗环表现厚度 */
+  c.lineWidth=H*0.22;
+  c.strokeStyle=mShade(sub,0.1);
+  c.globalAlpha=0.5;
+  c.stroke();
+  c.globalAlpha=1;
+
+  /* 高光带：顺着形体走的一条弧带，不是圆点 */
+  c.beginPath();
+  for(i=0;i<n;i++){
+    var q=pts[i];
+    if(i===0) c.moveTo(q[0]+W*0.06, q[1]+H*0.14);
+    else c.lineTo(q[0]+W*0.06, q[1]+H*0.14);
+  }
+  for(i=n-1;i>=0;i--){
+    var q2=pts[i];
+    c.lineTo(q2[0]+W*0.06, q2[1]+H*0.30);
+  }
+  c.closePath();
+  c.fillStyle=matGrad(c,'lh'+hi+minY.toFixed(0),
+    minX,minY+H*0.10,maxX,minY+H*0.34,[
+      [0,'rgba(255,255,255,0)'],
+      [0.35,hi],
+      [0.72,mShade(ene,0.4)],
+      [1,'rgba(255,255,255,0)']
+    ]);
+  c.globalAlpha=0.72;
+  c.fill();
+  c.globalAlpha=1;
+
+  /* 内部流动混色：两块缓慢漂移的色团 */
+  var bx1=(minX+maxX)*0.5 + Math.sin(t*0.9)*W*0.22;
+  var bx2=(minX+maxX)*0.5 + Math.sin(t*0.7+2.1)*W*0.26;
+  c.fillStyle=matGradR(c,'lb1'+ene, bx1, minY+H*0.5, 0, W*0.42,[
+    [0, ene], [1,'rgba(0,0,0,0)']
+  ]);
+  c.globalAlpha=0.30; c.fillRect(minX,minY,W,H); c.globalAlpha=1;
+  c.fillStyle=matGradR(c,'lb2'+main, bx2, minY+H*0.62, 0, W*0.36,[
+    [0, mShade(main,0.4)], [1,'rgba(0,0,0,0)']
+  ]);
+  c.globalAlpha=0.24; c.fillRect(minX,minY,W,H); c.globalAlpha=1;
+
+  c.restore();
+
+  /* 轮廓：细而柔，下缘稍重（模拟液体表面张力） */
+  c.beginPath();
+  c.moveTo(pts[0][0], pts[0][1]);
+  for(i=1;i<n;i++){ c.lineTo(pts[i][0], pts[i][1]); }
+  c.closePath();
+  c.lineWidth=0.5; c.strokeStyle=mShade(hi,0.3); c.globalAlpha=0.5; c.stroke(); c.globalAlpha=1;
+}
+
+/* ======================================================================
+   材质 4：鳞与甲 scale
+   特征：片片叠压露下缘 / 每片独立受光暗面 / 末端渐小 / 沿方向排列
+   ====================================================================== */
+function matScale(c, pts, pal, opt){
+  opt=opt||{};
+  var i,n=pts.length;
+  var main=pal.main||"#d8b040", sub=pal.sub||"#4a3410", hi=pal.hi||"#fff8d0", ene=pal.ene||"#ffd040";
+  var rows=opt.rows||3, cols=opt.cols||7;
+
+  var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  for(i=0;i<n;i++){ var p=pts[i]; if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0]; if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1]; }
+  var W=maxX-minX, H=maxY-minY; if(H<0.001)H=1;
+
+  /* 底层 */
+  c.beginPath();
+  c.moveTo(pts[0][0], pts[0][1]);
+  for(i=1;i<n;i++) c.lineTo(pts[i][0], pts[i][1]);
+  c.closePath();
+  c.fillStyle=matGrad(c,'sc0'+main+minY.toFixed(0), minX,minY,maxX,maxY,[
+    [0,mShade(main,-0.20)],[0.5,mShade(sub,0.15)],[1,mShade(sub,-0.1)]
+  ]);
+  c.fill();
+
+  c.save(); c.clip();
+
+  /* 逐片叠压：从末端往前铺，后面的片压住前面的边缘 */
+  var cw=W/cols, ch=H/rows;
+  for(var r=0;r<rows;r++){
+    var y0=minY+r*ch;
+    /* 末端渐小 */
+    var shrink=0.62+0.38*((r+1)/rows);
+    for(var cc=0;cc<cols;cc++){
+      var x0=minX + cc*cw + (r%2)*cw*0.5;
+      var pw=cw*1.12;
+      var ph=ch*1.55*shrink;
+      var px=x0+pw*0.5, py=y0+ph*0.5;
+
+      /* 鳞片形状：上圆下尖的盾形 */
+      c.beginPath();
+      c.moveTo(x0, y0+ph*0.35);
+      c.quadraticCurveTo(px, y0-ph*0.42, x0+pw, y0+ph*0.35);
+      c.quadraticCurveTo(px, y0+ph*1.05, x0, y0+ph*0.35);
+      c.closePath();
+
+      /* 每片独立受光：上亮下暗 */
+      c.fillStyle=matGrad(c,'scp'+main+r+cc,
+        x0, y0, x0+pw, y0+ph,[
+          [0, mShade(main,0.26)],
+          [0.42, main],
+          [1, mShade(sub,0.18)]
+        ]);
+      c.globalAlpha=0.94;
+      c.fill();
+
+      /* 片缘亮边（只在上弧，粗细变化） */
+      c.beginPath();
+      c.moveTo(x0+pw*0.06, y0+ph*0.34);
+      c.quadraticCurveTo(px, y0-ph*0.34, x0+pw*0.94, y0+ph*0.34);
+      c.strokeStyle=mShade(hi,0.2);
+      c.lineWidth=0.7*shrink;
+      c.globalAlpha=0.55;
+      c.stroke();
+      c.globalAlpha=1;
+    }
+  }
+
+  /* 缝隙透光：光从片间渗出 */
+  for(var r2=0;r2<rows;r2++){
+    var gy=minY+r2*ch+ch*0.98;
+    c.beginPath();
+    c.moveTo(minX, gy);
+    c.lineTo(maxX, gy);
+    c.strokeStyle=ene;
+    c.lineWidth=0.6;
+    c.globalAlpha=0.30;
+    c.stroke();
+    c.globalAlpha=1;
+  }
+
+  c.restore();
+
+  /* 外轮廓 */
+  c.beginPath();
+  c.moveTo(pts[0][0], pts[0][1]);
+  for(i=1;i<n;i++) c.lineTo(pts[i][0], pts[i][1]);
+  c.closePath();
+  c.lineWidth=0.9; c.strokeStyle=mShade(sub,-0.3); c.stroke();
+  c.lineWidth=0.4; c.strokeStyle=mShade(hi,0.3); c.globalAlpha=0.4; c.stroke(); c.globalAlpha=1;
+}
+
+/* ======================================================================
+   材质 5：烟与雾 smoke
+   特征：多层半透明越外越淡 / 形状不规则边缘模糊 / 明确飘散方向
+   ====================================================================== */
+function matSmoke(c, pts, pal, opt){
+  opt=opt||{};
+  var i,n=pts.length;
+  var main=pal.main||"#8a90a0", sub=pal.sub||"#2a2e38", hi=pal.hi||"#d0d8e8", ene=pal.ene||"#a060ff";
+  var t=opt.t||0, puffs=opt.puffs||5, dir=opt.dir||-1;
+
+  var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  for(i=0;i<n;i++){ var p=pts[i]; if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0]; if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1]; }
+  var W=maxX-minX, H=maxY-minY; if(H<0.001)H=1;
+
+  c.save();
+  c.beginPath();
+  c.moveTo(pts[0][0], pts[0][1]);
+  for(i=1;i<n;i++) c.lineTo(pts[i][0], pts[i][1]);
+  c.closePath();
+  c.clip();
+
+  /* 体积：多层叠加，越外层越淡 */
+  for(var L=0;L<puffs;L++){
+    var t2=L/(puffs-1||1);
+    /* 沿飘散方向偏移，每层不同 */
+    var ox=dir*W*0.16*t2*windHelper(t,L);
+    var oy=-H*0.14*t2;
+    /* 不规则形状：用多段贝塞尔拼 */
+    var cx=(minX+maxX)*0.5+ox, cy=(minY+maxY)*0.5+oy;
+    var rx=W*(0.52-t2*0.14), ry=H*(0.50-t2*0.10);
+
+    c.beginPath();
+    var segs=7;
+    for(i=0;i<=segs;i++){
+      var ang=i/segs*6.2832;
+      var wob=1+Math.sin(ang*2.7+L*1.4+t*0.6)*0.17+Math.cos(ang*4.1+L)*0.11;
+      var px2=cx+Math.cos(ang)*rx*wob;
+      var py2=cy+Math.sin(ang)*ry*wob;
+      if(i===0) c.moveTo(px2,py2);
+      else {
+        var pang=(i-0.5)/segs*6.2832;
+        var wob2=1+Math.sin(pang*2.7+L*1.4+t*0.6)*0.17;
+        var cpx=cx+Math.cos(pang)*rx*wob2*1.18;
+        var cpy=cy+Math.sin(pang)*ry*wob2*1.18;
+        c.quadraticCurveTo(cpx,cpy,px2,py2);
+      }
+    }
+    c.closePath();
+
+    /* 越外层越淡 */
+    c.globalAlpha=0.30*(1-t2*0.72);
+    c.fillStyle=(L%2===0)?mShade(main,0.1):mShade(ene,0.25);
+    c.fill();
+    c.globalAlpha=1;
+  }
+
+  /* 内部核心稍浓 */
+  c.beginPath();
+  c.moveTo(pts[0][0], pts[0][1]);
+  for(i=1;i<n;i++) c.lineTo(pts[i][0], pts[i][1]);
+  c.closePath();
+  c.fillStyle=matGrad(c,'sm'+main+minY.toFixed(0), minX,minY,maxX,maxY,[
+    [0,mShade(main,0.25)],[0.6,mShade(main,-0.1)],[1,'rgba(0,0,0,0)']
+  ]);
+  c.globalAlpha=0.42;
+  c.fill();
+  c.globalAlpha=1;
+
+  c.restore();
+
+  /* 不画外描边（烟雾没有边界），只在受光侧加一道柔光 */
+  c.beginPath();
+  c.moveTo(pts[0][0], pts[0][1]);
+  for(i=1;i<n;i++) c.lineTo(pts[i][0], pts[i][1]);
+  c.closePath();
+  c.strokeStyle=mShade(hi,0.2);
+  c.lineWidth=2.2;
+  c.globalAlpha=0.10;
+  c.stroke();
+  c.globalAlpha=1;
+}
+function windHelper(t,L){ return 0.6+0.4*Math.sin(t*0.8+L*1.7); }
+
+/* ======================================================================
+   统一入口：按材质类型分派
+   mat: molten | silk | liquid | scale | smoke | brushed(旧)
+   ====================================================================== */
+function matDraw(c, mat, pts, pal, opt){
+  if(mat==="molten")      return matMolten(c,pts,pal,opt);
+  if(mat==="silk")        return matSilk(c,pts,pal,opt);
+  if(mat==="liquid"||mat==="crystal") return matLiquid(c,pts,pal,opt);
+  if(mat==="scale")       return matScale(c,pts,pal,opt);
+  if(mat==="smoke"||mat==="void") return matSmoke(c,pts,pal,opt);
+  return matMolten(c,pts,pal,opt);   /* 默认熔金属，杜绝几何平填 */
+}
+
+/* ==================================================================================
+   曲率路径生成器 —— 把多边形顶点转成柔软曲线路径（禁直线折角）
+   原理：以每个顶点的「中点」为中继，顶点为控制点，用二次贝塞尔连成曲率连续的轮廓
+   corner: 0=尖角(保留一点硬朗)  1=完全圆融
+   ================================================================================== */
+
+/* ==================================================================================
+   材质映射表：把 skin 的 baseMat 映射到五种材质算法
+   关键：不同 baseMat 走不同算法，不是换颜色
+   ================================================================================== */
+var MAT_MAP={
+  /* 熔过的金属：硬核机械、被高温烧过、边缘微融 */
+  brushed:    {fn:"molten", opt:{}},
+  lightmetal: {fn:"molten", opt:{}},
+  obsidian:   {fn:"smoke",  opt:{puffs:5, dir:-1}},   /* 黑曜石=凝固的暗焰，走烟雾体积 */
+  /* 布与纱：柔软、多层、透光 */
+  porcelain:  {fn:"silk",   opt:{layers:3, wind:1}},
+  pearl:      {fn:"silk",   opt:{layers:3, wind:0.7}},
+  /* 液体与胶质：玻璃质、内流、厚边 */
+  crystal:    {fn:"liquid", opt:{}},
+  /* 鳞与甲：片片叠压 */
+  scaledragon:{fn:"scale",  opt:{rows:3, cols:7}},
+  /* 哑光：薄雾金属 */
+  matte:      {fn:"molten", opt:{}}
+};
+function matOfSkin(mat){
+  var m=MAT_MAP[mat];
+  if(m) return m;
+  return {fn:"molten", opt:{}};
+}
+
+/* 当前渲染的材质上下文（由 drawWeaponSkin 设置） */
+var _curMat={fn:"molten", opt:{}, pal:null, t:0};
+function setCurMat(baseMat, pal, t){
+  var m=matOfSkin(baseMat);
+  _curMat.fn=m.fn;
+  _curMat.opt=m.opt||{};
+  _curMat.pal=pal;
+  _curMat.t=t||0;
+}
+
+function qPath(c, pts, corner){
+  var n=pts.length/2;
+  if(n<2) return;
+  corner=(corner===undefined)?0.75:corner;
+  /* 顶点列表 */
+  function px(i){ return pts[(i%n)*2]; }
+  function py(i){ return pts[(i%n)*2+1]; }
+  /* 起点：第一条边的中点 */
+  var sx=(px(0)+px(1))*0.5, sy=(py(0)+py(1))*0.5;
+  c.moveTo(sx,sy);
+  for(var i=1;i<=n;i++){
+    /* 每段：控制点=顶点，终点=下一段中点 */
+    var vx=px(i%n), vy=py(i%n);
+    var ex=(px(i%n)+px((i+1)%n))*0.5, ey=(py(i%n)+py((i+1)%n))*0.5;
+    if(corner>=0.999){
+      c.quadraticCurveTo(vx,vy, ex,ey);
+    } else {
+      /* 混合：先朝顶点走一段直线，再曲线收口，保留一点机械硬朗 */
+      var bx = vx + (ex-vx)*corner;
+      var by = vy + (ey-vy)*corner;
+      c.quadraticCurveTo(vx,vy, bx,by);
+      c.lineTo(ex,ey);
+    }
+  }
+  c.closePath();
+}
+
+/* ==================================================================================
+   emboss 曲率版 v2
+   相比旧版：
+     1. 折线 → 贝塞尔圆角（轮廓有曲率）
+     2. 侧壁加倒角，厚度真实
+     3. 4 个明暗区：亮面 / 灰面 / 暗面 / 环境反光
+     4. 描边粗细虚实变化（禁等宽）
+     5. 渐变缓存（禁每帧新建）
+   ================================================================================== */
 function emboss(c, pts, colTop, colBody, colSide, rimCol, rimW){
   var n=pts.length;
-  // 1. 侧壁（向下偏移 1.4，暗色）
-  c.beginPath();
-  c.moveTo(pts[0],pts[1]+1.5);
-  for(var i=2;i<n;i+=2) c.lineTo(pts[i],pts[i+1]+1.5);
-  c.closePath();
-  c.fillStyle=colSide; c.fill();
-  // 2. 主体渐变（上亮下暗）
+  if(n<6) return;
+
   var minY=1e9,maxY=-1e9,minX=1e9,maxX=-1e9;
-  for(var i=0;i<n;i+=2){ if(pts[i+1]<minY)minY=pts[i+1]; if(pts[i+1]>maxY)maxY=pts[i+1];
-    if(pts[i]<minX)minX=pts[i]; if(pts[i]>maxX)maxX=pts[i]; }
-  var g=c.createLinearGradient(0,minY,0,maxY);
-  g.addColorStop(0,colTop); g.addColorStop(0.45,colBody); g.addColorStop(1,colSide);
+  for(var i=0;i<n;i+=2){
+    if(pts[i+1]<minY)minY=pts[i+1];
+    if(pts[i+1]>maxY)maxY=pts[i+1];
+    if(pts[i]<minX)minX=pts[i];
+    if(pts[i]>maxX)maxX=pts[i];
+  }
+  var H=maxY-minY; if(H<0.01)H=1;
+  var W=maxX-minX; if(W<0.01)W=1;
+  var corner=0.72;
+
+  /* ---------- 1) 侧壁（厚度）：整体下移，带倒角渐变 ---------- */
+  c.save();
+  c.translate(0,1.6);
   c.beginPath();
-  c.moveTo(pts[0],pts[1]);
-  for(var i=2;i<n;i+=2) c.lineTo(pts[i],pts[i+1]);
-  c.closePath();
-  c.fillStyle=g; c.fill();
-  // 3. 顶面高光边（沿上轮廓）
-  c.beginPath(); c.moveTo(pts[0],pts[1]);
-  for(var i=2;i<n;i+=2) c.lineTo(pts[i],pts[i+1]);
-  c.strokeStyle="rgba(255,255,255,0.42)"; c.lineWidth=0.7; c.stroke();
-  // 4. 金边勾轮廓
+  qPath(c, pts, corner);
+  c.fillStyle=colSide||mShade(colBody,-0.55);
+  c.fill();
+  c.restore();
+
+  /* ---------- 2) 主体：按当前皮肤材质走五种算法之一 ---------- */
+  /* 把扁平坐标转成点对，供材质函数使用 */
+  var _pp=[];
+  for(var _pi=0;_pi<n;_pi+=2) _pp.push([pts[_pi], pts[_pi+1]]);
+  var _pal = _curMat.pal || {main:colBody, sub:colSide||mShade(colBody,-0.55), hi:colTop, ene:colTop};
+  var _mp = {
+    main:_pal.main||colBody,
+    sub :_pal.sub ||colSide||mShade(colBody,-0.55),
+    hi  :_pal.hi  ||colTop,
+    ene :_pal.ene ||_pal.main||colBody
+  };
+  /* 小块部件用轻量材质，避免性能浪费 */
+  var _area=Math.abs(W)*Math.abs(H);
+  var _light = _area < 90;   /* 小零件 */
+  if(_light){
+    /* 小零件：简化的四区渐变（保持质感，但不开多层） */
+    c.beginPath();
+    qPath(c, pts, corner);
+    var gk2='eb'+colTop+colBody+colSide+minY.toFixed(1)+maxY.toFixed(1);
+    c.fillStyle=matGrad(c, gk2, minX,minY,maxX,maxY,[
+      [0,    mShade(colTop, 0.10)],
+      [0.22, colTop],
+      [0.46, colBody],
+      [0.74, mShade(colBody,-0.26)],
+      [1,    colSide||mShade(colBody,-0.55)]
+    ]);
+    c.fill();
+  } else {
+    var _o=_curMat.opt||{};
+    _o.t=_curMat.t;
+    matDraw(c, _curMat.fn, _pp, _mp, _o);
+  }
+
+  /* ---------- 3) 内部细节：全部 clip 在形体里 ---------- */
+  c.save();
+  c.beginPath();
+  qPath(c, pts, corner);
+  c.clip();
+
+  /* 3a) 受光面：上缘 28% 一道宽亮带（不是描边） */
+  c.beginPath();
+  c.rect(minX-2, minY, W+4, H*0.30);
+  var hk='ebh'+colTop+minY.toFixed(1)+H.toFixed(1);
+  c.fillStyle=matGrad(c, hk, minX,minY,maxX,minY+H*0.30,[
+    [0,   'rgba(255,255,255,0.46)'],
+    [0.55, 'rgba(255,255,255,0.10)'],
+    [1,   'rgba(255,255,255,0)']
+  ]);
+  c.fill();
+
+  /* 3b) 环境反光：下缘 18% 一道冷色回光 */
+  c.beginPath();
+  c.rect(minX-2, minY+H*0.74, W+4, H*0.26);
+  c.fillStyle='rgba(180,220,255,0.16)';
+  c.fill();
+
+  /* 3c) 转折积光：在形体上 1/3 处，一条跟着轮廓走的弧光 */
+  c.beginPath();
+  var nv=n/2;
+  var gyy=minY+H*0.34;
+  c.moveTo(minX, gyy);
+  for(var k=0;k<=8;k++){
+    var kx=minX+W*k/8;
+    c.lineTo(kx, gyy + Math.sin(k*0.9)*H*0.035);
+  }
+  c.strokeStyle='rgba(255,255,255,0.24)';
+  c.lineWidth=H*0.09;
+  c.stroke();
+
+  /* 3d) 纹理流纹：极细，不均匀分布（有主次，不铺满） */
+  c.strokeStyle='rgba(255,255,255,0.11)';
+  c.lineWidth=0.5;
+  var lines=[0.58,0.66,0.80];
+  for(var li=0;li<lines.length;li++){
+    var ly=minY+H*lines[li];
+    c.beginPath();
+    c.moveTo(minX,ly);
+    for(var lx=minX; lx<=maxX; lx+=3){
+      c.lineTo(lx, ly+Math.sin((lx-minX)*0.28+li*2.3)*H*0.012);
+    }
+    c.stroke();
+  }
+
+  c.restore();
+
+  /* ---------- 4) 边缘：粗细 + 虚实变化（禁等宽） ---------- */
+  /* 外沿暗线（较重，体现厚度） */
+  c.beginPath();
+  qPath(c, pts, corner);
+  c.strokeStyle='rgba(0,0,0,0.52)';
+  c.lineWidth=0.85;
+  c.stroke();
+
+  /* 上轮廓亮线：只画上半部分，细而亮 */
+  c.save();
+  c.beginPath();
+  c.rect(minX-4, minY-4, W+8, H*0.55);
+  c.clip();
+  c.beginPath();
+  qPath(c, pts, corner);
+  c.strokeStyle='rgba(255,255,255,0.55)';
+  c.lineWidth=0.5;
+  c.stroke();
+  c.restore();
+
+  /* ---------- 5) 镶边（可选）：跟着曲率走 ---------- */
   if(rimCol){
-    c.beginPath(); c.moveTo(pts[0],pts[1]);
-    for(var i=2;i<n;i+=2) c.lineTo(pts[i],pts[i+1]);
-    c.closePath();
-    c.strokeStyle=rimCol; c.lineWidth=(rimW||0.75); c.stroke();
+    c.beginPath();
+    qPath(c, pts, corner);
+    c.strokeStyle=rimCol;
+    c.lineWidth=(rimW||0.75);
+    c.globalAlpha=0.85;
+    c.stroke();
+    c.globalAlpha=1;
   }
 }
+
 /* 圆柱：金属管（带镜面 + 底部反光 + 内膛） */
 function cyl(c, x0,x1, cy, r, pal, extra){
   var g=c.createLinearGradient(0,cy-r,0,cy+r);
@@ -6625,6 +7340,8 @@ function drawWeaponSkin(c, weaponType, skinId, level, x, y, scale, flip, animTim
   if(flip) c.scale(-1,1);
   c.scale(scale,scale);
 
+  /* 设置当前材质：之后的 emboss 全部按此皮肤的材质算法绘制 */
+  setCurMat(sk.baseMat, pal, T);
   // ---- 第8层先画氛围光（在枪后面） ----
   skinAura(c, len, hh, pal, T, sk.glow, showAura);
 
@@ -8175,13 +8892,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v8.3");
+    localStorage.setItem("njs_patch","v9.0");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v8.3"){
+    if(seen!=="v9.0"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -12841,7 +13558,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v8.3</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v9.0</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -12872,6 +13589,26 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-25 00:52:10",items:[
+      "🎨 枪皮材质系统重做：彻底抛弃几何拼装，改为五种材质算法",
+      "⚙️ 熔过的金属：边缘微融圆钝 + 转折积光 + 表面流纹 + 下缘冷色回光",
+      "🌬 风中的布与纱：三层错角叠加 + 边缘渐隐 + 明暗带褶皱（零描边）",
+      "💧 液体与胶质：顺形体高光带 + 边缘发暗显厚度 + 内部缓流混色",
+      "🐉 鳞与甲：片片叠压露下缘 + 每片独立受光 + 末端渐小 + 缝隙透光",
+      "🌫 烟与雾：多层越外越淡 + 不规则轮廓 + 明确飘散方向（无边界）",
+      "✏️ 全部轮廓从直线折角改为贝塞尔曲率，自带圆角",
+      "🔧 15 套枪皮按 baseMat 自动分派材质算法，不是换颜色"
+    ]},
+    {time:"2026-10-25 00:52:10",items:[
+      "🎨 枪皮材质系统重做：彻底抛弃几何拼装，改为五种材质算法",
+      "⚙️ 熔过的金属：边缘微融圆钝 + 转折积光 + 表面流纹 + 下缘冷色回光",
+      "🌬 风中的布与纱：三层错角叠加 + 边缘渐隐 + 明暗带褶皱（零描边）",
+      "💧 液体与胶质：顺形体高光带 + 边缘发暗显厚度 + 内部缓流混色",
+      "🐉 鳞与甲：片片叠压露下缘 + 每片独立受光 + 末端渐小 + 缝隙透光",
+      "🌫 烟与雾：多层越外越淡 + 不规则轮廓 + 明确飘散方向（无边界）",
+      "✏️ 全部轮廓从直线折角改为贝塞尔曲率，自带圆角",
+      "🔧 15 套枪皮按 baseMat 自动分派材质算法，不是换颜色"
+    ]},
     {time:"2026-10-24 23:39:29",items:[
       "✨ 粒子系统重做：从『所有皮肤共用圆点』改为『每套皮肤独立粒子』",
       "🔷 12 种粒子形状：六角冰晶/龙鳞/羽片/四角星/菱形/方片/爱心/符文三角/金丝长条/针片/花瓣/圆点",
@@ -13158,7 +13895,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 23:39:29";
+    pd.textContent="更新于 2026 年 10 月 25 日 00:52:10";
   }
 })();
 </script>
