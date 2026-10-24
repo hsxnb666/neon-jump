@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v9.0</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v9.1</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -1741,6 +1741,63 @@ function pcNorm(c){
    粒子配置表 —— 每套皮肤的开火/拖尾粒子独立
    禁止所有皮肤共用同一套粒子
    ================================================================== */
+
+/* ==================================================================================
+   等级跃迁系统 LVL05
+   ────────────────────────────────────────────────────────────────────────────────
+   武器等级 1→50，分 5 个阶段，每 10 级一次结构跃迁：
+     Lv 1-9   T0 初装    ：粒子少、慢、无旋转；枪口小；单发
+     Lv 10-19 T1 强化    ：粒子+40%、开始自旋；枪口带外环；第二亚音
+     Lv 20-29 T2 觉醒    ：粒子分叉双股；枪口碎裂；弹体拉长带尾须
+     Lv 30-39 T3 超越    ：粒子三道喷流 + 残影；枪口冲击环；弹体有拖曳光尾
+     Lv 40-50 T4 神话    ：粒子星爆 + 环绕；枪口核心爆闪；弹体拖多层残像
+   ================================================================================== */
+var LV_TIER=[
+  /* T0 Lv1-9 */
+  { n:1.00, spd:1.00, life:1.00, size:1.00, spin:0.00, grav:1.00,
+    streams:1, jitter:0.00, tail:0, ring:0, linger:0, aftershock:0, rec:1.00,
+    name:"初装", col:2 },
+  /* T1 Lv10-19 */
+  { n:1.45, spd:1.15, life:1.10, size:1.12, spin:1.00, grav:1.10,
+    streams:1, jitter:0.15, tail:1, ring:1, linger:1, aftershock:0, rec:1.15,
+    name:"强化", col:2 },
+  /* T2 Lv20-29 */
+  { n:1.95, spd:1.28, life:1.22, size:1.26, spin:1.60, grav:1.20,
+    streams:2, jitter:0.28, tail:2, ring:1, linger:1, aftershock:1, rec:1.28,
+    name:"觉醒", col:3 },
+  /* T3 Lv30-39 */
+  { n:2.60, spd:1.42, life:1.36, size:1.42, spin:2.10, grav:1.30,
+    streams:3, jitter:0.42, tail:2, ring:2, linger:2, aftershock:1, rec:1.42,
+    name:"超越", col:3 },
+  /* T4 Lv40-50 */
+  { n:3.40, spd:1.58, life:1.52, size:1.62, spin:2.80, grav:1.42,
+    streams:3, jitter:0.55, tail:3, ring:2, linger:2, aftershock:1, rec:1.55,
+    name:"神话", col:4 }
+];
+function lvTierOf(level){
+  var L=Math.max(1,Math.min(50,level|0));
+  /* Lv1-9→T0, 10-19→T1, 20-29→T2, 30-39→T3, 40-50→T4 */
+  var i=Math.min(4, Math.floor(L/10));
+  return i;
+}
+function lvTierCfg(level){
+  return LV_TIER[lvTierOf(level)];
+}
+/* 当前局内武器等级（由 gameGun 每帧写入） */
+var _gunLv=1;
+function setGunLv(L){
+  var n=Math.max(1,Math.min(50,L|0));
+  if(n!==_gunLv){
+    var oldT=lvTierOf(_gunLv), newT=lvTierOf(n);
+    _gunLv=n;
+    /* 跨阶段时闪一下提示（不打断游戏） */
+    if(newT>oldT && typeof showToast==="function"){
+      try{ showToast("武器进阶 Lv"+n+" · "+LV_TIER[newT].name, "#ffd700"); }catch(e){}
+    }
+  }
+}
+function curGunLv(){ return _gunLv; }
+
 var PART_CFG={
   /* 冰晶神谕：六角冰晶碎片，少而锐利，飞散慢 */
   icecrystal:{ n:9,  shape:"hex",   spd:190, spread:0.65, life:0.30, size:2.2, spin:1.8, grav:0.3 },
@@ -1794,41 +1851,82 @@ function spawnMuzzle(x,y,ang,color,power){
 
 
 
-  /* ===== 开火粒子：按皮肤分派配置 ===== */
+  /* ===== 开火粒子：皮肤配置 × 等级阶段 ===== */
   var _pc=partCfgOf(_mfx.bullet);
-  var _pn=Math.round(_pc.n*power);
+  var _tc=lvTierCfg(_gunLv);          /* 等级阶段配置 */
   var _pcol=pcNorm((_mfx.pal&&_mfx.pal.ene)||color||"#ffe600");
   var _pcol2=pcNorm((_mfx.pal&&_mfx.pal.main)||color||"#ffffff");
-  for(var i=0;i<_pn;i++){
-    var spread=(Math.random()-0.5)*_pc.spread;
-    var sp=(_pc.spd*0.7)+Math.random()*_pc.spd*power;
-    bulletParts.push({
-      x:x,y:y,
-      vx:Math.cos(ang+spread)*sp,
-      vy:Math.sin(ang+spread)*sp,
-      t:0,
-      life:_pc.life*(0.7+Math.random()*0.6),
-      size:_pc.size*(0.7+Math.random()*0.7)*power,
-      color:i%3===0?_pcol2:_pcol,
-      kind:"muzzle",
-      shape:_pc.shape,
-      spin:_pc.spin,
-      rot:Math.random()*6.283,
-      grav:_pc.grav
-    });
+  var _pcol3=pcNorm((_mfx.pal&&_mfx.pal.hi)||"#ffffff");
+
+  /* 数量：皮肤基数 × 等级倍率 */
+  var _pn=Math.round(_pc.n*power*_tc.n);
+  /* 等级越高，喷流越多（1→3 股），每股有自己的锥角 */
+  var _streams=_tc.streams;
+
+  for(var st=0; st<_streams; st++){
+    /* 每股喷流的中心角：多股时左右分开 */
+    var _soff = (_streams===1) ? 0 : ((st/(_streams-1))-0.5)*(0.34+_tc.jitter*0.5);
+    var _cnt = Math.max(1, Math.round(_pn/_streams));
+    for(var i=0;i<_cnt;i++){
+      var spread=(Math.random()-0.5)*_pc.spread + _soff;
+      var sp=(_pc.spd*0.7*_tc.spd)+Math.random()*_pc.spd*power*_tc.spd;
+      /* 等级高时粒子带抖动，形成更狂乱的火花 */
+      var jitX=0, jitY=0;
+      if(_tc.jitter>0){
+        jitX=(Math.random()-0.5)*_tc.jitter*7;
+        jitY=(Math.random()-0.5)*_tc.jitter*7;
+      }
+      bulletParts.push({
+        x:x+jitX, y:y+jitY,
+        vx:Math.cos(ang+spread)*sp,
+        vy:Math.sin(ang+spread)*sp,
+        t:0,
+        life:_pc.life*(0.7+Math.random()*0.6)*_tc.life,
+        size:_pc.size*(0.7+Math.random()*0.7)*power*_tc.size,
+        color:(i%_tc.col===0)?_pcol2:((i%_tc.col===1&&_tc.col>2)?_pcol3:_pcol),
+        kind:"muzzle",
+        shape:_pc.shape,
+        spin:_pc.spin*_tc.spin,
+        rot:Math.random()*6.283,
+        grav:_pc.grav*_tc.grav
+      });
+    }
   }
-  /* 后坐火花：按皮肤主色，不固定橙色 */
-  for(var j=0;j<3;j++){
+
+  /* 残影层：T2 以上，枪口后方向再喷一层淡影 */
+  if(_tc.linger>0){
+    for(var lg=0; lg<_tc.linger*4; lg++){
+      var la=ang+Math.PI+(Math.random()-0.5)*1.4;
+      bulletParts.push({
+        x:x, y:y,
+        vx:Math.cos(la)*(40+Math.random()*70)*_tc.spd,
+        vy:Math.sin(la)*(40+Math.random()*70)*_tc.spd,
+        t:0, life:0.20+Math.random()*0.22,
+        size:_pc.size*0.85*_tc.size,
+        color:_pcol2,
+        kind:"trail",
+        shape:_pc.shape,
+        spin:_pc.spin*_tc.spin*0.6,
+        rot:Math.random()*6.283,
+        grav:-0.15
+      });
+    }
+  }
+
+  /* 后坐火花：数量随等级，颜色按皮肤 */
+  var _sparkN=3+_tc.tail*2;
+  for(var j=0;j<_sparkN;j++){
     var ba=ang+Math.PI+(Math.random()-0.5)*0.9;
+    var bs=(120+Math.random()*160)*_tc.spd;
     bulletParts.push({
       x:x,y:y,
-      vx:Math.cos(ba)*(120+Math.random()*160),
-      vy:Math.sin(ba)*(120+Math.random()*160),
+      vx:Math.cos(ba)*bs,
+      vy:Math.sin(ba)*bs,
       t:0,life:0.16+Math.random()*0.16,
-      size:1.2+Math.random()*1.6,
+      size:(1.2+Math.random()*1.6)*_tc.size,
       color:pcNorm((_mfx.pal&&_mfx.pal.sub)||"#ff8a5b"),
       kind:"spark",
-      shape:"needle",spin:3.0,rot:Math.random()*6.283,grav:0.3
+      shape:"needle",spin:3.0*_tc.spin,rot:Math.random()*6.283,grav:0.3*_tc.grav
     });
   }
 }
@@ -1836,30 +1934,55 @@ function spawnMuzzle(x,y,ang,color,power){
 /* 子弹飞行中持续喷粒子（由子弹自己调用） */
 function spawnBulletTrail(b,dt){
   var _tc=partCfgOf(b.fx||"plain");
-  /* 每颗子弹按皮肤配置决定喷射率 */
-  var rate=Math.round((b.r>=8?22:12)*(_tc.n/10));
+  var _lv=lvTierCfg(_gunLv);        /* 等级阶段 */
+  /* 每颗子弹按皮肤配置 × 等级决定喷射率 */
+  var rate=Math.round((b.r>=8?22:12)*(_tc.n/10)*_lv.n);
   if(b._acc===undefined)b._acc=0;
   b._acc+=rate*dt;
   var _tcol=pcNorm((b.fxPal&&b.fxPal.ene)||b.color||"#00f2ff");
   var _tcol2=pcNorm((b.fxPal&&b.fxPal.main)||b.color||"#ffffff");
+  var _tcol3=pcNorm((b.fxPal&&b.fxPal.hi)||"#ffffff");
   while(b._acc>=1){
     b._acc-=1;
     var back=0.12+Math.random()*0.2;
+    var ci=Math.floor(Math.random()*_lv.col);
     bulletParts.push({
       x:b.x+(Math.random()-0.5)*b.r*1.2,
       y:b.y+(Math.random()-0.5)*b.r*1.2,
-      vx:-b.vx*back+(Math.random()-0.5)*90,
-      vy:-b.vy*back+(Math.random()-0.5)*90,
+      vx:-b.vx*back+(Math.random()-0.5)*90*_lv.spd,
+      vy:-b.vy*back+(Math.random()-0.5)*90*_lv.spd,
       t:0,
-      life:_tc.life*(0.6+Math.random()*0.5),
-      size:b.r*(0.24+Math.random()*0.30)*(_tc.size/2.2),
-      color:Math.random()<0.3?_tcol2:_tcol,
+      life:_tc.life*(0.6+Math.random()*0.5)*_lv.life,
+      size:b.r*(0.24+Math.random()*0.30)*(_tc.size/2.2)*_lv.size,
+      color:(ci===0)?_tcol2:((ci===1&&_lv.col>2)?_tcol3:_tcol),
       kind:"trail",
       shape:_tc.shape,
-      spin:_tc.spin*0.7,
+      spin:_tc.spin*0.7*_lv.spin,
       rot:Math.random()*6.283,
-      grav:_tc.grav*0.5
+      grav:_tc.grav*0.5*_lv.grav
     });
+  }
+  /* T3 以上：额外抛出残余碎片，形成拉长的气流条 */
+  if(_lv.tail>=2){
+    if(b._frag===undefined)b._frag=0;
+    b._frag+=dt*(_lv.tail*9);
+    while(b._frag>=1){
+      b._frag-=1;
+      var fa=Math.atan2(b.vy,b.vx)+Math.PI+(Math.random()-0.5)*1.1;
+      var fs=(60+Math.random()*120)*_lv.spd;
+      bulletParts.push({
+        x:b.x,y:b.y,
+        vx:Math.cos(fa)*fs, vy:Math.sin(fa)*fs,
+        t:0, life:0.14+Math.random()*0.18,
+        size:b.r*0.30*_lv.size,
+        color:_tcol3,
+        kind:"trail",
+        shape:_tc.shape,
+        spin:_tc.spin*1.6*_lv.spin,
+        rot:Math.random()*6.283,
+        grav:0.4
+      });
+    }
   }
 }
 
@@ -8070,6 +8193,8 @@ function drawGun(){
   var _grow=1+(Math.max(1,Math.min(50,L))-1)*0.004;
   var _ox=-(_gripX[ty]||0)*_gs*_grow;
   var _oy=-(_gripY[ty]||0)*_gs*_grow;
+  /* 等级写入全局：粒子/拖尾/枪口全部按这个等级取阶段配置 */
+  setGunLv(L);
   var info=drawWeaponSkin(ctx, ty, sk, L, _ox, _oy, _gs, false, T, "game");
   /* 把局内枪尺寸暴露给前手绘制 */
   _gunLenPx=info.len||44; _gunHalfH=info.hh||6;
@@ -8140,10 +8265,73 @@ function drawGun(){
       ctx.fillStyle=ene;
       ctx.beginPath(); ctx.arc(0,0,4.5*mf,0,6.2832); ctx.fill();
     }
-    // 通用白核
+    /* ===== 等级增强层：每阶段加一层新结构 ===== */
+    var _lvt=lvTierOf(_gunLv);
+    var _ltc=LV_TIER[_lvt];
+    if(_ltc.ring>0){
+      /* T1+：枪口外环 */
+      ctx.globalAlpha=0.55*mf;
+      ctx.strokeStyle=hi;
+      ctx.lineWidth=0.9*mf;
+      ctx.beginPath(); ctx.arc(0,0,(7+_lvt*2.2)*mf,0,6.2832); ctx.stroke();
+      /* 断口，让它不像机械圆环 */
+      ctx.globalAlpha=0.9*mf;
+      ctx.strokeStyle=ene;
+      ctx.lineWidth=1.3*mf;
+      for(var _r=0;_r<_lvt;_r++){
+        var _ra=_r*2.1+ (1-mf)*2.4;
+        ctx.beginPath(); ctx.arc(0,0,(7+_lvt*2.2)*mf,_ra,_ra+0.7); ctx.stroke();
+      }
+    }
+    if(_ltc.aftershock>0){
+      /* T2+：冲击环，向外扩散正在消退 */
+      var _as=1-mf;
+      ctx.globalAlpha=(1-_as)*0.5;
+      ctx.strokeStyle=ene;
+      ctx.lineWidth=1.6*mf;
+      ctx.beginPath(); ctx.arc(0,0,(9+_as*22)*mf,0,6.2832); ctx.stroke();
+    }
+    if(_ltc.streams>1){
+      /* T2+：多股喷口，主焰两侧各开一道副焰 */
+      ctx.globalAlpha=0.7*mf;
+      ctx.fillStyle=ene;
+      for(var _sd=0;_sd<2;_sd++){
+        var _sy=(_sd?1:-1)*(2.6+_lvt*0.6)*mf;
+        ctx.beginPath();
+        ctx.moveTo(1*mf,_sy*0.6);
+        ctx.lineTo((5+_lvt*1.4)*mf,_sy*(1+_as*0.5));
+        ctx.lineTo(1*mf,_sy*1.35);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+    if(_ltc.jitter>0){
+      /* T3+：焰口碎裂，飞散的小碎块 */
+      ctx.globalAlpha=0.8*mf;
+      ctx.fillStyle=hi;
+      var _fj=Math.round(_ltc.jitter*14);
+      for(var _k=0;_k<_fj;_k++){
+        var _fa=(_k/_fj)*6.283+_lvt;
+        var _fd=(6+Math.sin(_k*2.7+_lvt)*7)*mf;
+        var _fs=1.1*mf*(0.6+Math.abs(Math.sin(_k*3.1)));
+        ctx.beginPath();
+        ctx.arc(Math.cos(_fa)*_fd, Math.sin(_fa)*_fd, _fs, 0, 6.2832);
+        ctx.fill();
+      }
+    }
+    // 通用白核（等级越高核心越大越亮）
     ctx.globalAlpha=mf*0.95;
     ctx.fillStyle="#ffffff";
-    ctx.beginPath(); ctx.arc(0,0,2.6*mf,0,6.2832); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0,0,(2.6+_lvt*0.55)*mf,0,6.2832);
+    ctx.fill();
+    if(_lvt>=3){
+      /* T3+：核心外再套一圈极亮，形成爆闪感 */
+      ctx.globalAlpha=mf*0.42;
+      ctx.fillStyle=hi;
+      ctx.beginPath();
+      ctx.arc(0,0,(4.2+_lvt*0.8)*mf,0,6.2832);
+      ctx.fill();
+    }
     ctx.restore(); ctx.globalAlpha=1;
 
     // 短命彩烟（取皮肤主色，0.3 秒）
@@ -8892,13 +9080,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v9.0");
+    localStorage.setItem("njs_patch","v9.1");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v9.0"){
+    if(seen!=="v9.1"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -13558,7 +13746,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v9.0</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v9.1</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -13589,6 +13777,15 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-25 01:20:44",items:[
+      "🔺 等级跃迁系统：1-50 级分 5 个阶段，每 10 级一次结构变化",
+      "T0 初装 Lv1-9：单股喷流、粒子无自旋、枪口小核心",
+      "T1 强化 Lv10-19：粒子+45%、开始自旋、枪口带断口外环",
+      "T2 觉醒 Lv20-29：喷流分 2 股、枪口冲击环、开始有残影",
+      "T3 超越 Lv30-39：喷流 3 股、焰口碎裂飞散、弹体抛残余碎片",
+      "T4 神话 Lv40-50：粒子达初装 3.9 倍、核心爆闪、4 色配色",
+      "📈 升级跨阶段时右上角提示进阶名称"
+    ]},
     {time:"2026-10-25 00:52:10",items:[
       "🎨 枪皮材质系统重做：彻底抛弃几何拼装，改为五种材质算法",
       "⚙️ 熔过的金属：边缘微融圆钝 + 转折积光 + 表面流纹 + 下缘冷色回光",
@@ -13895,7 +14092,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 25 日 00:52:10";
+    pd.textContent="更新于 2026 年 10 月 25 日 01:20:44";
   }
 })();
 </script>
