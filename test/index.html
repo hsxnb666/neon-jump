@@ -2500,6 +2500,8 @@ sShoot();if(gunLevel>=3)sfx(600+gunLevel*100,"square",0.05,0.03,200);
 spawnParticles(p.x+Math.cos(ang)*32,p.y+Math.sin(ang)*14,3,"#00f2ff",35)}
 
 /* 武器模型 */
+
+
 var WEP_DEF=[
 [1,1,"box","tube","orb","vent",0,0,0,0.862],
 [2,1,"taper","tube","diamond","vent",1,0,0,0.874],
@@ -8586,7 +8588,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     try{ wepDraw(lv,ctx,{t:Date.now()/1000}); }catch(e){}
     ctx.restore();
   }
-}  /* ===== 图鉴 UI ===== */
+  /* ===== 图鉴 UI ===== */
   var cxTab=0,cxDetailId=null;
   window.openCodex=function(tab){
     cxTab=(tab===undefined?0:tab);
