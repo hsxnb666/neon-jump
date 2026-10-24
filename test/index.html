@@ -1737,18 +1737,6 @@ function pcNorm(c){
   _pcMap[c]=best;
   return best;
 }
-/* ============ 子弹粒子拖尾系统 ============ */
-var bulletParts=[];      // {x,y,vx,vy,t,life,size,color,kind}
-var muzzleFlash=[];      // 枪口闪光 {x,y,ang,t,life,size,color}
-
-/* 枪口喷射：射击瞬间喷出一团粒子 */
-function spawnMuzzle(x,y,ang,color,power){
-  power=power||1;
-  // 枪口闪光
-  var _mfx=curSkinFx();
-  muzzleFlash.push({x:x,y:y,ang:ang,t:0,life:0.09,size:22*power,color:color||"#fff",
-    fx:_mfx.muzzle, pal:_mfx.pal});
-
 /* ==================================================================
    粒子配置表 —— 每套皮肤的开火/拖尾粒子独立
    禁止所有皮肤共用同一套粒子
@@ -1792,6 +1780,19 @@ var PART_CFG={
 function partCfgOf(fx){
   return PART_CFG[fx] || PART_CFG.plain;
 }
+/* ============ 子弹粒子拖尾系统 ============ */
+var bulletParts=[];      // {x,y,vx,vy,t,life,size,color,kind}
+var muzzleFlash=[];      // 枪口闪光 {x,y,ang,t,life,size,color}
+
+/* 枪口喷射：射击瞬间喷出一团粒子 */
+function spawnMuzzle(x,y,ang,color,power){
+  power=power||1;
+  // 枪口闪光
+  var _mfx=curSkinFx();
+  muzzleFlash.push({x:x,y:y,ang:ang,t:0,life:0.09,size:22*power,color:color||"#fff",
+    fx:_mfx.muzzle, pal:_mfx.pal});
+
+
 
   /* ===== 开火粒子：按皮肤分派配置 ===== */
   var _pc=partCfgOf(_mfx.bullet);
