@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v7.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v7.3</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -2438,7 +2438,41 @@ function spawnShockRing(x,y,c,maxR){if(!c||c===undefined)c=PAL15[Math.floor(Math
 function spawnParticles(x,y,n,c,sp){for(var i=0;i<n;i++){var a=Math.random()*6.28,s=Math.random()*sp+25;world.particles.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0.35+Math.random()*0.35,color:c,size:1.5+Math.random()*2.5})}}
 
 /* 跳跃 */
-function tryJump(){var p=player;if(p.jumps<2){p.vy=-430;p.jumps++;p.onGround=false;sJump();spawnParticles(p.x,p.y+p.h/2,7,"#00f2ff",55);if(p.jumps===2){spawnParticles(p.x,p.y+p.h/2,10,"#ff00aa",90);sfx(500,"sine",0.15,0.05,900);spawnShockRing(p.x,p.y+p.h/2,"#ff00aa",40)}}}
+/* 跳跃（含二段跳）：二段跳更轻盈有力，带拖影与光圈 */
+var _jumpHold=0;      // 长按跳跃键延长上升
+var _jumpHoldMax=0.22;
+function tryJump(){
+  var p=player;
+  if(p.jumps>=2) return;
+  if(p.jumps===0){
+    /* 一段跳：干脆，力度足 */
+    p.vy=-460; p.jumps=1; p.onGround=false;
+    sJump();
+    spawnParticles(p.x,p.y+p.h/2,8,"#00f2ff",60);
+    spawnShockRing(p.x,p.y+p.h/2,"#00f2ff",34);
+  }else{
+    /* 二段跳：更轻更快，脚下留环 + 拖影 + 上扬粒子 */
+    p.vy=-400; p.jumps=2; p.onGround=false;
+    /* 脚下冲击环（两层） */
+    spawnShockRing(p.x,p.y+p.h/2,"#ff00aa",52);
+    spawnShockRing(p.x,p.y+p.h/2,"#ffffff",28);
+    /* 粒子：向上锥形散开 */
+    for(var i=0;i<14;i++){
+      var a=-Math.PI/2+(Math.random()-0.5)*1.5;
+      var sp=50+Math.random()*110;
+      spawnParticles(p.x+Math.cos(a)*8, p.y+p.h/2+Math.sin(a)*6, 1, i%2?"#ff00aa":"#00f2ff", sp);
+    }
+    sfx(620,"sine",0.18,0.06,1400);
+    /* 拖影残像 */
+    if(!world.trails) world.trails=[];
+    world.trails.push({x:p.x,y:p.y,f:p.facing||1,life:0.30,max:0.30});
+    /* 短暂上升加速（"弹"的手感） */
+    p.vy=-460;
+  }
+  _jumpHold=_jumpHoldMax;
+}
+/* 松键时截断上升（让短按=小跳，长按=大跳） */
+function jumpRelease(){ _jumpHold=0; }
 
 /* 射击 */
 function shoot(){var p=player;
@@ -5858,7 +5892,10 @@ function drawGun(){
   var rec=0;
   if(player&&player.muzzle>0) rec=-Math.min(3.2,player.muzzle*26);
   // 用枪皮引擎绘制（与图鉴/详情同一个函数）
-  var info=drawWeaponSkin(ctx, ty, sk, L, rec, 0, 1.0, false, T, "game");
+  /* 按武器类型定制局内缩放：让 8 类在屏幕上视觉长度统一（46-64px） */
+  var _gameScal=[2.35, 1.15, 0.92, 1.50, 1.48, 1.85, 1.42, 2.05];
+  var _gs=_gameScal[ty]||1.15;
+  var info=drawWeaponSkin(ctx, ty, sk, L, rec, 0, _gs, false, T, "game");
   var mx=rec+info.len;
   var pal=info.pal;
   var skin=info.skin||{};
@@ -5957,9 +5994,18 @@ if(slowTimer>0){slowTimer-=rdt;if(slowTimer<=0){slowTimer=0}else{timeScale=0.35+
 if(skillCd>0)skillCd-=rdt;
 if(comboT>0){comboT-=rdt;if(comboT<=0)combo=0}
 if(world.flash>0)world.flash-=rdt*2;
+if(world.trails&&world.trails.length){
+  for(var _ti=world.trails.length-1;_ti>=0;_ti--){
+    var _tr=world.trails[_ti]; _tr.life-=rdt;
+    if(_tr.life<=0) world.trails.splice(_ti,1);
+  }
+}
 for(var i=world.lightnings.length-1;i>=0;i--){world.lightnings[i].t+=rdt;if(world.lightnings[i].t>0.5)world.lightnings.splice(i,1)}
 if(typeof world._revCtrl==="number"){world._revCtrl-=rdt;if(world._revCtrl<=0)world._revCtrl=0;}
 var p=player;
+/* 摇杆漂移保护：手指已抬起则强制归零 */
+if(stick && !stick.active) input.move=0;
+if(Math.abs(input.move)<0.06) input.move=0;
 var move=input.move;
 if(keys.KeyA||keys.ArrowLeft)move=-1;
 if(keys.KeyD||keys.ArrowRight)move=1;
@@ -5970,7 +6016,9 @@ var speed=240*attrMul("spd"),fr=12;
 if(Math.abs(move)>0.1){p.vx+=(move*speed-p.vx)*10*dt;p.facing=move>0?1:-1}else{p.vx*=Math.max(0,1-fr*dt)}
 p.dashCd=Math.max(0,p.dashCd-rdt);
 if(p.shield>0)p.shield-=rdt;
-p.vy+=1100*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.anim+=dt;
+/* 下落更快：下落时重力加大，手不飘 */
+p.vy+=(p.vy<0?1100:1650)*dt;
+p.x+=p.vx*dt;p.y+=p.vy*dt;p.anim+=dt;
 for(var i=0;i<world.platforms.length;i++){if(world.platforms[i].moving){var pl=world.platforms[i];pl.mvPhase+=dt*1.2;pl.y=pl.origY+Math.sin(pl.mvPhase)*pl.mvRange}}
 p.onGround=false;
 for(var i=0;i<world.platforms.length;i++){
@@ -6658,13 +6706,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v7.2");
+    localStorage.setItem("njs_patch","v7.3");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v7.2"){
+    if(seen!=="v7.3"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -6761,7 +6809,7 @@ function heroGunArm(shY, aimA, pal){
   // 枪：drawGun 自带 y+8 内偏移，translate(0,-10) 让枪身贴住手掌
   ctx.save();
   ctx.rotate(aimA*0.5);           // 枪口微微跟随瞄准
-  ctx.translate(12,-10);
+  ctx.translate(14,-6);
   drawGun();
   ctx.restore();
   ctx.restore();
@@ -10163,6 +10211,22 @@ function draw(){
   if(player&&!player.dead){
     var p=player;
     ctx.globalAlpha=p.inv>0&&Math.floor(Date.now()/70)%2?0.45:1;
+    /* ===== 二段跳残影（角色之下）===== */
+    if(world.trails&&world.trails.length){
+      for(var _tj=0;_tj<world.trails.length;_tj++){
+        var _tt=world.trails[_tj]; var _ta=_tt.life/_tt.max;
+        ctx.save();
+        ctx.globalAlpha=_ta*0.38;
+        ctx.translate(_tt.x,_tt.y);
+        if(_tt.f<0) ctx.scale(-1,1);
+        ctx.fillStyle=(_ta>0.55)?"#ff00aa":"#00f2ff";
+        ctx.beginPath();
+        ctx.ellipse(0,0,11*(1+(1-_ta)*0.5),26*(1+(1-_ta)*0.4),0,0,6.2832);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.globalAlpha=p.inv>0&&Math.floor(Date.now()/70)%2?0.45:1;
+    }
     // 冲刺残影
     if(p.dashing>0){
       for(var k=1;k<=3;k++){
@@ -11267,7 +11331,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v7.2</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v7.3</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -11298,6 +11362,12 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 19:10:43",items:[
+      "🔫 修复局内枪太短：按 8 类武器定制缩放，屏幕尺寸统一到 46-59px",
+      "🕹 修复人物自动前进：摇杆松手强制归零，消除漂移",
+      "🦘 二段跳重做：一段干脆有力、二段双层冲击环 + 14 颗上扬粒子 + 残影",
+      "⬇ 下落重力加大到 1650（原 1100），落手更干脆不飘"
+    ]},
     {time:"2026-10-24 18:59:59",items:[
       "⚡ 全新属性系统：八维加成（伤害/攻速/暴击/生命/移速/金币/运气/穿透）",
       "🎨 枪皮自带属性：白 1 条 → 金 4 条 → 红 5 条，稀有度越高越强",
@@ -11533,7 +11603,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 18:59:59";
+    pd.textContent="更新于 2026 年 10 月 24 日 19:10:43";
   }
 })();
 </script>
