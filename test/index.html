@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v8.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v8.3</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -1748,23 +1748,75 @@ function spawnMuzzle(x,y,ang,color,power){
   var _mfx=curSkinFx();
   muzzleFlash.push({x:x,y:y,ang:ang,t:0,life:0.09,size:22*power,color:color||"#fff",
     fx:_mfx.muzzle, pal:_mfx.pal});
-  // 喷出的粒子（沿子弹方向呈锥形散开）
-  var n=Math.round(6*power)+3;
-  for(var i=0;i<n;i++){
-    var spread=(Math.random()-0.5)*0.85;
-    var sp=180+Math.random()*300*power;
+
+/* ==================================================================
+   粒子配置表 —— 每套皮肤的开火/拖尾粒子独立
+   禁止所有皮肤共用同一套粒子
+   ================================================================== */
+var PART_CFG={
+  /* 冰晶神谕：六角冰晶碎片，少而锐利，飞散慢 */
+  icecrystal:{ n:9,  shape:"hex",   spd:190, spread:0.65, life:0.30, size:2.2, spin:1.8, grav:0.3 },
+  /* 神兽吞兵：龙鳞碎片，宽厚，带弧线 */
+  dragonbreath:{ n:11, shape:"scale", spd:220, spread:0.75, life:0.28, size:2.6, spin:2.4, grav:0.5 },
+  /* 炎羽天启：火焰羽片，向上飘 */
+  flame:{ n:13, shape:"feather", spd:250, spread:0.85, life:0.34, size:2.4, spin:2.0, grav:-0.4 },
+  /* 星尘：四角星点，多而散 */
+  stardust:{ n:15, shape:"star4", spd:230, spread:0.95, life:0.32, size:1.8, spin:3.2, grav:0.1 },
+  /* 虚空：菱形暗片，向心收缩 */
+  void:{ n:8,  shape:"diamond", spd:180, spread:0.55, life:0.36, size:2.8, spin:-1.6, grav:-0.2 },
+  /* 全息：方片，规整排列 */
+  holo:{ n:10, shape:"square", spd:200, spread:0.60, life:0.26, size:2.0, spin:0.8, grav:0 },
+  /* 爱心：小心心，慢速飘散 */
+  heart:{ n:9,  shape:"heart", spd:170, spread:0.70, life:0.40, size:2.0, spin:1.2, grav:-0.3 },
+  /* 符文：三角符文，旋转 */
+  rune:{ n:10, shape:"tri", spd:210, spread:0.70, life:0.34, size:2.2, spin:2.6, grav:0.2 },
+  /* 圣彗星：长条金丝片 */
+  holyComet:{ n:12, shape:"streak", spd:260, spread:0.65, life:0.30, size:2.4, spin:1.4, grav:0.3 },
+  /* 矛刺：尖锐针片，极快 */
+  spearStreak:{ n:7, shape:"needle", spd:340, spread:0.45, life:0.22, size:2.2, spin:3.5, grav:0 },
+  /* 纱芯：柔边花瓣，慢飘 */
+  silkOrb:{ n:12, shape:"petal", spd:160, spread:0.90, life:0.45, size:2.6, spin:1.0, grav:-0.5 },
+  /* 核球：圆碎点，由大到小 */
+  novaCore:{ n:14, shape:"dot", spd:240, spread:0.80, life:0.30, size:2.8, spin:0, grav:0.4 },
+  /* 双股螺旋金片 */
+  goldspiral:{ n:11, shape:"scale", spd:230, spread:0.70, life:0.30, size:2.4, spin:2.2, grav:0.3 },
+  /* 魔童闹海：水滴六角，比冰晶更慢更沉 */
+  seadrop:{ n:11, shape:"hex", spd:170, spread:0.85, life:0.38, size:3.0, spin:1.2, grav:0.7 },
+  /* 女娲灵识：细碎冰屑，小而多 */
+  nuwaice:{ n:16, shape:"hex", spd:210, spread:0.95, life:0.26, size:1.5, spin:2.8, grav:0.1 },
+  /* 无垠阁：全息方格，规整向内 */
+  voidgrid:{ n:9, shape:"square", spd:150, spread:0.40, life:0.34, size:2.4, spin:-2.0, grav:-0.3 },
+  /* 通用 */
+  plain:{ n:8, shape:"dot", spd:220, spread:0.80, life:0.24, size:1.9, spin:0, grav:0.2 }
+};
+function partCfgOf(fx){
+  return PART_CFG[fx] || PART_CFG.plain;
+}
+
+  /* ===== 开火粒子：按皮肤分派配置 ===== */
+  var _pc=partCfgOf(_mfx.bullet);
+  var _pn=Math.round(_pc.n*power);
+  var _pcol=pcNorm((_mfx.pal&&_mfx.pal.ene)||color||"#ffe600");
+  var _pcol2=pcNorm((_mfx.pal&&_mfx.pal.main)||color||"#ffffff");
+  for(var i=0;i<_pn;i++){
+    var spread=(Math.random()-0.5)*_pc.spread;
+    var sp=(_pc.spd*0.7)+Math.random()*_pc.spd*power;
     bulletParts.push({
       x:x,y:y,
       vx:Math.cos(ang+spread)*sp,
       vy:Math.sin(ang+spread)*sp,
       t:0,
-      life:0.22+Math.random()*0.26,
-      size:1.6+Math.random()*2.6*power,
-      color:pcNorm(color||"#ffe600"),
-      kind:"muzzle"
+      life:_pc.life*(0.7+Math.random()*0.6),
+      size:_pc.size*(0.7+Math.random()*0.7)*power,
+      color:i%3===0?_pcol2:_pcol,
+      kind:"muzzle",
+      shape:_pc.shape,
+      spin:_pc.spin,
+      rot:Math.random()*6.283,
+      grav:_pc.grav
     });
   }
-  // 后坐火花（反方向）
+  /* 后坐火花：按皮肤主色，不固定橙色 */
   for(var j=0;j<3;j++){
     var ba=ang+Math.PI+(Math.random()-0.5)*0.9;
     bulletParts.push({
@@ -1773,20 +1825,24 @@ function spawnMuzzle(x,y,ang,color,power){
       vy:Math.sin(ba)*(120+Math.random()*160),
       t:0,life:0.16+Math.random()*0.16,
       size:1.2+Math.random()*1.6,
-      color:"#ff8a5b",kind:"spark"
+      color:pcNorm((_mfx.pal&&_mfx.pal.sub)||"#ff8a5b"),
+      kind:"spark",
+      shape:"needle",spin:3.0,rot:Math.random()*6.283,grav:0.3
     });
   }
 }
 
 /* 子弹飞行中持续喷粒子（由子弹自己调用） */
 function spawnBulletTrail(b,dt){
-  // 每颗子弹按速度决定喷多少
-  var rate=(b.r>=8?22:12);
+  var _tc=partCfgOf(b.fx||"plain");
+  /* 每颗子弹按皮肤配置决定喷射率 */
+  var rate=Math.round((b.r>=8?22:12)*(_tc.n/10));
   if(b._acc===undefined)b._acc=0;
   b._acc+=rate*dt;
+  var _tcol=pcNorm((b.fxPal&&b.fxPal.ene)||b.color||"#00f2ff");
+  var _tcol2=pcNorm((b.fxPal&&b.fxPal.main)||b.color||"#ffffff");
   while(b._acc>=1){
     b._acc-=1;
-    // 粒子速度 = 子弹速度的反向一部分 + 随机扰动
     var back=0.12+Math.random()*0.2;
     bulletParts.push({
       x:b.x+(Math.random()-0.5)*b.r*1.2,
@@ -1794,10 +1850,14 @@ function spawnBulletTrail(b,dt){
       vx:-b.vx*back+(Math.random()-0.5)*90,
       vy:-b.vy*back+(Math.random()-0.5)*90,
       t:0,
-      life:0.16+Math.random()*0.24,
-      size:b.r*(0.28+Math.random()*0.34),
-      color:pcNorm(b.color||"#00f2ff"),
-      kind:"trail"
+      life:_tc.life*(0.6+Math.random()*0.5),
+      size:b.r*(0.24+Math.random()*0.30)*(_tc.size/2.2),
+      color:Math.random()<0.3?_tcol2:_tcol,
+      kind:"trail",
+      shape:_tc.shape,
+      spin:_tc.spin*0.7,
+      rot:Math.random()*6.283,
+      grav:_tc.grav*0.5
     });
   }
 }
@@ -1819,6 +1879,10 @@ function updateBulletFx(dt){
     // 阻力
     q.vx*=Math.max(0,1-6.5*dt);
     q.vy*=Math.max(0,1-6.5*dt);
+    // 粒子形状旋转
+    if(q.spin) q.rot=(q.rot||0)+q.spin*dt;
+    // 按皮肤配置的重力（正=下沉，负=上浮）
+    if(typeof q.grav==="number") q.vy+=q.grav*300*dt;
     // 枪口粒子轻微上浮，拖尾粒子轻微下沉
     if(q.kind==="muzzle")q.vy-=40*dt;
     else if(q.kind==="spark")q.vy+=260*dt;
@@ -2919,6 +2983,120 @@ function drawMuzzleFx(type,x,y,ang,pal,t){
   }
 }
 
+
+/* ==================================================================
+   粒子形状绘制 —— 按 shape 分派，禁止统一圆点
+   合批友好：同批一次 beginPath 画完同类形状
+   ================================================================== */
+function drawPartShape(sh, x, y, rot, size){
+  var c=size;
+  if(sh==="hex"){
+    /* 六角冰晶 */
+    for(var i=0;i<6;i++){
+      var a=rot+i*1.0472;
+      if(i===0) ctx.moveTo(x+Math.cos(a)*c, y+Math.sin(a)*c);
+      else ctx.lineTo(x+Math.cos(a)*c, y+Math.sin(a)*c);
+    }
+    ctx.closePath();
+  }
+  else if(sh==="scale"){
+    /* 龙鳞：弧边扇片 */
+    ctx.moveTo(x-c*0.9, y);
+    ctx.quadraticCurveTo(x, y-c*1.1, x+c*0.9, y);
+    ctx.quadraticCurveTo(x, y+c*0.55, x-c*0.9, y);
+    ctx.closePath();
+  }
+  else if(sh==="feather"){
+    /* 羽片：尖端 + 两侧弧 */
+    var ca=Math.cos(rot), sa=Math.sin(rot);
+    ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x+ca*c*0.5-sa*c*0.45, y+sa*c*0.5+ca*c*0.45, x+ca*c*1.3, y+sa*c*1.3);
+    ctx.quadraticCurveTo(x+ca*c*0.5+sa*c*0.3, y+sa*c*0.5-ca*c*0.3, x, y);
+    ctx.closePath();
+  }
+  else if(sh==="star4"){
+    /* 四角星 */
+    ctx.moveTo(x, y-c*1.3);
+    ctx.lineTo(x+c*0.32, y-c*0.32);
+    ctx.lineTo(x+c*1.3, y);
+    ctx.lineTo(x+c*0.32, y+c*0.32);
+    ctx.lineTo(x, y+c*1.3);
+    ctx.lineTo(x-c*0.32, y+c*0.32);
+    ctx.lineTo(x-c*1.3, y);
+    ctx.lineTo(x-c*0.32, y-c*0.32);
+    ctx.closePath();
+  }
+  else if(sh==="diamond"){
+    ctx.moveTo(x, y-c*1.25);
+    ctx.lineTo(x+c*0.75, y);
+    ctx.lineTo(x, y+c*1.25);
+    ctx.lineTo(x-c*0.75, y);
+    ctx.closePath();
+  }
+  else if(sh==="square"){
+    var cs=Math.cos(rot), ss=Math.sin(rot);
+    var h=c*0.85;
+    ctx.moveTo(x+(-h*cs-h*ss), y+(-h*ss+h*cs));
+    ctx.lineTo(x+( h*cs-h*ss), y+( h*ss+h*cs));
+    ctx.lineTo(x+( h*cs+h*ss), y+( h*ss-h*cs));
+    ctx.lineTo(x+(-h*cs+h*ss), y+(-h*ss-h*cs));
+    ctx.closePath();
+  }
+  else if(sh==="heart"){
+    var cc=Math.cos(rot), sr=Math.sin(rot);
+    function HP(a,b){ return [x+(a*cc-b*sr)*c*0.9, y+(a*sr+b*cc)*c*0.9]; }
+    var p1=HP(0,0.62); ctx.moveTo(p1[0],p1[1]);
+    var q1=HP(-1.02,-0.3), r1=HP(-0.42,-1.05), t1=HP(0,-0.32);
+    ctx.bezierCurveTo(q1[0],q1[1],r1[0],r1[1],t1[0],t1[1]);
+    var q2=HP(0.42,-1.05), r2=HP(1.02,-0.3), t2=HP(0,0.62);
+    ctx.bezierCurveTo(q2[0],q2[1],r2[0],r2[1],t2[0],t2[1]);
+    ctx.closePath();
+  }
+  else if(sh==="tri"){
+    var c3=Math.cos(rot), s3=Math.sin(rot);
+    ctx.moveTo(x+c3*c*1.2, y+s3*c*1.2);
+    ctx.lineTo(x+Math.cos(rot+2.094)*c*1.2, y+Math.sin(rot+2.094)*c*1.2);
+    ctx.lineTo(x+Math.cos(rot+4.189)*c*1.2, y+Math.sin(rot+4.189)*c*1.2);
+    ctx.closePath();
+  }
+  else if(sh==="streak"){
+    /* 长条金丝片 */
+    var c4=Math.cos(rot), s4=Math.sin(rot);
+    ctx.moveTo(x+c4*c*1.7, y+s4*c*1.7);
+    ctx.lineTo(x-c4*c*0.05-s4*c*0.34, y-s4*c*0.05+c4*c*0.34);
+    ctx.lineTo(x-c4*c*1.1, y-s4*c*1.1);
+    ctx.lineTo(x-c4*c*0.05+s4*c*0.34, y-s4*c*0.05-c4*c*0.34);
+    ctx.closePath();
+  }
+  else if(sh==="needle"){
+    /* 尖锐针片 8:1 */
+    var c5=Math.cos(rot), s5=Math.sin(rot);
+    ctx.moveTo(x+c5*c*2.2, y+s5*c*2.2);
+    ctx.lineTo(x-c5*c*0.6-s5*c*0.28, y-s5*c*0.6+c5*c*0.28);
+    ctx.lineTo(x-c5*c*1.0, y-s5*c*1.0);
+    ctx.lineTo(x-c5*c*0.6+s5*c*0.28, y-s5*c*0.6-c5*c*0.28);
+    ctx.closePath();
+  }
+  else if(sh==="petal"){
+    /* 柔边花瓣 */
+    var c6=Math.cos(rot), s6=Math.sin(rot);
+    var px=-s6, py=c6;
+    ctx.moveTo(x, y);
+    ctx.bezierCurveTo(x+c6*c*0.5+px*c*0.85, y+s6*c*0.5+py*c*0.85,
+                      x+c6*c*1.05+px*c*0.4, y+s6*c*1.05+py*c*0.4,
+                      x+c6*c*1.25, y+s6*c*1.25);
+    ctx.bezierCurveTo(x+c6*c*1.0-px*c*0.6, y+s6*c*1.0-py*c*0.6,
+                      x+c6*c*0.4-px*c*0.55, y+s6*c*0.4-py*c*0.55,
+                      x, y);
+    ctx.closePath();
+  }
+  else {
+    /* dot：圆点（仅 plain 用） */
+    ctx.moveTo(x+c, y);
+    ctx.arc(x, y, c, 0, 6.2832);
+  }
+}
+
 function drawBulletFx(){
   var i,l;
 
@@ -2962,62 +3140,67 @@ function drawBulletFx(){
     ctx.globalAlpha=1;
   }
 
-  /* 尖刺粒子：4尖星芒，沿速度拉长，合批绘制 */
+/* ===== 粒子：按 shape 分派绘制（8 种形状，合批） ===== */
   l=bulletParts.length;
   if(l<=0)return;
-
-  var groups={},order=[];
+  var pgroups={},porder=[];
   for(i=0;i<l;i++){
     var q=bulletParts[i];
     var pq=q.t/q.life;
     if(pq>=1)continue;
-    var c=q.color;
-    var gr=groups[c];
-    if(!gr){gr=groups[c]=[];order.push(c);}
-    gr.push(q);
+    var key2=(q.shape||"dot")+"|"+q.color;
+    var gr2=pgroups[key2];
+    if(!gr2){gr2=pgroups[key2]=[];porder.push(key2);}
+    gr2.push(q);
   }
+  for(var pgi=0;pgi<porder.length;pgi++){
+    var pkey=porder[pgi], parr=pgroups[pkey];
+    if(!parr.length)continue;
+    var psh=parr[0].shape||"dot";
+    var pcol=parr[0].color;
 
-  for(var gi=0;gi<order.length;gi++){
-    var cc=order[gi],arr=groups[cc];
-    if(!arr.length)continue;
-
-    /* 外晕 */
-    ctx.fillStyle=cc;
-    ctx.globalAlpha=0.26;
-    ctx.beginPath();
-    for(i=0;i<arr.length;i++){
-      var g1=arr[i];
-      var s1=g1.size*(1-(g1.t/g1.life)*0.62)*1.9;
-      if(s1<=0.2)continue;
-      ctx.moveTo(g1.x+s1,g1.y);
-      ctx.arc(g1.x,g1.y,s1,0,6.2832);
+    /* 外晕（非 dot） */
+    if(psh!=="dot" && FQ>0){
+      ctx.fillStyle=pcol;
+      ctx.globalAlpha=0.22;
+      ctx.beginPath();
+      for(i=0;i<parr.length;i++){
+        var og=parr[i];
+        var op=og.t/og.life;
+        var os=og.size*(1-op*0.62)*1.75;
+        if(os<=0.3)continue;
+        drawPartShape(psh, og.x, og.y, og.rot||0, os);
+      }
+      ctx.fill();
     }
-    ctx.fill();
 
     /* 主体 */
-    ctx.globalAlpha=0.9;
+    ctx.fillStyle=pcol;
+    ctx.globalAlpha=0.92;
     ctx.beginPath();
-    for(i=0;i<arr.length;i++){
-      var g2=arr[i];
-      var s2=g2.size*(1-(g2.t/g2.life)*0.62)*1.1;
-      if(s2<=0.2)continue;
-      ctx.moveTo(g2.x+s2,g2.y);
-      ctx.arc(g2.x,g2.y,s2,0,6.2832);
+    for(i=0;i<parr.length;i++){
+      var mm2=parr[i];
+      var mp2=mm2.t/mm2.life;
+      var ms=mm2.size*(1-mp2*0.62);
+      if(ms<=0.2)continue;
+      drawPartShape(psh, mm2.x, mm2.y, mm2.rot||0, ms);
     }
     ctx.fill();
 
-    /* 亮芯 */
-    ctx.fillStyle="#ffffff";
-    ctx.globalAlpha=0.7;
-    ctx.beginPath();
-    for(i=0;i<arr.length;i++){
-      var g3=arr[i];
-      var s3=g3.size*(1-(g3.t/g3.life)*0.62)*0.45;
-      if(s3<=0.15)continue;
-      ctx.moveTo(g3.x+s3,g3.y);
-      ctx.arc(g3.x,g3.y,s3,0,6.2832);
+    /* 高光芯（非 dot） */
+    if(psh!=="dot"){
+      ctx.fillStyle="#ffffff";
+      ctx.globalAlpha=0.42;
+      ctx.beginPath();
+      for(i=0;i<parr.length;i++){
+        var hg=parr[i];
+        var hp=hg.t/hg.life;
+        var hs=hg.size*(1-hp*0.62)*0.42;
+        if(hs<=0.15)continue;
+        drawPartShape(psh, hg.x, hg.y, hg.rot||0, hs);
+      }
+      ctx.fill();
     }
-    ctx.fill();
   }
   ctx.globalAlpha=1;
 
@@ -4776,7 +4959,7 @@ var SKIN_DEF={
     baseMat:"crystal", shell:"scaledragon", extend:"dragon",
     floaters:["crystal","spark","rune"], trail:"frost",
     glow:3, dyn:"flow",
-    muzzle:"dragonbreath", bullet:"icecrystal", hit:"crack", kill:"seadragon"
+    muzzle:"dragonbreath", bullet:"seadrop", hit:"crack", kill:"seadragon"
   },
   /* ===== T2 史诗 · 星舰幻游（梦幻火箭） ===== */
   rocketDream:{
@@ -4812,7 +4995,7 @@ var SKIN_DEF={
     baseMat:"crystal", shell:"ice", extend:null,
     floaters:["crystal"], trail:"frost",
     glow:1, dyn:"pulse",
-    muzzle:"frostburst", bullet:"icecrystal", hit:"dot", kill:"plain"
+    muzzle:"frostburst", bullet:"nuwaice", hit:"dot", kill:"plain"
   },
   /* ===== T3 稀有 · 星舰幻游（无垠阁） ===== */
   voidPavilion:{
@@ -4821,7 +5004,7 @@ var SKIN_DEF={
     baseMat:"brushed", shell:"mechplate", extend:"mechwing",
     floaters:["spark"], trail:"raceTrail",
     glow:1, dyn:"rotate",
-    muzzle:"pulse", bullet:"holo", hit:"dot", kill:"plain"
+    muzzle:"pulse", bullet:"voidgrid", hit:"dot", kill:"plain"
   },
   /* ===== T0 神话 · 炎羽天启（百变纱华 ACE32） ===== */
   veilBloom:{
@@ -7991,13 +8174,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v8.2");
+    localStorage.setItem("njs_patch","v8.3");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v8.2"){
+    if(seen!=="v8.3"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -12657,7 +12840,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v8.2</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v8.3</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -12688,6 +12871,13 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 23:39:29",items:[
+      "✨ 粒子系统重做：从『所有皮肤共用圆点』改为『每套皮肤独立粒子』",
+      "🔷 12 种粒子形状：六角冰晶/龙鳞/羽片/四角星/菱形/方片/爱心/符文三角/金丝长条/针片/花瓣/圆点",
+      "🎯 15 套皮肤每套独立的粒子数量、速度、扩散角、寿命、尺寸、旋转速度、重力",
+      "🌪 粒子支持旋转与浮沉：魔童闹海水滴下沉、至情至圣火羽上浮、百变纱华花瓣慢飘",
+      "🔥 开火粒子按皮肤配色：主色+能量色交替，后坐火花也不再固定橙色"
+    ]},
     {time:"2026-10-24 23:11:18",items:[
       "↩ 跳跃手感回退到最初版本（初速 -430 / 重力 1100 / 简单二段跳）",
       "🔙 已移除：可变跳跃高度 / 土狼时间 / 跳跃缓冲 / 三段重力 / squash形变",
@@ -12967,7 +13157,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 23:11:18";
+    pd.textContent="更新于 2026 年 10 月 24 日 23:39:29";
   }
 })();
 </script>
