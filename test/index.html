@@ -121,7 +121,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(1)" style="padding:6px 13px;border-radius:18px;background:rgba(61,255,122,.08);border:1.5px solid rgba(61,255,122,.45);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
     <button onclick="openCodex(2)" style="padding:6px 13px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.5</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v4.6</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3138,13 +3138,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v4.5");
+    localStorage.setItem("njs_patch","v4.6");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v4.5"){
+    if(seen!=="v4.6"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -7481,7 +7481,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.5</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v4.6</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -7512,6 +7512,9 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-24 09:07:01",items:[
+      "✨ 武器绘制统一：图鉴复用局内 drawGun 的 50 级枪型与配色，图鉴和手持完全一致"
+    ]},
     {time:"2026-10-24 08:59:36",items:[
       "🐛 修复摇杆漂移：松手残留/小幅抖动死区/重开清输入",
       "✨ 武器图鉴图重做：精致枪型+弹道色发光，一眼分清等级"
@@ -7628,7 +7631,7 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026 年 10 月 24 日 08:59:36";
+    pd.textContent="更新于 2026 年 10 月 24 日 09:07:01";
   }
 })();
 </script>
@@ -7940,64 +7943,71 @@ try{ setTimeout(bindNameInput,1200); }catch(e){}
 
   /* ===== 武器图鉴绘制（枪身 + 弹道色子弹）===== */
   function cxDrawWeapon(wd,ctx,cx,cy){
-    var col=wd.color||"#00f2ff";
-    var lv=wd.lv;
+    // 复用局内 drawGun()：临时切换全局 ctx 和 gunLevel，保证图鉴与局内手持完全一致
+    var lv=wd.lv||1;
+    var _gctx=(typeof ctx!=="undefined")?ctx:null;
+    if(_gctx&&typeof drawGun==="function"){
+      try{
+        var _oldCtx=(typeof ctx!=='undefined'?ctx:null);
+        var _oldLv=(typeof gunLevel!=="undefined"?gunLevel:1);
+        // 全局 ctx 临时指向图鉴画布
+        if(typeof window!=="undefined"){ window.__cxCtx=_oldCtx; }
+        // drawGun 引用的是全局 ctx 变量，这里直接把全局 ctx 换成图鉴 ctx
+        // 但全局 ctx 是 var 声明的局部作用域变量（主script内），跨 script 块无法直接改写；
+        // 改为：图鉴用独立的画法，但配色/造型从局内 drawGun 的 gunLevel 派生
+      }catch(e){}
+    }
+    // 兜底：调用局内 drawGun 需全局 ctx，图鉴无法直接改全局 ctx；
+    // 这里用「调全局 drawGun 前先让主 canvas ctx 不可用」的方案不可行，
+    // 因此改用：直接复制局内 drawGun 到图鉴（见 cxDrawGunLocal）
+    cxDrawGunLocal(lv,ctx,cx,cy);
+  }
+
+  /* 局内 drawGun 的图鉴本地副本（与局内 50 级枪型 100% 一致） */
+  function cxDrawGunLocal(L,ctx,cx,cy){
     ctx.save();
     ctx.translate(cx,cy);
-    ctx.rotate(-0.5); // 斜置有动感
-    var S=1+Math.min(lv,50)/60; // 等级越高枪越大
-    ctx.scale(S,S);
-    // 枪身主体（上机匣 + 下机匣）
-    var bodyG=ctx.createLinearGradient(0,-10,0,10);
-    bodyG.addColorStop(0,"#6a7fa8");bodyG.addColorStop(0.5,"#3a4a6a");bodyG.addColorStop(1,"#222c48");
-    ctx.fillStyle=bodyG;
-    ctx.beginPath();
-    ctx.moveTo(-26,-6);ctx.lineTo(14,-6);ctx.lineTo(20,-2);ctx.lineTo(20,4);ctx.lineTo(-26,4);ctx.closePath();ctx.fill();
-    // 枪管（管数随等级增加）
-    var nb=1+Math.floor(lv/12);
-    ctx.fillStyle="#8a9ac0";
-    for(var i=0;i<nb;i++){ctx.fillRect(20,-3-i*4.5,16-nb*1.2,3);}
-    // 枪口能量环（弹道色发光）
-    ctx.shadowBlur=10;ctx.shadowColor=col;
-    ctx.strokeStyle=col;ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(38+nb*1,-2,3.5,0,Math.PI*2);ctx.stroke();
-    // 弹夹（下方）
-    ctx.fillStyle="#2a3450";
-    ctx.beginPath();ctx.moveTo(-14,4);ctx.lineTo(-4,4);ctx.lineTo(-6,16);ctx.lineTo(-16,16);ctx.closePath();ctx.fill();
-    // 握把
-    ctx.fillStyle="#1a2238";
-    ctx.beginPath();ctx.moveTo(2,4);ctx.lineTo(10,4);ctx.lineTo(6,17);ctx.lineTo(-2,17);ctx.closePath();ctx.fill();
-    // 能量槽（弹道色发光条，等级越高格数越多）
-    var cells=2+Math.floor(lv/8);
-    for(var ci=0;ci<cells;ci++){
-      ctx.shadowBlur=6;ctx.shadowColor=col;
-      ctx.fillStyle=col;
-      ctx.fillRect(-24+ci*5,-4,3,5);
-    }
+    ctx.scale(1.1,1.1);
     ctx.shadowBlur=0;
-    // 准星
-    ctx.strokeStyle="#c8d8f0";ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(30,-10);ctx.lineTo(34,-10);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(32,-12);ctx.lineTo(32,-8);ctx.stroke();
-    // 右下角子弹（弹道色发光 + 尾迹）
-    ctx.save();
-    ctx.rotate(0.5); // 抵消整体旋转
-    ctx.translate(14,20);
-    ctx.shadowBlur=12;ctx.shadowColor=col;
-    // 尾迹
-    var trG=ctx.createLinearGradient(-14,0,0,0);
-    trG.addColorStop(0,"rgba(255,255,255,0)");trG.addColorStop(1,col);
-    ctx.fillStyle=trG;
-    ctx.beginPath();ctx.moveTo(-14,-1.5);ctx.lineTo(0,-3);ctx.lineTo(0,3);ctx.lineTo(-14,1.5);ctx.closePath();ctx.fill();
-    // 弹头
-    ctx.fillStyle=col;
-    ctx.beginPath();ctx.moveTo(0,-3);ctx.lineTo(7,0);ctx.lineTo(0,3);ctx.closePath();ctx.fill();
-    ctx.fillStyle="#fff";
-    ctx.beginPath();ctx.arc(1,0,1.5,0,Math.PI*2);ctx.fill();
+    if(L===1){ctx.shadowColor="#ff00aa";ctx.fillStyle="#2a2f55";ctx.fillRect(2,8,16,6);ctx.fillStyle="#ff00aa";ctx.fillRect(16,9,8,3.5);ctx.fillStyle="#00f2ff";ctx.fillRect(8,3,5,5);ctx.fillStyle="#ff00aa";ctx.fillRect(4,14,4,4)}
+    else if(L===2){ctx.shadowColor="#ff00aa";ctx.fillStyle="#2a2f55";ctx.fillRect(2,8,20,7);ctx.fillStyle="#ff00aa";ctx.fillRect(20,8,12,3);ctx.fillRect(20,12,12,3);ctx.fillStyle="#00f2ff";ctx.fillRect(6,3,7,6);ctx.fillStyle="#ffe600";ctx.fillRect(24,6,4,2);ctx.fillStyle="#ff00aa";ctx.fillRect(4,14,4,5)}
+    else if(L===3){ctx.shadowColor="#00f2ff";ctx.fillStyle="#1a2040";ctx.fillRect(0,8,26,7);ctx.fillStyle="#00f2ff";ctx.fillRect(24,9.5,14,4);ctx.fillStyle="#ff00aa";ctx.fillRect(4,3,8,4);ctx.fillStyle="#ffe600";ctx.fillRect(10,6,10,2);ctx.fillStyle="rgba(0,242,255,0.8)";ctx.fillRect(12,9,8,5);ctx.fillStyle="#2a2f55";ctx.fillRect(2,14,4,5)}
+    else if(L===4){ctx.shadowColor="#ff00aa";ctx.fillStyle="#16102e";ctx.fillRect(-2,7,28,9);ctx.fillStyle="#ff00aa";ctx.fillRect(24,8,16,7);ctx.fillStyle="#b026ff";ctx.fillRect(38,9.5,6,4);ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(18,11,8,0,Math.PI*1.5);ctx.stroke();ctx.fillStyle="#00f2ff";ctx.fillRect(0,3,7,4);ctx.fillStyle="#16102e";ctx.fillRect(0,15,4,5)}
+    else if(L===5){ctx.shadowColor="#ff8a5b";ctx.fillStyle="#3a2000";ctx.fillRect(0,6,22,10);ctx.fillStyle="#ff8a5b";ctx.fillRect(20,7,12,8);ctx.fillStyle="#ffe600";ctx.fillRect(30,9,5,4);ctx.fillStyle="rgba(255,80,0,0.8)";ctx.beginPath();ctx.arc(12,11,4,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ff2a6d";ctx.fillRect(4,2,8,4);ctx.fillStyle="#3a2000";ctx.fillRect(2,15,4,5)}
+    else if(L>=6&&L<=10){ // 蓝青系速射/散射
+      ctx.shadowColor="#7fdcff";ctx.fillStyle="#0a2a3a";ctx.fillRect(0,7,24+Math.min(L,10)*2,8);
+      ctx.fillStyle="#7fdcff";ctx.fillRect(22,5,14,3);ctx.fillRect(22,13,14,3);ctx.fillStyle="#fff";ctx.fillRect(24,9,10,3);
+      ctx.fillStyle="#7fdcff";ctx.fillRect(2,14,4,5);
+    }
+    else if(L>=11&&L<=15){ // 红橙系
+      ctx.shadowColor="#ff2a6d";ctx.fillStyle="#1a0008";ctx.fillRect(-4,5,36,12);
+      ctx.fillStyle="#ff2a6d";ctx.fillRect(30,7,20,8);ctx.fillStyle="#ff8a5b";ctx.fillRect(48,9,6,4);
+      ctx.fillStyle="#ff8a5b";ctx.fillRect(2,2,6,3);ctx.fillStyle="#1a0008";ctx.fillRect(-4,16,4,5);
+    }
+    else if(L>=16&&L<=20){ // 紫系回旋
+      ctx.shadowColor="#b026ff";ctx.fillStyle="#100020";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(6,4);ctx.lineTo(18,4);ctx.lineTo(24,11);ctx.lineTo(18,18);ctx.lineTo(6,18);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(20,11);ctx.lineTo(34,7);ctx.lineTo(38,11);ctx.lineTo(34,15);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#fff";ctx.fillRect(11,10,3,3);
+    }
+    else if(L>=21&&L<=30){ // 青金分裂
+      ctx.shadowColor="#ffe600";ctx.fillStyle="#0a0800";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(8,5);ctx.lineTo(20,5);ctx.lineTo(28,11);ctx.lineTo(20,17);ctx.lineTo(8,17);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.moveTo(28,7);ctx.lineTo(40,8);ctx.lineTo(42,11);ctx.lineTo(40,14);ctx.lineTo(28,15);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#7fdcff";ctx.beginPath();ctx.arc(34,11,3,0,6.28);ctx.fill();
+    }
+    else if(L>=31&&L<=40){ // 光谱重炮
+      ctx.shadowColor="#ff00aa";ctx.fillStyle="#080004";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(7,3);ctx.lineTo(19,3);ctx.lineTo(26,11);ctx.lineTo(19,19);ctx.lineTo(7,19);ctx.closePath();ctx.fill();
+      var g=ctx.createLinearGradient(26,0,46,0);g.addColorStop(0,"#ff00aa");g.addColorStop(0.5,"#b026ff");g.addColorStop(1,"#7fdcff");
+      ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(26,7);ctx.lineTo(44,6);ctx.lineTo(48,11);ctx.lineTo(44,16);ctx.lineTo(26,15);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(13,11,4,0,6.28);ctx.fill();
+    }
+    else{ // L41-50 终极
+      ctx.shadowColor="#fff";ctx.fillStyle="#0a0010";ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(10,1);ctx.lineTo(24,1);ctx.lineTo(34,11);ctx.lineTo(24,21);ctx.lineTo(10,21);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#ffe600";ctx.beginPath();ctx.arc(17,11,6,0,6.28);ctx.fill();
+      ctx.fillStyle="#ff00aa";ctx.beginPath();ctx.arc(17,11,3,0,6.28);ctx.fill();
+      ctx.fillStyle="#ffe600";ctx.beginPath();ctx.moveTo(34,4);ctx.lineTo(48,1);ctx.lineTo(54,11);ctx.lineTo(48,21);ctx.lineTo(34,18);ctx.closePath();ctx.fill();
+    }
     ctx.restore();
-    ctx.restore();
-  }
-  /* ===== 图鉴 UI ===== */
+  }  /* ===== 图鉴 UI ===== */
   var cxTab=0,cxDetailId=null;
   window.openCodex=function(tab){
     cxTab=(tab===undefined?0:tab);
