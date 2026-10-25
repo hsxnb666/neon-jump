@@ -7574,13 +7574,23 @@ function w3WeaponMesh(ty,skin,L,T){
 }
 function w3Project(model,W,H,T){
   var mesh=model.mesh,verts=new Array(mesh.v.length),faces=[];
-  var yaw=.24+Math.sin(T*.35)*.035,pitch=-.10,co=Math.cos(yaw),si=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
-  var scale=Math.min(W/(model.len*1.95),H/(model.h*10.5));
+  var yaw=.26+Math.sin(T*.35)*.03,pitch=-.16,co=Math.cos(yaw),si=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+  /* 第一遍：算旋转后的包围盒 */
+  var b=[1e9,-1e9,1e9,-1e9,1e9,-1e9],tv=[];
   for(var i=0;i<mesh.v.length;i++){
     var v=mesh.v[i],x=v[0],y=v[1],z=v[2];
     var x1=x*co-z*si,z1=x*si+z*co,y1=y*cp-z1*sp,z2=y*sp+z1*cp;
-    var pers=1/(1+z2*.006);
-    verts[i]=[W*.43+x1*scale*pers,H*.49-y1*scale*pers,z2];
+    tv[i]=[x1,y1,z2];
+    if(x1<b[0])b[0]=x1;if(x1>b[1])b[1]=x1;
+    if(y1<b[2])b[2]=y1;if(y1>b[3])b[3]=y1;
+    if(z2<b[4])b[4]=z2;if(z2>b[5])b[5]=z2;
+  }
+  /* 自适应缩放：模型充满画布 92%，正交无透视压缩 */
+  var bw=b[1]-b[0]||1,bh=b[3]-b[2]||1;
+  var scale=Math.min(W*0.92/bw, H*0.86/bh);
+  var cx=(b[0]+b[1])*0.5,cy=(b[2]+b[3])*0.5;
+  for(var j=0;j<mesh.v.length;j++){
+    verts[j]=[W*0.5+(tv[j][0]-cx)*scale, H*0.5-(tv[j][1]-cy)*scale, tv[j][2]];
   }
   var light=[-.42,-.72,.55];
   for(var j=0;j<mesh.f.length;j++){
@@ -7596,7 +7606,7 @@ function w3Project(model,W,H,T){
   return {v:verts,f:faces};
 }
 function w3RenderFrame(ty,skin,L,T,mode){
-  var model=w3WeaponMesh(ty,skin,L,T),detail=mode!=="game",W=detail?480:300,H=detail?300:190;
+  var model=w3WeaponMesh(ty,skin,L,T),detail=mode!=="game",W=detail?560:340,H=detail?340:210;
   var cv=document.createElement("canvas");cv.width=W;cv.height=H;
   var c=cv.getContext("2d"),pr=w3Project(model,W,H,T);
   /* 面片按深度合批绘制；不用阴影模糊 */
@@ -7634,10 +7644,11 @@ function drawWeaponSkin3D(c,weaponType,skinId,level,x,y,scale,flip,animTime,mode
   var sk=SKIN_DEF[skinId]||SKIN_DEF.basicWhite,pal=sk.pal,T=animTime||Date.now()/1000;
   var ty=WEP_TYPES[Math.max(0,Math.min(7,weaponType|0))],L=Math.max(1,Math.min(50,level|0));
   var fr=w3GetFrame(ty,skinId,L,T,mode||"game"),len=fr.len,hh=fr.h;
-  c.save();c.translate(x,y);if(flip)c.scale(-1,1);c.scale(scale,scale);
-  /*  sprite 映射回原来的逻辑坐标，枪口/握把/手的位置无需重写 */
-  var dw=len*1.95,dh=hh*10.5;
-  c.drawImage(fr.canvas,-len*.82,-hh*5.1,dw,dh);
+  /* 目标屏幕尺寸：枪长按原逻辑，宽按 16:9 帧比例 */
+  var targetW=len*scale*1.6,targetH=targetW*(fr.canvas.height/fr.canvas.width);
+  c.save();c.translate(x,y);if(flip)c.scale(-1,1);
+  /* 帧中心对准手部锚点（逻辑原点在握把后约 18% 处） */
+  c.drawImage(fr.canvas,-targetW*0.18,-targetH*0.5,targetW,targetH);
   c.restore();
   return {len:len*scale,hh:hh*scale,muzzleX:len*scale,muzzleY:0,pal:pal,skin:sk,engine:"w3d"};
 }
