@@ -7860,7 +7860,192 @@ function rkHairStrand(c,x,y,len,wid,ang,curl,col,hi){
   c.fillStyle=g; c.fill();
 }
 
+
+/* =====================================================================================
+   R3D：角色真三维模型
+   四肢=胶囊体(圆柱+两端球)、躯干=圆角柱、头=球体、头饰/武器有独立几何
+   五个角色体型不同；皮肤只换材质色，不改骨架结构
+   ===================================================================================== */
+function r3Capsule(x,y,z,len,r,col,axis){
+  var P=w3Cylinder(x,y,z,len,r,col,axis,10);
+  var off=axis==="x"?[len/2,0,0]:axis==="y"?[0,len/2,0]:[0,0,len/2];
+  w3Join(P,w3Sphere(x-off[0],y-off[1],z-off[2],r,col,8));
+  w3Join(P,w3Sphere(x+off[0],y+off[1],z+off[2],r,col,8));
+  return P;
+}
+function r3HeroMesh(heroIdx, skinId, T){
+  var P={v:[],f:[]};
+  var pal=ROLE_PAL[skinId]||ROLE_PAL.rk_steel;
+  var list=ROLE_SKIN_DEF[heroIdx]||[];
+  var sk=null;
+  for(var i=0;i<list.length;i++) if(list[i].id===skinId) sk=list[i];
+  var rar=sk?(SKIN_RAR[sk.rar]||SKIN_RAR.white):SKIN_RAR.white;
+  var main=pal.main||"#8a9ab8", sub=pal.sub||"#2a3242", hi=pal.hi||"#ffffff", ene=pal.ene||pal.glow||"#60e0ff", skin="#f0d0c0";
+
+  /* 体型差异 */
+  var BW,BH,HR,LL;
+  if(heroIdx===0){ BW=21;BH=32;HR=10.5;LL=21; }
+  else if(heroIdx===1){ BW=16;BH=28;HR=11.5;LL=23; }
+  else if(heroIdx===2){ BW=23;BH=33;HR=9.5;LL=21; }
+  else if(heroIdx===3){ BW=19;BH=32;HR=10;LL=22; }
+  else { BW=18;BH=30;HR=10.5;LL=22; }
+
+  var bob=Math.sin(T*2.2)*1.2;
+
+  /* 腿（左右，带摆动） */
+  var legSw=Math.sin(T*3.4)*0.35;
+  for(var lr=0;lr<2;lr++){
+    var sx=lr===0?-1:1, sw=lr===0?legSw:-legSw;
+    var lx=sx*BW*0.32;
+    /* 大腿 */
+    w3Join(P,r3Capsule(lx, -BH*0.5, 0, LL*0.55, BW*0.28, sub, "y"));
+    /* 小腿（与大腿形成膝盖弯曲） */
+    w3Join(P,r3Capsule(lx+sw*2.5, -BH*0.5-LL*0.55, 0, LL*0.45, BW*0.24, main, "y"));
+    /* 靴 */
+    w3Join(P,w3Box(lx+sw*2.5, -BH*0.5-LL*1.0, 0, BW*0.55, 3.2, BW*0.8, hi, .2));
+  }
+  /* 躯干（上宽下窄） */
+  var body=[];
+  body.push([-BW*0.38,BH*0.5,-BH*0.30]);
+  body.push([ BW*0.38,BH*0.5,-BH*0.30]);
+  body.push([ BW*0.42,-BH*0.5,-BH*0.18]);
+  body.push([-BW*0.42,-BH*0.5,-BH*0.18]);
+  for(var bs=0;bs<4;bs++) body.push([body[bs][0]*0.9,body[bs][1]+BH*0.42,body[bs][2]*0.9]);
+  for(var bj=0;bj<4;bj++){
+    w3Join(P,w3Mesh([body[bj],body[(bj+1)%4],body[(bj+1)%4+4],body[bj+4]],[{p:[0,1,2,3],c:main}]));
+  }
+  w3Join(P,w3Mesh([body[0],body[1],body[2],body[3]],[{p:[0,1,2,3],c:sub}]));
+  w3Join(P,w3Mesh([body[4],body[5],body[6],body[7]],[{p:[3,2,1,0],c:hi}]));
+  /* 腰带 */
+  w3Join(P,w3Box(0,-BH*0.32,0,BW*0.85,4.5,BH*0.42,ene,.25));
+  /* 手臂（上臂+前臂+手） */
+  for(var ar=0;ar<2;ar++){
+    var ax=ar===0?-1:1, ax2=ax*BW*0.42, asw=ar===0?legSw:-legSw;
+    /* 上臂（圆柱） */
+    w3Join(P,r3Capsule(ax2, BH*0.30, 0, BH*0.38, BW*0.20, sub, "y"));
+    /* 肘 */
+    w3Join(P,w3Sphere(ax2+asw*1.2, BH*0.30-BH*0.19, 0, BW*0.13, hi, 8));
+    /* 前臂 */
+    w3Join(P,r3Capsule(ax2+asw*2.2, BH*0.30-BH*0.19-BH*0.30, 0, BH*0.32, BW*0.17, main, "y"));
+    /* 手 */
+    w3Join(P,w3Sphere(ax2+asw*2.2, BH*0.30-BH*0.19-BH*0.30-BH*0.16, 0, BW*0.16, skin, 8));
+  }
+  /* 头 */
+  w3Join(P,w3Sphere(0, BH*0.5+HR*0.6+bob, 0, HR, skin, 14));
+  /* 颈部 */
+  w3Join(P,w3Cylinder(0, BH*0.5+HR*0.1, 0, HR*0.55, HR*0.34, skin, "y", 8));
+
+  /* ===== 头部专属（5 角色各不相同） ===== */
+  if(heroIdx===0){
+    /* 机甲头盔：覆盖头顶的面甲 + 天线 */
+    w3Join(P,w3Box(0, BH*0.5+HR*0.6+bob+HR*0.5, 0, HR*1.7, HR*0.9, HR*1.1, main, .3));
+    w3Join(P,w3Box(0, BH*0.5+HR*0.6+bob+HR*0.15, 0, HR*1.3, HR*0.35, HR*1.0, ene, .15));
+    /* 天线 */
+    w3Join(P,w3Cylinder(HR*0.55, BH*0.5+HR*0.6+bob+HR*0.7, 0, HR*0.9, HR*0.09, sub, "y", 6));
+    w3Join(P,w3Sphere(HR*0.55, BH*0.5+HR*0.6+bob+HR*0.7+HR*0.45, 0, HR*0.18, ene, 8));
+  }else if(heroIdx===1){
+    /* 二次元少女：双马尾 + 刘海 + 蝴蝶结 */
+    /* 刘海 */
+    for(var hb=0;hb<3;hb++){
+      var ha=hb*2.094+0.6;
+      w3Join(P,w3Prism(Math.cos(ha)*HR*0.55, BH*0.5+HR*0.6+bob-HR*0.4, Math.sin(ha)*HR*0.55,
+        [[-HR*0.22,0],[0,-HR*0.55],[HR*0.22,0],[0,HR*0.15]], HR*0.12, sub));
+    }
+    /* 双马尾（左右各一束） */
+    for(var mh=0;mh<2;mh++){
+      var ms=mh===0?-1:1;
+      for(var ms2=0;ms2<3;ms2++){
+        var mt=ms2/2;
+        w3Join(P,w3Sphere(ms*(HR*0.85+mt*HR*0.35), BH*0.5+HR*0.6+bob-HR*0.3-mt*HR*1.4, mt*HR*0.4, HR*(0.34-mt*0.08), sub, 6));
+      }
+    }
+    /* 蝴蝶结 */
+    w3Join(P,w3Box(0, BH*0.5+HR*0.6+bob+HR*0.75, 0, HR*0.5, HR*0.25, HR*0.3, ene, .1));
+  }else if(heroIdx===2){
+    /* 写实格斗家：头带 + 飘尾 */
+    w3Join(P,w3Box(0, BH*0.5+HR*0.6+bob-HR*0.15, 0, HR*1.8, HR*0.22, HR*1.0, sub, .12));
+    /* 飘尾（布带向后） */
+    var tail=[[-HR*0.7,0],[-HR*1.4,-HR*0.6],[-HR*1.1,-HR*1.0],[-HR*0.4,-HR*0.4]];
+    w3Join(P,w3Prism(0, BH*0.5+HR*0.6+bob, -HR*0.2, tail, HR*0.08, sub));
+    /* 拳套 */
+    for(var fs=0;fs<2;fs++){
+      w3Join(P,w3Box((fs===0?-1:1)*BW*0.62, BH*0.30-BH*0.19-BH*0.30-BH*0.16, 0, BW*0.35, 4.5, BW*0.5, main, .15));
+    }
+  }else if(heroIdx===3){
+    /* 赛博武士：双角 + 面甲 */
+    w3Join(P,w3Box(0, BH*0.5+HR*0.6+bob+HR*0.45, 0, HR*1.5, HR*0.75, HR*0.9, sub, .25));
+    /* 双角 */
+    for(var hn=0;hn<2;hn++){
+      var hs=hn===0?-1:1;
+      w3Join(P,w3Prism(hs*HR*0.5, BH*0.5+HR*0.6+bob+HR*0.75, 0,
+        [[0,0],[hs*HR*0.3,-HR*1.1],[hs*HR*0.7,-HR*0.4]], HR*0.15, hi));
+    }
+    /* 面甲 */
+    w3Join(P,w3Box(0, BH*0.5+HR*0.6+bob-HR*0.3, HR*0.75, HR*1.2, HR*0.5, HR*0.25, ene, .15));
+  }else{
+    /* 女仆鲸娘：女仆头饰 + 鲸尾 */
+    w3Join(P,w3Box(0, BH*0.5+HR*0.6+bob+HR*0.55, 0, HR*1.6, HR*0.3, HR*1.0, hi, .12));
+    for(var wt=0;wt<3;wt++){
+      w3Join(P,w3Sphere((wt-1)*HR*0.6, BH*0.5+HR*0.6+bob+HR*0.62, 0, HR*0.22, ene, 6));
+    }
+    /* 鲸尾（从后腰伸出，左右摆动） */
+    var wt2=Math.sin(T*2.8)*0.4;
+    for(var wt3=0;wt3<3;wt3++){
+      var wt4=wt3/2;
+      w3Join(P,w3Sphere(wt2*HR*0.3*wt4, -BH*0.5-LL*0.2-wt4*HR*1.2, HR*0.4+wt4*HR*0.5, HR*(0.28-wt4*0.06), main, 6));
+    }
+  }
+  /* 神话级：环绕碎晶 */
+  if(sk&&sk.rar==="red"){
+    for(var cr=0;cr<6;cr++){
+      var ca=cr*1.047+T*1.4;
+      w3Join(P,w3Box(Math.cos(ca)*HR*1.8, BH*0.3+Math.sin(T*1.8+cr)*2, Math.sin(ca)*HR*1.8, HR*0.22, HR*0.22, HR*0.22, ene, .08));
+    }
+  }
+  /* 传说级以上：披风（向后展开的实体） */
+  if(sk&&(sk.rar==="gold"||sk.rar==="red"||sk.rar==="purple")){
+    var cape=[[-BW*0.35,BH*0.4],[-BW*0.5,-BH*0.9],[0,-BH*1.0],[BW*0.5,-BH*0.9],[BW*0.35,BH*0.4]];
+    w3Join(P,w3Prism(0, BH*0.1, -BH*0.35, cape, BH*0.08, sub));
+  }
+  return {mesh:P, h:BH+LL+HR, w:BW};
+}
+function r3RenderHero(heroIdx, skinId, T, W, H){
+  var model=r3HeroMesh(heroIdx,skinId,T);
+  var cv=document.createElement("canvas");cv.width=W;cv.height=H;
+  var c=cv.getContext("2d"),pr=w3Project(model,W,H,T);
+  for(var i=0;i<pr.f.length;i++){
+    var f=pr.f[i];c.globalAlpha=f.a;c.fillStyle=f.col;c.beginPath();
+    for(var j=0;j<f.p.length;j++){var p=pr.v[f.p[j]];if(j===0)c.moveTo(p[0],p[1]);else c.lineTo(p[0],p[1]);}
+    c.closePath();c.fill();
+    if(f.a>.8){c.strokeStyle="rgba(2,6,12,.22)";c.lineWidth=.4;c.stroke();}
+  }
+  c.globalAlpha=1;
+  return {canvas:cv, h:model.h};
+}
+var R3D_CACHE={},R3D_KEYS=[],R3D_MAX=40;
+function r3GetHero(heroIdx, skinId, T, mode){
+  var fps=mode==="game"?10:14,frame=Math.floor(T*fps)%20;
+  var key=heroIdx+"|"+skinId+"|"+frame+"|"+mode;
+  var hit=R3D_CACHE[key];if(hit)return hit;
+  var detail=mode!=="game",W=detail?320:180,H=detail?420:280;
+  var out=r3RenderHero(heroIdx,skinId,frame/fps,W,H);
+  R3D_CACHE[key]=out;R3D_KEYS.push(key);
+  if(R3D_KEYS.length>R3D_MAX){var old=R3D_KEYS.shift();delete R3D_CACHE[old];}
+  return out;
+}
+/* 统一入口：图鉴 / 局内共用 */
+function drawRoleSkin3D(c, heroIdx, skinId, x, y, scale, T, mode){
+  var fr=r3GetHero(heroIdx,skinId,T,mode||"game");
+  var targetH=fr.h*scale*1.35, targetW=targetH*(fr.canvas.width/fr.canvas.height);
+  c.save();c.translate(x,y);
+  c.drawImage(fr.canvas,-targetW*0.5,-targetH*0.52,targetW,targetH);
+  c.restore();
+  return fr;
+}
+
 function drawRoleSkin(c, heroIdx, skinId, x, y, scale, T){
+  try{return drawRoleSkin3D(c,heroIdx,skinId,x,y,scale,T);}
+  catch(e){ if(typeof console!=="undefined"&&console.warn)console.warn("R3D fallback",e); }
   var pal=ROLE_PAL[skinId]||ROLE_PAL.rk_steel;
   var list=ROLE_SKIN_DEF[heroIdx]||[];
   var sk=null;
