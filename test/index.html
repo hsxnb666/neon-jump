@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.1</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.2</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -377,7 +377,7 @@ function coinHud(){
   try{
     var _cv=document.getElementById("coinVal");
     if(!_cv)return;
-    var _x2=smartMode?'<span style="font-size:9px;color:#ffd700;background:#b026ff;border-radius:5px;padding:1px 3px;vertical-align:top">×2</span> ':'';
+    var _x2=smartMode?'<span style="font-size:9px;color:#ffd700;background:#b026ff;border-radius:5px;padding:1px 3px;vertical-align:top">×2<\/span> ':'';
     _cv.innerHTML='🪙 '+_x2+coinCount;
   }catch(_){}
 }
@@ -535,7 +535,7 @@ function resetGame(){
   bulletParts.length=0;muzzleFlash.length=0;HITFX.length=0;KILLFX.length=0;
   setGunLv(1);
   bgStageIdx=-1;bgCur={top:[22,10,58],bot:[10,14,70],glow:[90,60,255],hill:[26,12,62]};
-setCL();combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;try{input.move=0;stick.active=false;stick.id=-1;}catch(_){}var _cxEq=1,_cxTy=0;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;if(_cx.eqType&&_cx.eqType>=0&&_cx.eqType<=7)_cxTy=_cx.eqType;}catch(_){}gunLevel=_cxEq;gunType=_cxTy;setGunLv(_cxEq);_lastCoinGain=0;
+setCL();combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;try{input.move=0;stick.active=false;stick.id=-1;}catch(_){}var _cxEq=1,_cxTy=0;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;if(typeof _cx.eqType==="number"&&_cx.eqType>=0&&_cx.eqType<=7)_cxTy=_cx.eqType;else _cxTy=Math.min(7,Math.floor((_cxEq-1)/7));}catch(_){}gunLevel=_cxEq;gunType=_cxTy;setGunLv(_cxEq);_lastCoinGain=0;
 loadEquip();
 _attrApplied=totalAttr();
 player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:Math.round(100*attrMul("hp")),maxHp:Math.round(100*attrMul("hp")),en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
@@ -7462,9 +7462,18 @@ function w3Prism(x,y,z,profile,depth,col){
   for(var k=0;k<n;k++){var q=(k+1)%n;f.push({p:[k,q,q+n,k+n],c:col});}
   return w3Mesh(v,f);
 }
-function w3Join(out,m){for(var i=0;i<m.v.length;i++)out.v.push(m.v[i]);for(var j=0;j<m.f.length;j++)out.f.push(m.f[j]);}
+function w3Join(out,m){
+  /* 拼接网格必须平移顶点索引；否则每个部件都引用第一组顶点，模型只剩碎片 */
+  var base=out.v.length;
+  for(var i=0;i<m.v.length;i++)out.v.push(m.v[i]);
+  for(var j=0;j<m.f.length;j++){
+    var src=m.f[j],np=new Array(src.p.length);
+    for(var k=0;k<src.p.length;k++)np[k]=src.p[k]+base;
+    out.f.push({p:np,c:src.c,a:src.a,cap:src.cap});
+  }
+}
 function w3Tube(parts,x,y,z,len,r,col){w3Join(parts,w3Cylinder(x,y,z,len,r,col,"x",12));}
-function w3WeaponMesh(ty,skin,L,T){
+function w3WeaponMesh(ty,skin,L,T,skinId){
   var P={v:[],f:[]},pal=skin.pal,main=pal.main,sub=pal.sub,hi=pal.hi,ene=pal.ene,dark=pal.dark||"#050812";
   var tier=Math.min(4,Math.floor(L/10)),grow=1+(L-1)*0.004;
   var len=(ty==="sniper"?58:ty==="rifle"?40:ty==="staff"?38:ty==="cannon"?36:ty==="gatling"?34:ty==="shotgun"?33:ty==="drone"?28:26)*grow;
@@ -7507,7 +7516,7 @@ function w3WeaponMesh(ty,skin,L,T){
     w3Tube(P,h*1.5,0,0,h*1.8,h*.28,dark);
   }
   /* 皮肤专属三维识别件，来自 pe_hot 拆解，不是换色 */
-  var id=skin._id||"";
+  var id=skinId||skin.id||skin._id||"";
   if(id==="dawnGod"){
     /* 圣典匣外扩 + 三层递减圣徽 */
     w3Join(P,w3Box(len*.07,0,0,len*.25,h*2.15,h*1.25,hi,.7));
@@ -7570,7 +7579,7 @@ function w3WeaponMesh(ty,skin,L,T){
   for(var up=0;up<tier;up++){
     w3Join(P,w3Box(len*(-.18+up*.18),h*(1.15+up*.18),-h*.45,h*.55,h*.42,h*.32,up%2?hi:sub,.14));
   }
-  return {mesh:P,len:len,h:h,tier:tier};
+  return {mesh:P,len:len,h:h,tier:tier,gripX:0,gripY:0};
 }
 function w3Project(model,W,H,T){
   var mesh=model.mesh,verts=new Array(mesh.v.length),faces=[];
@@ -7603,10 +7612,15 @@ function w3Project(model,W,H,T){
     faces.push({p:p,z:depth,col:w3Shade(f.c,lum,dot>.78?12:0),a:f.a===undefined?1:f.a});
   }
   faces.sort(function(a,b){return a.z-b.z;});
-  return {v:verts,f:faces};
+    function mapPoint(v){
+    var x=v[0],y=v[1],z=v[2];
+    var x1=x*co-z*si,z1=x*si+z*co,y1=y*cp-z1*sp;
+    return [W*.5+(x1-cx)*scale,H*.5-(y1-cy)*scale];
+  }
+  return {v:verts,f:faces,map:mapPoint};
 }
-function w3RenderFrame(ty,skin,L,T,mode){
-  var model=w3WeaponMesh(ty,skin,L,T),detail=mode!=="game",W=detail?560:340,H=detail?340:210;
+function w3RenderFrame(ty,skin,L,T,mode,skinId){
+  var model=w3WeaponMesh(ty,skin,L,T,skinId),detail=mode!=="game",W=detail?560:340,H=detail?340:210;
   var cv=document.createElement("canvas");cv.width=W;cv.height=H;
   var c=cv.getContext("2d"),pr=w3Project(model,W,H,T);
   /* 面片按深度合批绘制；不用阴影模糊 */
@@ -7617,11 +7631,10 @@ function w3RenderFrame(ty,skin,L,T,mode){
     if(f.a>.8){c.strokeStyle="rgba(3,7,14,.24)";c.lineWidth=.45;c.stroke();}
   }
   c.globalAlpha=1;
-  return {canvas:cv,len:model.len,h:model.h};
+  return {canvas:cv,len:model.len,h:model.h,gripX:model.gripX===undefined?0:model.gripX,gripY:model.gripY===undefined?0:model.gripY};
 }
 function w3GetFrame(weaponType,skinId,L,T,mode){
   var skin=SKIN_DEF[skinId]||SKIN_DEF.basicWhite;
-  if(!skin._id)try{Object.defineProperty(skin,"_id",{value:skinId,writable:true,configurable:true});}catch(e){skin._id=skinId;}
   var tier=Math.min(4,Math.floor(L/10)),fps=mode==="game"?8:12,frame=Math.floor(T*fps)%16;
   var key=weaponType+"|"+skinId+"|"+tier+"|"+mode+"|"+frame;
   var hit=W3D_CACHE[key];if(hit)return hit;
@@ -7632,9 +7645,10 @@ function w3GetFrame(weaponType,skinId,L,T,mode){
       var prev=W3D_CACHE[W3D_CACHE_KEYS[i]];
       if(prev&&prev.ty===weaponType&&prev.skinId===skinId&&prev.tier===tier)return prev;
     }
+    /* 新皮肤/新枪型没有可沿用的同身份帧：立即构建，不能返回 undefined 触发旧2D回退 */
   }
   W3D_LAST_BUILD=now;
-  var out=w3RenderFrame(weaponType,skin,L,frame/fps,mode);
+  var out=w3RenderFrame(weaponType,skin,L,frame/fps,mode,skinId);
   out.ty=weaponType;out.skinId=skinId;out.tier=tier;
   W3D_CACHE[key]=out;W3D_CACHE_KEYS.push(key);
   if(W3D_CACHE_KEYS.length>W3D_CACHE_MAX){var old=W3D_CACHE_KEYS.shift();delete W3D_CACHE[old];}
@@ -7647,10 +7661,14 @@ function drawWeaponSkin3D(c,weaponType,skinId,level,x,y,scale,flip,animTime,mode
   /* 目标屏幕尺寸：枪长按原逻辑，宽按 16:9 帧比例 */
   var targetW=len*scale*1.6,targetH=targetW*(fr.canvas.height/fr.canvas.width);
   c.save();c.translate(x,y);if(flip)c.scale(-1,1);
-  /* 帧中心对准手部锚点（逻辑原点在握把后约 18% 处） */
-  c.drawImage(fr.canvas,-targetW*0.18,-targetH*0.5,targetW,targetH);
+  /* 帧内原点就是握把，映射到角色持枪挂点；枪口另按模型比例定位 */
+  var inGame=mode==="game";
+  var px=inGame?0.5-fr.gripX/len:0.5;
+  var py=inGame?0.5+fr.gripY/(len*1.6):0.5;
+  c.drawImage(fr.canvas,-targetW*px,-targetH*py,targetW,targetH);
   c.restore();
-  return {len:len*scale,hh:hh*scale,muzzleX:len*scale,muzzleY:0,pal:pal,skin:sk,engine:"w3d"};
+  var muzzle=len*(ty==="sniper"?1.02:ty==="pistol"?.93:1.0)*scale;
+  return {len:len*scale,hh:hh*scale,muzzleX:muzzle,muzzleY:-fr.gripY*scale,pal:pal,skin:sk,engine:"w3d"};
 }
 
 function drawWeaponSkinLegacy(c, weaponType, skinId, level, x, y, scale, flip, animTime, mode){
@@ -7873,14 +7891,39 @@ function r3Capsule(x,y,z,len,r,col,axis){
   w3Join(P,w3Sphere(x+off[0],y+off[1],z+off[2],r,col,8));
   return P;
 }
+function r3Segment(a,b,r,col){
+  var dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];
+  var len=Math.sqrt(dx*dx+dy*dy+dz*dz)||1;
+  dx/=len;dy/=len;dz/=len;
+  var ux,uy,uz;
+  if(Math.abs(dy)<.9){ux=-dz;uy=0;uz=dx;}
+  else{ux=1;uy=0;uz=0;}
+  var ul=Math.sqrt(ux*ux+uy*uy+uz*uz)||1;ux/=ul;uy/=ul;uz/=ul;
+  var vx=dy*uz-dz*uy,vy=dz*ux-dx*uz,vz=dx*uy-dy*ux;
+  var P={v:[],f:[]},n=10;
+  for(var ring=0;ring<2;ring++)for(var i=0;i<n;i++){
+    var ang=i*6.283185307/n,co=Math.cos(ang)*r,si=Math.sin(ang)*r;
+    var q=ring?b:a;
+    P.v.push([q[0]+ux*co+vx*si,q[1]+uy*co+vy*si,q[2]+uz*co+vz*si]);
+  }
+  for(var j=0;j<n;j++){var k=(j+1)%n;P.f.push({p:[j,k,k+n,j+n],c:col});}
+  w3Join(P,w3Sphere(a[0],a[1],a[2],r,col,8));
+  w3Join(P,w3Sphere(b[0],b[1],b[2],r,col,8));
+  return P;
+}
 function r3HeroMesh(heroIdx, skinId, T){
+  if(!skinId){
+    var defs=ROLE_SKIN_DEF[heroIdx]||[];
+    skinId=defs.length?defs[0].id:"rk_steel";
+  }
   var P={v:[],f:[]};
   var pal=ROLE_PAL[skinId]||ROLE_PAL.rk_steel;
   var list=ROLE_SKIN_DEF[heroIdx]||[];
   var sk=null;
   for(var i=0;i<list.length;i++) if(list[i].id===skinId) sk=list[i];
   var rar=sk?(SKIN_RAR[sk.rar]||SKIN_RAR.white):SKIN_RAR.white;
-  var main=pal.main||"#8a9ab8", sub=pal.sub||"#2a3242", hi=pal.hi||"#ffffff", ene=pal.ene||pal.glow||"#60e0ff", skin="#f0d0c0";
+  /* ROLE_PAL 的实际字段是 body/trim/accent/glow/eye，按角色皮肤读取 */
+  var main=pal.body||"#8a9ab8", sub=pal.accent||"#2a3242", hi=pal.trim||"#ffffff", ene=pal.glow||"#60e0ff", skin="#f0d0c0";
 
   /* 体型差异 */
   var BW,BH,HR,LL;
@@ -7920,15 +7963,14 @@ function r3HeroMesh(heroIdx, skinId, T){
   w3Join(P,w3Box(0,-BH*0.32,0,BW*0.85,4.5,BH*0.42,ene,.25));
   /* 手臂（上臂+前臂+手） */
   for(var ar=0;ar<2;ar++){
-    var ax=ar===0?-1:1, ax2=ax*BW*0.42, asw=ar===0?legSw:-legSw;
-    /* 上臂（圆柱） */
-    w3Join(P,r3Capsule(ax2, BH*0.30, 0, BH*0.38, BW*0.20, sub, "y"));
-    /* 肘 */
-    w3Join(P,w3Sphere(ax2+asw*1.2, BH*0.30-BH*0.19, 0, BW*0.13, hi, 8));
-    /* 前臂 */
-    w3Join(P,r3Capsule(ax2+asw*2.2, BH*0.30-BH*0.19-BH*0.30, 0, BH*0.32, BW*0.17, main, "y"));
-    /* 手 */
-    w3Join(P,w3Sphere(ax2+asw*2.2, BH*0.30-BH*0.19-BH*0.30-BH*0.16, 0, BW*0.16, skin, 8));
+    var side=ar===0?-1:1;
+    var shoulder=[side*BW*.42,BH*.28,side*BW*.20];
+    var hand=ar===0?[BW*.55,-BH*.05,BW*.25]:[BW*.88,-BH*.01,-BW*.12];
+    var elbow=[(shoulder[0]+hand[0])*.5,Math.min(shoulder[1],hand[1])-BH*.12,(shoulder[2]+hand[2])*.5];
+    w3Join(P,r3Segment(shoulder,elbow,BW*.19,sub));
+    w3Join(P,w3Sphere(elbow[0],elbow[1],elbow[2],BW*.14,hi,8));
+    w3Join(P,r3Segment(elbow,hand,BW*.16,main));
+    w3Join(P,w3Sphere(hand[0],hand[1],hand[2],BW*.15,skin,8));
   }
   /* 头 */
   w3Join(P,w3Sphere(0, BH*0.5+HR*0.6+bob, 0, HR, skin, 14));
@@ -8007,7 +8049,7 @@ function r3HeroMesh(heroIdx, skinId, T){
     var cape=[[-BW*0.35,BH*0.4],[-BW*0.5,-BH*0.9],[0,-BH*1.0],[BW*0.5,-BH*0.9],[BW*0.35,BH*0.4]];
     w3Join(P,w3Prism(0, BH*0.1, -BH*0.35, cape, BH*0.08, sub));
   }
-  return {mesh:P, h:BH+LL+HR, w:BW};
+  return {mesh:P, h:BH+LL+HR, w:BW, footY:-BH*.5-LL-1.6, grip:[BW*.55,-BH*.05,BW*.25]};
 }
 function r3RenderHero(heroIdx, skinId, T, W, H){
   var model=r3HeroMesh(heroIdx,skinId,T);
@@ -8020,7 +8062,9 @@ function r3RenderHero(heroIdx, skinId, T, W, H){
     if(f.a>.8){c.strokeStyle="rgba(2,6,12,.22)";c.lineWidth=.4;c.stroke();}
   }
   c.globalAlpha=1;
-  return {canvas:cv, h:model.h};
+    var grip=pr.map(model.grip||[0,0,0]);
+  var foot=pr.map([0,model.footY===undefined?-model.h*.5:model.footY,0]);
+  return {canvas:cv, h:model.h, footY:model.footY===undefined?-model.h*.5:model.footY, grip:grip, foot:foot};
 }
 var R3D_CACHE={},R3D_KEYS=[],R3D_MAX=40;
 function r3GetHero(heroIdx, skinId, T, mode){
@@ -8036,15 +8080,16 @@ function r3GetHero(heroIdx, skinId, T, mode){
 /* 统一入口：图鉴 / 局内共用 */
 function drawRoleSkin3D(c, heroIdx, skinId, x, y, scale, T, mode){
   var fr=r3GetHero(heroIdx,skinId,T,mode||"game");
-  var targetH=fr.h*scale*1.35, targetW=targetH*(fr.canvas.width/fr.canvas.height);
+  var targetH=fr.h*scale, targetW=targetH*(fr.canvas.width/fr.canvas.height);
+  var py=fr.foot[1]/fr.canvas.height;
   c.save();c.translate(x,y);
-  c.drawImage(fr.canvas,-targetW*0.5,-targetH*0.52,targetW,targetH);
+  c.drawImage(fr.canvas,-targetW*0.5,-targetH*py,targetW,targetH);
   c.restore();
   return fr;
 }
 
 function drawRoleSkin(c, heroIdx, skinId, x, y, scale, T){
-  try{return drawRoleSkin3D(c,heroIdx,skinId,x,y,scale,T);}
+  try{return drawRoleSkin3D(c,heroIdx,skinId,x,y,scale,T,"detail");}
   catch(e){ if(typeof console!=="undefined"&&console.warn)console.warn("R3D fallback",e); }
   var pal=ROLE_PAL[skinId]||ROLE_PAL.rk_steel;
   var list=ROLE_SKIN_DEF[heroIdx]||[];
@@ -8604,7 +8649,7 @@ function drawGun(){
   var info=drawWeaponSkin3D(ctx, ty, sk, L, 0, 0, 1, false, T, "game");
   /* 把局内枪尺寸暴露给前手绘制 */
   _gunLenPx=info.len||44; _gunHalfH=info.hh||6;
-  var mx=rec+info.len;
+  var mx=rec+(info.muzzleX===undefined?info.len:info.muzzleX);
   var pal=info.pal;
   var skin=info.skin||{};
   // ===== 枪口闪光（按风格族换形） =====
@@ -9436,8 +9481,29 @@ heroHeadImg.src="data:image/jpeg;base64,/9j/4QBYRXhpZgAATU0AKgAAAAgABAEAAAQAAAAB
    4. 肩→肘→腕三级骨骼，枪握在腕点，朝向鼠标/瞄准方向
 */
 function drawHero(x,y,scale,facing,frame,onGround,vx){
-  // 分发器：根据 HERO 角色 ID 调用对应绘制
+  // 局内角色也走真三维；旧五套函数保留作异常回退
   var h=HERO;
+  try{
+    ctx.save();
+    if(facing<0){ctx.translate(x,y);ctx.scale(-1,1);x=0;y=0;}
+    var rtime=(frame||0)*0.12;
+    var result=drawRoleSkin3D(ctx,h-1,currentRoleSkin,x,y,scale,rtime,"game");
+    /* 旧 2D 身体里的 heroGunArm 不会再执行，3D 角色必须显式调用 drawGun。
+       使用缓存帧里的同一投影手掌点，不重复建模/投影。 */
+    var rh=(result.h||63.5)*scale;
+    var rw=rh*(result.canvas.width/result.canvas.height);
+    var gx=(result.grip[0]/result.canvas.width-.5)*rw;
+    var gy=(result.grip[1]-result.foot[1])/result.canvas.height*rh;
+    ctx.translate(x+gx,y+gy);
+    ctx.scale(scale,scale);
+    drawGun();
+    ctx.restore();
+    return result;
+  }catch(e){
+    ctx.restore();
+    if(typeof console!=="undefined"&&console.warn)console.warn("局内R3D fallback",e);
+  }
+  // 分发器：根据 HERO 角色 ID 调用对应绘制
   if(h===1) return drawHeroMech(x,y,scale,facing,frame,onGround,vx);
   if(h===2) return drawHeroAnime(x,y,scale,facing,frame,onGround,vx);
   if(h===3) return drawHeroFighter(x,y,scale,facing,frame,onGround,vx);
@@ -9490,13 +9556,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v10.0");
+    localStorage.setItem("njs_patch","v10.2");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v10.0"){
+    if(seen!=="v10.2"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -13654,7 +13720,7 @@ function lbRenderRichTo(box){
   // 标题说明
   var tip=document.createElement("div");
   tip.style.cssText="color:#7c86c8;text-align:center;padding:5px;font-size:11px;line-height:1.4";
-  tip.innerHTML="💰 富豪榜 · 终身累计金币<br><span style='color:#ffd54a'>赚过的每一枚都算数（含已花掉的）</span>";
+  tip.innerHTML="💰 富豪榜 · 终身累计金币<br><span style='color:#ffd54a'>赚过的每一枚都算数（含已花掉的）<\/span>";
   box.appendChild(tip);
   // 全网富豪榜列表（同昵称去重：只保留 lifetime_coins 最高的一条）
   var raw=lbCacheRich||[];
@@ -14155,8 +14221,8 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v10.0</div>
-    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 24 日 01:50</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v10.2</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 25 日 12:32</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
     <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
@@ -14186,6 +14252,14 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-25 12:32:33",items:[
+      "🔫 修复枪皮真正不显示：拼接网格时补齐顶点索引偏移，枪不再碎成小片",
+      "🎨 局内已接通当前装备枪皮：3D角色新增真实持枪挂点，drawGun每帧调用当前皮肤",
+      "👤 五个角色局内全部走R3D；14套角色皮肤配色读取正确，新增三维持枪双臂",
+      "🗂 修复枪皮详情串皮、武器图鉴枪型错误、装备与重开游戏不恢复枪型",
+      "📍 握把、手掌、脚底使用同一三维投影锚点；图鉴与局内分别对齐，不再推出画布",
+      "✅ 验收：120组枪型×枪皮及14套角色皮肤通过；手机横屏实装、摇杆松手停止，0报错0回退"
+    ]},
     {time:"2026-10-25 11:54:41",items:[
       "🔧 修复局内枪不显示（双重偏移导致枪跑到画面外）",
       "🛑 修复自动移动（鼠标松开后摇杆残留输入）",
@@ -14501,7 +14575,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     for(var pi=0;pi<patchList.length;pi++){
       var _it=patchList[pi];
       if(pi===0){
-        _html+='<div style="color:#ff2fd6;font-weight:600;margin-bottom:6px;font-size:13px">🔥 最新更新 <span style="font-size:10px;color:#9fb8e8">· '+_it.time+'</span></div>';
+        _html+='<div style="color:#ff2fd6;font-weight:600;margin-bottom:6px;font-size:13px">🔥 最新更新 <span style="font-size:10px;color:#9fb8e8">· '+_it.time+'<\/span></div>';
       }else{
         _html+='<div style="color:#ffd54a;font-weight:600;margin:12px 0 4px;font-size:12px">· '+_it.time+'</div>';
       }
@@ -14567,7 +14641,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     else if(w<=40)col="#ff8a5b";
     else if(w<=45)col="#ffd700";
     else col="#ffe600";
-    CX_WEAPONS.push({lv:w,name:nm,icon:ic,type:tp,dmg:dmg,spd:spd,bal:bal,sp:sp,price:100+w*30,color:col});
+    CX_WEAPONS.push({lv:w,name:nm,icon:ic,type:tp,dmg:dmg,spd:spd,bal:bal,sp:sp,price:100+w*30,color:col,ty:Math.min(7,Math.floor((w-1)/7))});
   }
   var CX_MOBS=[
     {k:"walker",n:"尖刺龟",ic:"🐢",tp:"近战",hp:50,sc:100,atk:"靠近后缩壳高速旋转冲撞，壳上尖刺全程伤害"},
@@ -14638,8 +14712,10 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     lv=Math.max(1,Math.min(50,lv|0));
     if(o.weapons.indexOf(lv)<0)return;
     o.equipped=lv;
+    var wd=CX_WEAPONS[lv-1];
+    o.eqType=wd&&typeof wd.ty==="number"?wd.ty:Math.min(7,Math.floor((lv-1)/7));
     cxSave(o);
-    gunLevel=lv;
+    gunLevel=lv;gunType=o.eqType;
     setGunLv(lv);
   }
 
@@ -14845,9 +14921,9 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
 
   /* ===== 武器图鉴绘制（枪身 + 弹道色子弹）===== */
   function cxDrawWeapon(wd,ctx,cx,cy,big){
-    // 唯一绘制入口：图鉴/详情/局内共用 3D 引擎 drawWeaponSkin
+    // 图鉴网格/详情/局内共用 3D；wd 必须决定枪型与等级
     var lv=wd.lv||1;
-    var ty=(typeof cxTypeIdx!=="undefined")?cxTypeIdx:0;
+    var ty=(typeof wd.ty==="number")?wd.ty:Math.min(7,Math.floor((lv-1)/7));
     var box=big?190:70;
     var skinId=currentSkin||"basicWhite";
     var info=wepInfo(ty,lv);
@@ -14873,8 +14949,8 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     var rsName="未装备";
     var rlist=ROLE_SKIN_DEF[HERO]||[];
     for(var i=0;i<rlist.length;i++){ if(rlist[i].id===currentRoleSkin){ rsName=rlist[i].name; break; } }
-    line.innerHTML='🎨 枪皮：<b style="color:'+skRar.col+'">'+sk.name+'</b>　'+
-                   '👤 角色皮肤：<b style="color:#ff7ad1">'+rsName+'</b>';
+    line.innerHTML='🎨 枪皮：<b style="color:'+skRar.col+'">'+sk.name+'<\/b>　'+
+                   '👤 角色皮肤：<b style="color:#ff7ad1">'+rsName+'<\/b>';
     // 属性条
     bars.innerHTML="";
     var any=false;
@@ -14887,8 +14963,8 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       row.style.cssText="padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.045);border:1px solid rgba(125,255,160,.18)";
       row.innerHTML=
         '<div style="display:flex;align-items:center;font-size:12px;color:#d8e4ff;margin-bottom:5px">'+
-          '<span style="font-size:14px;margin-right:6px">'+d.ic+'</span>'+d.n+
-          '<span style="margin-left:auto;font-weight:800;color:#7dffa0;font-size:13px">'+d.fmt(v)+'</span>'+
+          '<span style="font-size:14px;margin-right:6px">'+d.ic+'<\/span>'+d.n+
+          '<span style="margin-left:auto;font-weight:800;color:#7dffa0;font-size:13px">'+d.fmt(v)+'<\/span>'+
         '</div>'+
         '<div style="height:5px;border-radius:3px;background:rgba(0,0,0,.45);overflow:hidden">'+
           '<div style="height:100%;width:'+pct.toFixed(1)+'%;border-radius:3px;background:linear-gradient(90deg,#3aff7a,#00f2ff)"></div>'+
@@ -14960,7 +15036,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
         cv.width=110; cv.height=76;
         cv.style.cssText="width:104px;height:72px;margin:0 auto;display:block";
         var c2=cv.getContext("2d");
-        try{ drawWeaponSkin(c2, 1, id, 30, 14, 38, 1.25, false, (i*0.7)+1.2, "detail"); }catch(e){}
+        try{ drawWeaponSkin(c2, 1, id, 30, 55, 38, 1.25, false, (i*0.7)+1.2, "detail"); }catch(e){}
         var nm=document.createElement("div");
         nm.style.cssText="font-size:10px;color:#e8f0ff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
         nm.textContent=sk.name;
@@ -14985,7 +15061,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     cv.width=520; cv.height=300;
     cv.style.cssText="width:100%;max-width:520px;height:auto;display:block;margin:0 auto;border-radius:12px;background:radial-gradient(circle at 50% 50%,rgba(30,40,70,.6),rgba(6,10,20,.95))";
     var c2=cv.getContext("2d");
-    try{ drawWeaponSkin(c2, 1, id, 50, 60, 150, 2.6, false, Date.now()/1000, "detail"); }catch(e){}
+    try{ drawWeaponSkin(c2, 1, id, 50, 260, 150, 2.6, false, Date.now()/1000, "detail"); }catch(e){}
     dt.appendChild(cv);
     var h=document.createElement("div");
     h.style.cssText="text-align:center;margin-top:8px";
@@ -15185,7 +15261,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     if(seen){cxDrawBoss(b.k,_b2,110,110);}
     else{_b2.fillStyle="rgba(0,0,0,0.9)";_b2.beginPath();_b2.ellipse(0,0,40,44,0,0,Math.PI*2);_b2.fill();_b2.fillStyle="rgba(255,255,255,0.35)";_b2.font="28px sans-serif";_b2.textAlign="center";_b2.fillText("?",0,10);}
     h.appendChild(_bc2);
-    var tags=(b.tags||[]).map(function(t){return "<span style='display:inline-block;margin:2px;padding:3px 8px;border-radius:10px;background:rgba(255,42,109,.15);border:1px solid rgba(255,42,109,.4);color:#ff7ba0;font-size:10px'>"+t+"</span>"}).join("");
+    var tags=(b.tags||[]).map(function(t){return "<span style='display:inline-block;margin:2px;padding:3px 8px;border-radius:10px;background:rgba(255,42,109,.15);border:1px solid rgba(255,42,109,.4);color:#ff7ba0;font-size:10px'>"+t+"<\/span>"}).join("");
     var _ped3=document.createElement("div");
     _ped3.style.cssText="width:160px;height:150px;margin:4px auto 0;border-radius:16px;background:radial-gradient(ellipse at 50% 70%,rgba(176,38,255,.22),rgba(255,42,109,.08) 60%,transparent);box-shadow:0 0 26px rgba(176,38,255,.25);display:flex;align-items:center;justify-content:center";
     _ped3.appendChild(_bc2);h.appendChild(_ped3);
