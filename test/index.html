@@ -8600,7 +8600,8 @@ function drawGun(){
   var _grow=1+(Math.max(1,Math.min(50,L))-1)*0.004;
   var _ox=-(_gripX[ty]||0)*_gs*_grow;
   var _oy=-(_gripY[ty]||0)*_gs*_grow;
-  var info=drawWeaponSkin(ctx, ty, sk, L, _ox, _oy, _gs, false, T, "game");
+  /* 局内：直接调用 3D 引擎，坐标=手掌位置，不再做旧换算 */
+  var info=drawWeaponSkin3D(ctx, ty, sk, L, 0, 0, 1, false, T, "game");
   /* 把局内枪尺寸暴露给前手绘制 */
   _gunLenPx=info.len||44; _gunHalfH=info.hh||6;
   var mx=rec+info.len;
@@ -8775,6 +8776,8 @@ if(typeof world._revCtrl==="number"){world._revCtrl-=rdt;if(world._revCtrl<=0)wo
 var p=player;
 /* 摇杆漂移保护：手指已抬起则强制归零 */
 if(stick && !stick.active) input.move=0;
+/* 鼠标模式兜底：mousedown 没按着也不该有移动（触屏不受影响） */
+if(!hasTouch && typeof mD!=="undefined" && !mD) input.move=0;
 if(Math.abs(input.move)<0.06) input.move=0;
 var move=input.move;
 if(keys.KeyA||keys.ArrowLeft)move=-1;
