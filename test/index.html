@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.4</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.5</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3779,7 +3779,7 @@ function spawnParticles(x,y,n,c,sp){for(var i=0;i<n;i++){var a=Math.random()*6.2
 function tryJump(){
   var p=player;
   if(p.jumps<2){
-    p.vy=-430; p.jumps++; p.onGround=false;
+    p.vy=-430; p.jumps++; p.onGround=false;p._plat=null;
     sJump();
     spawnParticles(p.x,p.y+p.h/2,7,"#00f2ff",55);
     if(p.jumps===2){
@@ -7742,6 +7742,10 @@ function drawWeaponSkin3D(c,weaponType,skinId,level,x,y,scale,flip,animTime,mode
   var projectedLen=Math.abs(fr.muzzle[0]-fr.grip[0])||len*fr.unit;
   var logicalGunLen=len*1.7;
   var ratio=logicalGunLen*scale/projectedLen;
+  if(inGame){
+    var cb=fr.coreBB||fr.allBB, coreLen=Math.abs(cb[1]-cb[0])||projectedLen;
+    ratio=len*scale*1.15/coreLen;
+  }
   if(!inGame){
     var bb=fr.allBB,bw=bb[1]-bb[0],bh=bb[3]-bb[2];
     ratio=Math.min((viewW||560)*.88/bw,(viewH||340)*.78/bh)*scale;
@@ -8168,7 +8172,7 @@ function r3GetHero(heroIdx, skinId, T, mode){
 /* 统一入口：图鉴 / 局内共用 */
 function drawRoleSkin3D(c, heroIdx, skinId, x, y, scale, T, mode){
   var fr=r3GetHero(heroIdx,skinId,T,mode||"game");
-  var targetH=fr.h*scale, targetW=targetH*(fr.canvas.width/fr.canvas.height);
+  var targetH=fr.h*scale*1.08, targetW=targetH*(fr.canvas.width/fr.canvas.height);
   var py=fr.foot[1]/fr.canvas.height;
   c.save();c.translate(x,y);
   c.drawImage(fr.canvas,-targetW*0.5,-targetH*py,targetW,targetH);
@@ -8733,13 +8737,34 @@ function drawGun(){
   var _grow=1+(Math.max(1,Math.min(50,L))-1)*0.004;
   var _ox=-(_gripX[ty]||0)*_gs*_grow;
   var _oy=-(_gripY[ty]||0)*_gs*_grow;
-  /* 局内：直接调用 3D 引擎，坐标=手掌位置，不再做旧换算 */
-  var info=drawWeaponSkin3D(ctx, ty, sk, L, 0, 0, 1, false, T, "game");
-  /* 把局内枪尺寸暴露给前手绘制 */
-  _gunLenPx=info.len||44; _gunHalfH=info.hh||6;
-  var mx=rec+(info.muzzleX===undefined?info.len:info.muzzleX);
-  var pal=info.pal;
-  var skin=info.skin||{};
+  /* 局内：先用旧2D引擎画清晰枪身，再叠3D皮肤识别件 */
+  var info2=wepDraw(ty,L,ctx,{t:T});
+  _gunLenPx=info2.len||44; _gunHalfH=6;
+  var mx=rec+info2.muzzleX;
+var _wp=info2.pal;
+  var skin=SKIN_DEF[sk]||SKIN_DEF.basicWhite;
+  var pal={main:_wp.m||_wp.main||'#888',sub:_wp.s||_wp.sub||'#444',hi:_wp.h||_wp.hi||'#fff',ene:_wp.e||_wp.ene||'#00f2ff',dark:_wp.d||_wp.dark||'#050812'};
+  /* 叠加3D皮肤识别件：只画皮肤专属外延，不画整把3D枪 */
+  try{
+    var fr3d=w3GetFrame(WEP_TYPES[ty],sk,L,T,"game");
+    if(fr3d&&fr3d.coreBB&&fr3d.allBB){
+      var cb=fr3d.coreBB,ab=fr3d.allBB;
+      var extW=(ab[1]-ab[0])-(cb[1]-cb[0]);
+      if(extW>2){
+        var skinScale=_gunLenPx/((cb[1]-cb[0])||_gunLenPx);
+        ctx.save();
+        ctx.translate(0,-2);
+        ctx.globalAlpha=.82;
+        var r3d=skinScale;
+        ctx.drawImage(fr3d.canvas,
+          -fr3d.grip[0]*r3d,-fr3d.grip[1]*r3d,
+          fr3d.canvas.width*r3d,fr3d.canvas.height*r3d);
+        ctx.globalAlpha=1;
+        ctx.restore();
+      }
+    }
+  }catch(e3d){}
+  var info={len:_gunLenPx,hh:_gunHalfH,muzzleX:mx,muzzleY:0,pal:pal,skin:skin};
   // ===== 枪口闪光（按风格族换形） =====
   if(player&&player.muzzle>0){
     var mf=Math.max(0,player.muzzle/0.09);
@@ -8926,7 +8951,15 @@ p.dashCd=Math.max(0,p.dashCd-rdt);
 if(p.shield>0)p.shield-=rdt;
 p.vy+=1100*dt;
 p.x+=p.vx*dt;p.y+=p.vy*dt;p.anim+=dt;
-for(var i=0;i<world.platforms.length;i++){if(world.platforms[i].moving){var pl=world.platforms[i];pl.mvPhase+=dt*1.2;pl.y=pl.origY+Math.sin(pl.mvPhase)*pl.mvRange}}
+for(var i=0;i<world.platforms.length;i++){
+  if(world.platforms[i].moving){
+    var pl=world.platforms[i];pl.mvPhase+=dt*1.2;
+    if(pl._prevX===undefined){pl._prevX=pl.x;pl._prevY=pl.y;}
+    pl.y=pl.origY+Math.sin(pl.mvPhase)*pl.mvRange;
+    if(p.onGround&&p._plat===pl){p.x+=pl.x-pl._prevX;p.y+=pl.y-pl._prevY;}
+    pl._prevX=pl.x;pl._prevY=pl.y;
+  }
+}
 p.onGround=false;
 for(var i=0;i<world.platforms.length;i++){
   var plat=world.platforms[i];
@@ -8934,7 +8967,7 @@ for(var i=0;i<world.platforms.length;i++){
     var top=plat.y-plat.h/2;
     if(p.y+p.h/2>=top&&p.y+p.h/2<=top+34){
       if(plat.bounce){p.y=top-p.h/2;p.vy=-680;p.jumps=0;sBounce();spawnShockRing(p.x,top,"#ffe600",90);world.texts.push({x:p.x,y:top-40,text:"弹射!",life:0.5,vy:-40})}
-      else{p.y=top-p.h/2;p.vy=0;p.onGround=true;p.jumps=0}
+      else{p.y=top-p.h/2;p.vy=0;p.onGround=true;p.jumps=0;p._plat=plat}
     }
   }
 }
@@ -9569,28 +9602,8 @@ heroHeadImg.src="data:image/jpeg;base64,/9j/4QBYRXhpZgAATU0AKgAAAAgABAEAAAQAAAAB
    4. 肩→肘→腕三级骨骼，枪握在腕点，朝向鼠标/瞄准方向
 */
 function drawHero(x,y,scale,facing,frame,onGround,vx){
-  // 局内角色也走真三维；旧五套函数保留作异常回退
+  // 局内角色先保持完整二次元剪影；当前R3D角色只用于后续图鉴，不拿半成品替换局内
   var h=HERO;
-  try{
-    ctx.save();
-    if(facing<0){ctx.translate(x,y);ctx.scale(-1,1);x=0;y=0;}
-    var rtime=(frame||0)*0.12;
-    var result=drawRoleSkin3D(ctx,h-1,currentRoleSkin,x,y,scale,rtime,"game");
-    /* 旧 2D 身体里的 heroGunArm 不会再执行，3D 角色必须显式调用 drawGun。
-       使用缓存帧里的同一投影手掌点，不重复建模/投影。 */
-    var rh=(result.h||63.5)*scale;
-    var rw=rh*(result.canvas.width/result.canvas.height);
-    var gx=(result.grip[0]/result.canvas.width-.5)*rw;
-    var gy=(result.grip[1]-result.foot[1])/result.canvas.height*rh;
-    ctx.translate(x+gx,y+gy);
-    ctx.scale(scale,scale);
-    drawGun();
-    ctx.restore();
-    return result;
-  }catch(e){
-    ctx.restore();
-    if(typeof console!=="undefined"&&console.warn)console.warn("局内R3D fallback",e);
-  }
   // 分发器：根据 HERO 角色 ID 调用对应绘制
   if(h===1) return drawHeroMech(x,y,scale,facing,frame,onGround,vx);
   if(h===2) return drawHeroAnime(x,y,scale,facing,frame,onGround,vx);
@@ -9644,13 +9657,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v10.4");
+    localStorage.setItem("njs_patch","v10.5");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v10.4"){
+    if(seen!=="v10.5"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14309,8 +14322,8 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v10.4</div>
-    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 25 日 13:59</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v10.5</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 25 日 15:20</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
     <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
@@ -14340,6 +14353,13 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-25 15:20:00",items:[
+      "🔧 局内角色恢复完整二次元绘制（不再是小方块）",
+      "🔫 局内枪改为2D清晰枪身+3D皮肤识别件叠加（枪像枪，皮肤华丽但不糊）",
+      "📐 皮肤外延不再压扁枪身；核心枪身尺寸独立计算",
+      "🚶 修复平台移动带动玩家（不再自动前进后退）",
+      "⚡ 性能10ms、15套特效0错误、金币回归通过"
+    ]},
     {time:"2026-10-25 13:59:51",items:[
       "🌸 新增百变纱华垂直切片：白瓷流线主体 / 玫瑰金箍环 / 四层半透纱翼 / 樱粉能量核",
       "🪡 四层纱翼独立色相、错层弯曲、深度和透明度；白瓷与核心保持实体，不整枪透明",
