@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.0</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.1</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -14186,6 +14186,11 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-25 11:54:41",items:[
+      "🔧 修复局内枪不显示（双重偏移导致枪跑到画面外）",
+      "🛑 修复自动移动（鼠标松开后摇杆残留输入）",
+      "🧊 枪和角色均为真三维模型"
+    ]},
     {time:"2026-10-25 11:01:17",items:[
       "🧊 枪械模型全面升级为真三维：立体网格 + 透视投影 + 光照，不再是平面贴片",
       "🔫 8 类枪械全部三维实体骨架：圆柱枪管、倒角机匣、倾斜握把弹匣、真实深膛枪口",
@@ -14509,7 +14514,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   /* 日期填充（精确到秒） */
   var pd=document.getElementById("patchDateText");
   if(pd){
-    pd.textContent="更新于 2026-10-25 11:01:17";
+    pd.textContent="更新于 2026-10-25 11:54:41";
   }
 })();
 </script>
@@ -14840,17 +14845,17 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
 
   /* ===== 武器图鉴绘制（枪身 + 弹道色子弹）===== */
   function cxDrawWeapon(wd,ctx,cx,cy,big){
-    // 唯一绘制入口：图鉴/详情/局内共用 wepDraw
+    // 唯一绘制入口：图鉴/详情/局内共用 3D 引擎 drawWeaponSkin
     var lv=wd.lv||1;
-    var info=wepInfo((typeof cxTypeIdx!=="undefined"?cxTypeIdx:0),lv);
-    var box=big?190:70;                    // 详情大图 / 缩略图 可用宽度
+    var ty=(typeof cxTypeIdx!=="undefined")?cxTypeIdx:0;
+    var box=big?190:70;
+    var skinId=currentSkin||"basicWhite";
+    var info=wepInfo(ty,lv);
     var k=box/Math.max(1,info.len*1.15);
     if(k>2.6)k=2.6;
     ctx.save();
     ctx.translate(cx,cy);
-    ctx.scale(k,k);
-    ctx.translate(-info.len*0.5,0);
-    try{ wepDraw((typeof cxTypeIdx!=="undefined"?cxTypeIdx:0),lv,ctx,{t:Date.now()/1000}); }catch(e){}
+    try{ drawWeaponSkin(ctx,ty,skinId,lv,0,0,k,false,Date.now()/1000,big?"detail":"thumb"); }catch(e){}
     ctx.restore();
   }
   /* ===== 图鉴 UI ===== */
