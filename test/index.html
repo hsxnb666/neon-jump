@@ -531,8 +531,11 @@ var skillCd=0,SK_CD=12,combo=0,comboT=0,gunLevel=1,gunType=0;
 var smartMode=false;
 
 function resetGame(){
+  /* 清理跨局特效与等级状态，防止上一局粒子/枪口闪光串到下一局 */
+  bulletParts.length=0;muzzleFlash.length=0;HITFX.length=0;KILLFX.length=0;
+  setGunLv(1);
   bgStageIdx=-1;bgCur={top:[22,10,58],bot:[10,14,70],glow:[90,60,255],hill:[26,12,62]};
-setCL();combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;try{input.move=0;stick.active=false;stick.id=-1;}catch(_){}var _cxEq=1,_cxTy=0;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;if(_cx.eqType&&_cx.eqType>=0&&_cx.eqType<=7)_cxTy=_cx.eqType;}catch(_){}gunLevel=_cxEq;gunType=_cxTy;_lastCoinGain=0;
+setCL();combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;try{input.move=0;stick.active=false;stick.id=-1;}catch(_){}var _cxEq=1,_cxTy=0;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;if(_cx.eqType&&_cx.eqType>=0&&_cx.eqType<=7)_cxTy=_cx.eqType;}catch(_){}gunLevel=_cxEq;gunType=_cxTy;setGunLv(_cxEq);_lastCoinGain=0;
 loadEquip();
 _attrApplied=totalAttr();
 player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:Math.round(100*attrMul("hp")),maxHp:Math.round(100*attrMul("hp")),en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
@@ -758,6 +761,7 @@ if(e.type==="boss"){
   player.en=Math.min(player.maxEn,player.en+40);
   player.shield=Math.max(player.shield||0,3);
   gunLevel=Math.min(50,gunLevel+1);
+  setGunLv(gunLevel);
   world.texts.push({x:e.x,y:e.y-60,text:"+120金币",life:1.6,vy:-40});
   world.texts.push({x:e.x,y:e.y-30,text:"回血+50 武器+1 护盾3s",life:1.8,vy:-30});
   // 掉落多个道具
@@ -1783,20 +1787,19 @@ function lvTierOf(level){
 function lvTierCfg(level){
   return LV_TIER[lvTierOf(level)];
 }
-/* 当前局内武器等级（由 gameGun 每帧写入） */
+/* 当前局内武器等级：升级/装备时同步。
+   粒子以子弹自带 lv 为准，不再依赖绘制函数设置全局状态。 */
 var _gunLv=1;
 function setGunLv(L){
   var n=Math.max(1,Math.min(50,L|0));
-  if(n!==_gunLv){
-    var oldT=lvTierOf(_gunLv), newT=lvTierOf(n);
-    _gunLv=n;
-    /* 跨阶段时闪一下提示（不打断游戏） */
-    if(newT>oldT && typeof showToast==="function"){
-      try{ showToast("武器进阶 Lv"+n+" · "+LV_TIER[newT].name, "#ffd700"); }catch(e){}
-    }
+  if(n===_gunLv)return;
+  var oldT=lvTierOf(_gunLv),newT=lvTierOf(n);
+  _gunLv=n;
+  if(newT>oldT&&typeof showToast==="function"){
+    try{showToast("武器进阶 Lv"+n+" · "+LV_TIER[newT].name,"#ffd700")}catch(e){}
   }
 }
-function curGunLv(){ return _gunLv; }
+function curGunLv(){return _gunLv;}
 
 var PART_CFG={
   /* 冰晶神谕：六角冰晶碎片，少而锐利，飞散慢 */
@@ -1842,8 +1845,9 @@ var bulletParts=[];      // {x,y,vx,vy,t,life,size,color,kind}
 var muzzleFlash=[];      // 枪口闪光 {x,y,ang,t,life,size,color}
 
 /* 枪口喷射：射击瞬间喷出一团粒子 */
-function spawnMuzzle(x,y,ang,color,power){
+function spawnMuzzle(x,y,ang,color,power,level){
   power=power||1;
+  var _muzzleLv=Math.max(1,Math.min(50,(level===undefined?gunLevel:level)|0));
   // 枪口闪光
   var _mfx=curSkinFx();
   muzzleFlash.push({x:x,y:y,ang:ang,t:0,life:0.09,size:22*power,color:color||"#fff",
@@ -1853,7 +1857,7 @@ function spawnMuzzle(x,y,ang,color,power){
 
   /* ===== 开火粒子：皮肤配置 × 等级阶段 ===== */
   var _pc=partCfgOf(_mfx.bullet);
-  var _tc=lvTierCfg(_gunLv);          /* 等级阶段配置 */
+  var _tc=lvTierCfg(_muzzleLv);      /* 发射瞬间等级，不依赖渲染顺序 */
   var _pcol=pcNorm((_mfx.pal&&_mfx.pal.ene)||color||"#ffe600");
   var _pcol2=pcNorm((_mfx.pal&&_mfx.pal.main)||color||"#ffffff");
   var _pcol3=pcNorm((_mfx.pal&&_mfx.pal.hi)||"#ffffff");
@@ -1934,7 +1938,8 @@ function spawnMuzzle(x,y,ang,color,power){
 /* 子弹飞行中持续喷粒子（由子弹自己调用） */
 function spawnBulletTrail(b,dt){
   var _tc=partCfgOf(b.fx||"plain");
-  var _lv=lvTierCfg(_gunLv);        /* 等级阶段 */
+  /* 每颗子弹携带发射时等级；旧子弹回退当前等级 */
+  var _lv=lvTierCfg(b.lv===undefined?gunLevel:b.lv);
   /* 每颗子弹按皮肤配置 × 等级决定喷射率 */
   var rate=Math.round((b.r>=8?22:12)*(_tc.n/10)*_lv.n);
   if(b._acc===undefined)b._acc=0;
@@ -3767,16 +3772,6 @@ function spawnShockRing(x,y,c,maxR){if(!c||c===undefined)c=PAL15[Math.floor(Math
 function spawnParticles(x,y,n,c,sp){for(var i=0;i<n;i++){var a=Math.random()*6.28,s=Math.random()*sp+25;world.particles.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0.35+Math.random()*0.35,color:c,size:1.5+Math.random()*2.5})}}
 
 /* 跳跃 */
-/* 跳跃：一段跳干脆，二段跳轻盈（更小更快、带残影光圈），
-   长按可延长上升，松手立刻截断（短按小跳 / 长按大跳） */
-var _jumpHold=0;          /* 长按跳跃键延长上升（可变跳跃高度） */
-var _jumpHoldMax=0.24;
-var _coyoteT=0;           /* 土狼时间：离地后仍可跳的宽限 */
-var _coyoteMax=0.10;
-var _jumpBufT=0;          /* 跳跃缓冲：落地前按跳，落地瞬间自动起跳 */
-var _jumpBufMax=0.14;
-var _landSquash=0;        /* 落地压扁动画 */
-var _jumpStretch=0;       /* 起跳拉长动画 */
 /* ===== 跳跃：最初版本（简单二段跳）===== */
 function tryJump(){
   var p=player;
@@ -3804,9 +3799,9 @@ function mk(a,off,col,r,dmg,home){
   var _mx=p.x+_fx*36,_my=p.y-31+off;
   var _sf=curSkinFx();
   world.bullets.push({x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:dmg*rd,home:home,
-    fx:_sf.bullet, trailFx:_sf.trail, fxPal:_sf.pal});
+    fx:_sf.bullet, trailFx:_sf.trail, fxPal:_sf.pal, lv:gunLevel});
   // 枪口喷射粒子（每次开火都喷）
-  spawnMuzzle(_mx,_my,a,col,r>=8?1.8:1.1);
+  spawnMuzzle(_mx,_my,a,col,r>=8?1.8:1.1,gunLevel);
 }
 if(gunLevel===1){mk(ang,0,"#00f2ff",5,12,true)}
 else if(gunLevel===2){mk(ang,-5,"#00f2ff",5,12,true);mk(ang,5,"#00f2ff",5,12,true)}
@@ -4046,21 +4041,7 @@ function rifling(c,x,y,len,hh,pal,T){
   c.stroke();
   c.globalAlpha=1;
 }
-/* 齿轮 */
-function gear(c,x,y,r,teeth,pal,T,spin){
-  c.save();c.translate(x,y);c.rotate(T*(spin||1));
-  c.fillStyle=pal.m;
-  c.beginPath();
-  for(var i=0;i<teeth;i++){
-    var a1=i*6.2832/teeth, a2=(i+0.5)*6.2832/teeth;
-    c.lineTo(Math.cos(a1)*r,Math.sin(a1)*r);
-    c.lineTo(Math.cos(a2)*r*0.76,Math.sin(a2)*r*0.76);
-  }
-  c.closePath();c.fill();
-  c.strokeStyle=pal.h;c.globalAlpha=0.45;c.lineWidth=0.6;c.stroke();c.globalAlpha=1;
-  c.fillStyle="#05070d";c.beginPath();c.arc(0,0,r*0.42,0,6.2832);c.fill();
-  c.restore();
-}
+
 /* 液压杆 */
 function piston(c,x1,y1,x2,y2,pal){
   c.strokeStyle="#05070d";c.lineWidth=2.6;
@@ -4102,38 +4083,7 @@ function dataStream(c,x,y,w,pal,T){
 
 /* 等级级差件：让 Lv1~Lv50 每一级外观都不同（不是等比放大）
    依据 lv 派生：灯管数 / 铭纹条数 / 细节块数 / 微小附件 / 微刻编号 */
-function lvFx(c,pal,lv,seg,len,hh,T){
-  var sub=(lv-1)%10;              // 段内 0..9
-  var tubeN=1+Math.floor(sub/3);  // 段内灯管 1..4
-  // 段内灯管排（沿枪身分布，数量随级数增长）
-  for(var i=0;i<tubeN;i++){
-    var tx=len*(0.12+i*0.16);
-    neonTube(c,tx,-hh*1.02,2.2+sub*0.12,pal,T,false);
-  }
-  // 段内细节块（每 2 级多一个）
-  var blockN=1+Math.floor(sub/2);
-  for(var i=0;i<blockN;i++){
-    var bx=len*(0.2+i*0.1);
-    c.fillStyle=pal.m;
-    c.fillRect(bx,hh*0.92,1.8,1.2);
-    c.fillStyle=pal.h;c.globalAlpha=0.4;
-    c.fillRect(bx,hh*0.92,1.8,0.4);c.globalAlpha=1;
-  }
-  // 微刻编号：段内级数用竖条表示（1..10 条）
-  c.fillStyle=pal.e2;c.globalAlpha=0.85;
-  for(var i=0;i<=sub;i++)c.fillRect(len*0.06+i*1.15,-hh*1.28,0.7,1.6);
-  c.globalAlpha=1;
-  // 每级一个微调：枪体上加一道能量槽（位置随级数移动）
-  c.fillStyle=pal.e;c.globalAlpha=0.35;
-  c.fillRect(len*(0.3+sub*0.045),-hh*0.24,1.4,hh*0.48);
-  c.globalAlpha=1;
-  // 段位越高，额外装饰环越多
-  if(seg>=3){
-    c.strokeStyle=pal.h;c.globalAlpha=0.3;c.lineWidth=0.6;
-    c.beginPath();c.arc(len*0.5,0,hh*(0.9+(seg-3)*0.25),T*0.8,T*0.8+4.0);c.stroke();
-    c.globalAlpha=1;
-  }
-}
+
 
 /* ==========================================================
    武器绘制 v4 —— 流线曲面体系
@@ -5295,13 +5245,19 @@ function curveOutline(c, pts){
 
 /* 渐变缓存：禁止每帧新建渐变对象 */
 var _matGradCache={};
+var _matGradCacheN=0,MAT_GRAD_CACHE_MAX=512;
+function matGradCacheTrim(){
+  /* 防止异常参数/长时间运行造成缓存无限增长 */
+  if(_matGradCacheN<=MAT_GRAD_CACHE_MAX)return;
+  _matGradCache={};_matGradCacheN=0;
+}
 function matGrad(c, key, x0,y0,x1,y1, stops){
   var k=key;
   var g=_matGradCache[k];
   if(!g){
     g=c.createLinearGradient(x0,y0,x1,y1);
     for(var i=0;i<stops.length;i++) g.addColorStop(stops[i][0], stops[i][1]);
-    _matGradCache[k]=g;
+    _matGradCache[k]=g;_matGradCacheN++;matGradCacheTrim();
   }
   return g;
 }
@@ -5310,7 +5266,7 @@ function matGradR(c, key, x,y,r0,r1, stops){
   if(!g){
     g=c.createRadialGradient(x,y,r0,x,y,r1);
     for(var i=0;i<stops.length;i++) g.addColorStop(stops[i][0], stops[i][1]);
-    _matGradCache[key]=g;
+    _matGradCache[key]=g;_matGradCacheN++;matGradCacheTrim();
   }
   return g;
 }
@@ -8193,8 +8149,6 @@ function drawGun(){
   var _grow=1+(Math.max(1,Math.min(50,L))-1)*0.004;
   var _ox=-(_gripX[ty]||0)*_gs*_grow;
   var _oy=-(_gripY[ty]||0)*_gs*_grow;
-  /* 等级写入全局：粒子/拖尾/枪口全部按这个等级取阶段配置 */
-  setGunLv(L);
   var info=drawWeaponSkin(ctx, ty, sk, L, _ox, _oy, _gs, false, T, "game");
   /* 把局内枪尺寸暴露给前手绘制 */
   _gunLenPx=info.len||44; _gunHalfH=info.hh||6;
@@ -8266,7 +8220,7 @@ function drawGun(){
       ctx.beginPath(); ctx.arc(0,0,4.5*mf,0,6.2832); ctx.fill();
     }
     /* ===== 等级增强层：每阶段加一层新结构 ===== */
-    var _lvt=lvTierOf(_gunLv);
+    var _lvt=lvTierOf(gunLevel);
     var _ltc=LV_TIER[_lvt];
     if(_ltc.ring>0){
       /* T1+：枪口外环 */
@@ -8418,7 +8372,7 @@ if(p.clones&&p.clones.length>0){
       cl.shootCd=0.25;
       var tg2=null,md2=99999;
       for(var ei=0;ei<world.enemies.length;ei++){var en=world.enemies[ei];var dd2=(en.x-cl.x)*(en.x-cl.x)+(en.y-cl.y)*(en.y-cl.y);if(dd2<md2&&dd2<360000){md2=dd2;tg2=en}}
-      if(tg2){var aa=Math.atan2(tg2.y-cl.y,tg2.x-cl.x);world.bullets.push({x:cl.x,y:cl.y,vx:Math.cos(aa)*600,vy:Math.sin(aa)*600,r:5,life:2,owner:"player",color:ci3===0?"#00f2ff":ci3===1?"#ff00aa":"#ffe600",dmg:18,home:true})}
+      if(tg2){var aa=Math.atan2(tg2.y-cl.y,tg2.x-cl.x);world.bullets.push({x:cl.x,y:cl.y,vx:Math.cos(aa)*600,vy:Math.sin(aa)*600,r:5,life:2,owner:"player",color:ci3===0?"#00f2ff":ci3===1?"#ff00aa":"#ffe600",dmg:18,home:true,lv:gunLevel})}
     }
   }
   for(var ci4=p.clones.length-1;ci4>=0;ci4--){if(p.clones[ci4].life<=0)p.clones.splice(ci4,1)}
@@ -13005,7 +12959,6 @@ function settleCoins(){
     _c.lifetime+=coinCount; // 终身累计：只增不减，买武器不扣
     localStorage.setItem("njs_codex",JSON.stringify(_c));
     try{_lastCoinGain=(typeof _lastCoinGain==="number"?_lastCoinGain:0)+coinCount;}catch(_){_lastCoinGain=coinCount;}
-    coinCount=0;
     coinCount=0;coinHud();
   }catch(_){}
 }
@@ -13014,7 +12967,7 @@ function gameOver(){
   stopBgm();
   sfx(110,"sawtooth",1,0.12,40);
   settleCoins();
-  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+" · 本局金币 +"+coinCount+(smartMode?"（聪明人双倍加成）":"");
+  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+" · 本局金币 +"+(typeof _lastCoinGain==="number"?_lastCoinGain:0)+(smartMode?"（聪明人双倍加成）":"");
   saveScore(score,distance);
   lbSubmit(score,distance);
   // 只设置视图（不拉数据），等 lbSubmit 成功回调后再刷新，避免显示提交前的旧榜
@@ -14192,15 +14145,33 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   }
   function cxState(){
     var o=cxLoad();
-    if(!o.weapons)o.weapons=[1];
-    if(!o.equipped)o.equipped=1;
-    if(!o.mobs)o.mobs=[];
-    if(!o.boss)o.boss=[];
-    if(typeof o.gold!=="number")o.gold=0;
+    if(!o||typeof o!=="object"||Array.isArray(o))o={};
+    if(!Array.isArray(o.weapons))o.weapons=[1];
+    /* 过滤损坏/重复/越界存档，始终保留初始武器 */
+    var seen={1:true},valid=[1];
+    for(var i=0;i<o.weapons.length;i++){
+      var lv=o.weapons[i];
+      if(typeof lv==="number"&&isFinite(lv)&&lv>=1&&lv<=50&&Math.floor(lv)===lv&&!seen[lv]){
+        seen[lv]=true;valid.push(lv);
+      }
+    }
+    o.weapons=valid;
+    if(typeof o.equipped!=="number"||!isFinite(o.equipped)||o.equipped<1||o.equipped>50||Math.floor(o.equipped)!==o.equipped||!seen[o.equipped])o.equipped=1;
+    if(!Array.isArray(o.mobs))o.mobs=[];
+    if(!Array.isArray(o.boss))o.boss=[];
+    if(typeof o.gold!=="number"||!isFinite(o.gold)||o.gold<0)o.gold=0;
+    if(typeof o.lifetime!=="number"||!isFinite(o.lifetime)||o.lifetime<o.gold)o.lifetime=o.gold;
     return o;
   }
   function cxEquipWeapon(lv){
-    var o=cxState();o.equipped=lv;cxSave(o);
+    var o=cxState();
+    /* 只能装备已解锁武器，且等级必须是有效整数 */
+    lv=Math.max(1,Math.min(50,lv|0));
+    if(o.weapons.indexOf(lv)<0)return;
+    o.equipped=lv;
+    cxSave(o);
+    gunLevel=lv;
+    setGunLv(lv);
   }
 
   /* ===== 小怪图鉴绘制（复刻局内形象，配色严格一致）===== */
@@ -14656,7 +14627,6 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     if(o.gold<wd.price){showToast("金币不足（当前 🪙"+o.gold+"）");return;}
     o.gold-=wd.price;
     if(o.weapons.indexOf(lv)<0)o.weapons.push(lv);cxSave(o);
-    if(typeof coinCount!=="undefined"){coinCount=Math.max(0,coinCount-wd.price);}
     try{ var _ck=JSON.parse(localStorage.getItem("njs_codex")||"{}"); if(typeof _ck.gold==="number"&&typeof _ck.lifetime==="number"&&_ck.lifetime<_ck.gold)_ck.lifetime=_ck.gold,localStorage.setItem("njs_codex",JSON.stringify(_ck)); }catch(_){}
     showToast("解锁 "+wd.name+"!");
     var _gd=document.getElementById("codexGold");
