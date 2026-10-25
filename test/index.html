@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.3</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.4</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -5086,7 +5086,7 @@ var SKIN_DEF={
   /* ===== T0 神话 · 炎羽天启（百变纱华 ACE32） ===== */
   veilBloom:{
     name:"百变纱华", rar:"red", fam:"炎羽天启",
-    pal:{main:"#f0e0f4", sub:"#c8a8ff", hi:"#ffffff", ene:"#ff6ec7", dark:"#221826"},
+    pal:{main:"#f5edf2", sub:"#c58f9f", hi:"#fffafd", ene:"#ff69c7", dark:"#241a2b"},
     baseMat:"porcelain", shell:"petal", extend:"ribbon",
     floaters:["petal","spark"], trail:"star",
     glow:3, dyn:"float",
@@ -7469,7 +7469,7 @@ function w3Join(out,m){
   for(var j=0;j<m.f.length;j++){
     var src=m.f[j],np=new Array(src.p.length);
     for(var k=0;k<src.p.length;k++)np[k]=src.p[k]+base;
-    out.f.push({p:np,c:src.c,a:src.a,cap:src.cap});
+    out.f.push({p:np,c:src.c,a:src.a,cap:src.cap,mat:src.mat,edge:src.edge});
   }
 }
 function w3Tube(parts,x,y,z,len,r,col){w3Join(parts,w3Cylinder(x,y,z,len,r,col,"x",12));}
@@ -7551,14 +7551,56 @@ function w3WeaponMesh(ty,skin,L,T,skinId){
     }
     if(tier>=2)for(var fr=0;fr<tier;fr++)w3Join(P,w3Cylinder(len*(.45+fr*.12),0,0,h*.20,h*(1.05+fr*.18),ene,"x",16));
   }else if(id==="veilBloom"){
-    /* 多层半透纱翼：每层有不同深度/透明度/弯曲采样 */
-    for(var vl=0;vl<4;vl++){
-      var vy=-h*(.4+vl*.55),vlen=len*(.42+vl*.06),wave=Math.sin(T*1.5+vl)*h*.16;
-      var prof=[];for(var vp=0;vp<=12;vp++){var u=vp/12;prof.push([-len*.12+u*vlen,vy-Math.sin(u*3.1416)*h*(1.2+vl*.25)+wave*u]);}
-      for(var vd=12;vd>=0;vd--){var u2=vd/12;prof.push([-len*.12+u2*vlen,vy+h*.35-Math.sin(u2*3.1416)*h*.65+wave*u2]);}
-      var mesh=w3Prism(0,0,-h*.5+vl*h*.35,prof,h*.07,vl%2?pal.main:pal.ene);
-      for(var mf=0;mf<mesh.f.length;mf++)mesh.f[mf].a=.22+vl*.08;
-      w3Join(P,mesh);
+    /* 白瓷主体不是透明纱：用连续曲率采样构造侧视流线，再挤出真实厚度 */
+    var porcelain=[];
+    for(var pc=0;pc<=18;pc++){
+      var pu=pc/18,px=len*(-.27+pu*.78);
+      porcelain.push([px,-h*(.62+.22*Math.sin(pu*3.1416))]);
+    }
+    for(var pd=18;pd>=0;pd--){
+      var qu=pd/18,qx=len*(-.27+qu*.78);
+      porcelain.push([qx,h*(.48+.20*Math.sin(qu*3.1416))]);
+    }
+    w3Join(P,w3Prism(0,0,0,porcelain,h*1.18,main));
+    /* 玫瑰金箍环：有独立厚度和明暗，不把整枪染粉 */
+    for(var rg=0;rg<3;rg++){
+      var rx=len*(-.16+rg*.17);
+      w3Join(P,w3Cylinder(rx,0,0,h*.30,h*.83,sub,"x",16));
+      w3Join(P,w3Cylinder(rx+h*.10,0,0,h*.065,h*.88,hi,"x",16));
+    }
+    /* 樱粉能量核：小而实，外部透明纱不能吃掉它 */
+    w3Join(P,w3Sphere(len*.035,0,h*.69,h*.58,ene,16));
+    w3Join(P,w3Sphere(len*.035,0,h*.93,h*.25,hi,12));
+    /* 四层纱翼：每层独立色相、错角、深度、弯曲与透明度；
+       材质数据直接留在面上，渲染器据此做边缘衰减，而非全片统一透明 */
+    var silkCols=["#ff92d5","#d99aff","#ffb4df","#bfa4ff"];
+    for(var side=-1;side<=1;side+=2){
+      for(var vl=0;vl<4;vl++){
+        var rootX=len*(-.14+vl*.065),rootY=side*h*(.34+vl*.10);
+        var vlen=len*(.38+vl*.055),lift=side*h*(1.65+vl*.45);
+        var wave=Math.sin(T*1.5+vl*.9+side)*h*.22;
+        var prof=[];
+        for(var vp=0;vp<=20;vp++){
+          var u=vp/20;
+          prof.push([rootX+u*vlen,rootY+u*lift-Math.sin(u*3.1416)*side*h*(.85+vl*.12)+wave*u]);
+        }
+        for(var vd=20;vd>=0;vd--){
+          var u2=vd/20;
+          prof.push([rootX+u2*vlen-len*.035*Math.sin(u2*3.1416),rootY+u2*lift+side*h*(.30+.14*Math.sin(u2*3.1416))-Math.sin(u2*3.1416)*side*h*(.42+vl*.08)+wave*u2]);
+        }
+        var mesh=w3Prism(0,0,side*h*(.28+vl*.18),prof,h*.035,silkCols[vl]);
+        for(var mf=0;mf<mesh.f.length;mf++){
+          mesh.f[mf].a=mf<2?.30+vl*.055:.48;
+          mesh.f[mf].mat="veil";
+          mesh.f[mf].edge=mf>=2;
+        }
+        w3Join(P,mesh);
+      }
+    }
+    /* 动态收束环只改变位置，不削减纱翼层数 */
+    for(var vr=0;vr<2;vr++){
+      var va=T*.7+vr*3.1416;
+      w3Join(P,w3Cylinder(len*(.28+vr*.09),Math.sin(va)*h*.22,Math.cos(va)*h*.26,h*.12,h*.42,ene,"x",14));
     }
   }else if(id==="supernova"){
     /* 中央爆发核 + 双辉光色 + 星环 */
@@ -7659,10 +7701,12 @@ function w3RenderFrame(ty,skin,L,T,mode,skinId){
   var c=cv.getContext("2d"),pr=w3Project(model,W,H,T);
   /* 面片按深度合批绘制；不用阴影模糊 */
   for(var i=0;i<pr.f.length;i++){
-    var f=pr.f[i];c.globalAlpha=f.a;c.fillStyle=f.col;c.beginPath();
+    var f=pr.f[i],mf=model.mesh.f[i];c.globalAlpha=f.a;c.fillStyle=f.col;c.beginPath();
     for(var j=0;j<f.p.length;j++){var p=pr.v[f.p[j]];if(j===0)c.moveTo(p[0],p[1]);else c.lineTo(p[0],p[1]);}
     c.closePath();c.fill();
-    if(f.a>.8){c.strokeStyle="rgba(3,7,14,.24)";c.lineWidth=.45;c.stroke();}
+    if(mf&&mf.mat==="veil"&&mf.edge){
+      c.globalAlpha=.58;c.strokeStyle=f.col;c.lineWidth=.48;c.stroke();
+    }else if(f.a>.8){c.strokeStyle="rgba(3,7,14,.24)";c.lineWidth=.45;c.stroke();}
   }
   c.globalAlpha=1;
   var grip=pr.map(model.grip||[0,0,0]),muzzle=pr.map(model.muzzle||[model.len,0,0]);
@@ -9600,13 +9644,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v10.3");
+    localStorage.setItem("njs_patch","v10.4");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v10.3"){
+    if(seen!=="v10.4"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14265,8 +14309,8 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v10.3</div>
-    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 25 日 13:44</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v10.4</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 25 日 13:59</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
     <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
@@ -14296,6 +14340,13 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-25 13:59:51",items:[
+      "🌸 新增百变纱华垂直切片：白瓷流线主体 / 玫瑰金箍环 / 四层半透纱翼 / 樱粉能量核",
+      "🪡 四层纱翼独立色相、错层弯曲、深度和透明度；白瓷与核心保持实体，不整枪透明",
+      "🧩 修复网格拼接丢失材质标记：mat/edge完整保留，352个纱翼面全部通过检查",
+      "🎆 保留丝绸弹道、花瓣命中与击杀特效；严格禁用旧2D回退测试0异常",
+      "📋 当前仅诸神破晓、百变纱华完成参考级切片，其它皮肤继续逐套打磨"
+    ]},
     {time:"2026-10-25 13:44:57",items:[
       "🎯 诸神破晓垂直切片：象牙白圣典匣 / 黑曜下机匣 / 三层圣金浮雕 / 青蓝能量缝",
       "📐 枪身与皮肤外延分开适配：外延不再把枪身压小，图鉴按实际画布完整显示",
@@ -15121,10 +15172,10 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     dt.appendChild(h);
     var info=document.createElement("div");
     info.style.cssText="font-size:11px;color:#a8b8d8;line-height:1.8;margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)";
-    if(id==="dawnGod"){
+    if(id==="dawnGod"||id==="veilBloom"){
       var slice=document.createElement("div");
       slice.style.cssText="margin-top:8px;padding:8px 10px;border:1px solid rgba(119,232,255,.35);border-radius:10px;color:#aeeeff;font-size:11px;line-height:1.7;background:rgba(30,90,120,.12)";
-      slice.textContent="垂直切片：象牙白圣典匣 / 黑曜下机匣 / 三层圣金浮雕 / 青蓝能量缝";
+      slice.textContent=id==="veilBloom"?"垂直切片：白瓷流线主体 / 玫瑰金箍环 / 四层半透纱翼 / 樱粉能量核":"垂直切片：象牙白圣典匣 / 黑曜下机匣 / 三层圣金浮雕 / 青蓝能量缝";
       dt.appendChild(slice);
     }
     var matName={matte:"哑光涂装",lightmetal:"轻金属",brushed:"冷金属拉丝",obsidian:"黑曜石",porcelain:"白瓷半透",crystal:"水晶半透"};
