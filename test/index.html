@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.3</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -5104,7 +5104,7 @@ var SKIN_DEF={
   /* ===== T0 神话 · 深渊王权（诸神破晓 蜜獾） ===== */
   dawnGod:{
     name:"诸神破晓", rar:"red", fam:"深渊王权",
-    pal:{main:"#e8dcc0", sub:"#a08850", hi:"#fffbe8", ene:"#7fe4ff", dark:"#1a1610"},
+    pal:{main:"#eee7d5", sub:"#c9a84d", hi:"#fff9df", ene:"#77e8ff", dark:"#14161c"},
     baseMat:"lightmetal", shell:"runeplate", extend:"crown",
     floaters:["rune","crystal","spark"], trail:"star",
     glow:3, dyn:"pulse",
@@ -7474,7 +7474,7 @@ function w3Join(out,m){
 }
 function w3Tube(parts,x,y,z,len,r,col){w3Join(parts,w3Cylinder(x,y,z,len,r,col,"x",12));}
 function w3WeaponMesh(ty,skin,L,T,skinId){
-  var P={v:[],f:[]},pal=skin.pal,main=pal.main,sub=pal.sub,hi=pal.hi,ene=pal.ene,dark=pal.dark||"#050812";
+  var P={v:[],f:[]},pal=skin.pal,main=pal.main,sub=pal.sub,hi=pal.hi,ene=pal.ene,dark=pal.dark||"#050812",coreFaces=0;
   var tier=Math.min(4,Math.floor(L/10)),grow=1+(L-1)*0.004;
   var len=(ty==="sniper"?58:ty==="rifle"?40:ty==="staff"?38:ty==="cannon"?36:ty==="gatling"?34:ty==="shotgun"?33:ty==="drone"?28:26)*grow;
   var h=(ty==="sniper"?2.6:ty==="rifle"?3.6:ty==="staff"?2:ty==="cannon"?6.6:ty==="gatling"?6.4:ty==="shotgun"?4.8:ty==="drone"?3.8:4.3)*grow;
@@ -7515,16 +7515,33 @@ function w3WeaponMesh(ty,skin,L,T,skinId){
     for(var dr=0;dr<3+tier;dr++){var da=dr*6.283/(3+tier)+T*.35;w3Join(P,w3Box(Math.cos(da)*h*2.3,Math.sin(da)*h*2.3,0,h*.75,h*.42,h*.48,dr%2?sub:hi,.2));}
     w3Tube(P,h*1.5,0,0,h*1.8,h*.28,dark);
   }
+  coreFaces=P.f.length;
   /* 皮肤专属三维识别件，来自 pe_hot 拆解，不是换色 */
   var id=skinId||skin.id||skin._id||"";
   if(id==="dawnGod"){
-    /* 圣典匣外扩 + 三层递减圣徽 */
-    w3Join(P,w3Box(len*.07,0,0,len*.25,h*2.15,h*1.25,hi,.7));
+    /* 圣典匣：象牙白上壳、黑曜下机匣、圣金侧边、青蓝缝隙四区分明 */
+    w3Join(P,w3Prism(len*.035,-h*.12,0,
+      [[-len*.18,-h*1.18],[len*.20,-h*1.02],[len*.25,h*.42],[len*.12,h*1.20],[-len*.15,h*1.10],[-len*.22,h*.25]],h*1.55,main));
+    w3Join(P,w3Prism(len*.015,h*.70,h*.03,
+      [[-len*.18,0],[len*.18,-h*.08],[len*.15,h*.88],[len*.05,h*1.25],[-len*.12,h*.95]],h*1.62,dark));
+    /* 中段外扩圣典匣，不整枪等比放大 */
+    w3Join(P,w3Box(len*.015,-h*.10,h*.12,len*.34,h*2.65,h*1.85,sub,h*.22));
+    w3Join(P,w3Box(len*.015,-h*.18,h*1.06,len*.29,h*2.24,h*.14,main,h*.13));
+    /* 三层递减圣徽：每一层都有真实厚度与独立受光 */
     for(var cr=0;cr<3;cr++){
-      var cw=h*(1.8-cr*.38),cy=-h*(1.25+cr*.48);
-      w3Join(P,w3Prism(len*.05,cy,h*.7,[[-cw,0],[0,-h*.55],[cw,0],[0,h*.35]],h*.22,cr===1?ene:"#d9b84a"));
+      var cw=h*(1.30-cr*.26),ch=h*(1.48-cr*.27),cz=h*(1.19+cr*.13);
+      var emblem=[[0,-ch],[cw*.78,ch*.48],[cw*.28,ch*.28],[0,ch*.72],[-cw*.28,ch*.28],[-cw*.78,ch*.48]];
+      w3Join(P,w3Prism(len*.015,-h*.32,cz,emblem,h*.13,cr===1?ene:(cr===2?hi:sub)));
     }
-    for(var seam=0;seam<4;seam++)w3Join(P,w3Box(len*(-.05+seam*.07),h*.6,h*.65,h*.12,h*.85,h*.10,ene,.04));
+    /* 圣典匣两侧羽翼状金属外延，保持机械而非有机材质 */
+    for(var wg=-1;wg<=1;wg+=2){
+      for(var feather=0;feather<3;feather++){
+        var fx=len*(-.07+feather*.065),fy=wg*h*(1.28+feather*.18);
+        w3Join(P,w3Prism(fx,fy,-h*.25,
+          [[-len*.045,0],[len*.02,wg*h*.36],[len*.12,wg*h*.22],[len*.065,-wg*h*.16]],h*.24,feather===1?hi:sub));
+      }
+    }
+    for(var seam=0;seam<4;seam++)w3Join(P,w3Box(len*(-.135+seam*.088),h*.92,h*.96,len*.045,h*.085,h*.075,ene,.025));
   }else if(id==="finalShadow"){
     /* 前冲矛尖 + 碳纤维侧板 + 纵向流光 */
     w3Join(P,w3Prism(len*.73,0,0,[[0,-h*.9],[len*.28,0],[0,h*.9],[-h*.8,0]],h*.42,main));
@@ -7579,7 +7596,10 @@ function w3WeaponMesh(ty,skin,L,T,skinId){
   for(var up=0;up<tier;up++){
     w3Join(P,w3Box(len*(-.18+up*.18),h*(1.15+up*.18),-h*.45,h*.55,h*.42,h*.32,up%2?hi:sub,.14));
   }
-  return {mesh:P,len:len,h:h,tier:tier,gripX:0,gripY:0};
+  var gripX=ty==="staff"?-len*.24:ty==="drone"?-h*.5:-len*.08;
+  var gripY=ty==="drone"?0:h*.9;
+  var muzzleX=ty==="staff"?len*.725:ty==="drone"?h*2.4:len*(ty==="sniper"?.98:.87);
+  return {mesh:P,len:len,h:h,tier:tier,coreFaces:coreFaces,grip:[gripX,gripY,0],muzzle:[muzzleX,0,0]};
 }
 function w3Project(model,W,H,T){
   var mesh=model.mesh,verts=new Array(mesh.v.length),faces=[];
@@ -7617,7 +7637,21 @@ function w3Project(model,W,H,T){
     var x1=x*co-z*si,z1=x*si+z*co,y1=y*cp-z1*sp;
     return [W*.5+(x1-cx)*scale,H*.5-(y1-cy)*scale];
   }
-  return {v:verts,f:faces,map:mapPoint};
+  var allBB=[1e9,-1e9,1e9,-1e9],coreBB=[1e9,-1e9,1e9,-1e9];
+  var coreFaces=typeof model.coreFaces==="number"?model.coreFaces:mesh.f.length;
+  for(var fi=0;fi<mesh.f.length;fi++){
+    var fp=mesh.f[fi].p;
+    for(var vi=0;vi<fp.length;vi++){
+      var vv=verts[fp[vi]];
+      if(vv[0]<allBB[0])allBB[0]=vv[0];if(vv[0]>allBB[1])allBB[1]=vv[0];
+      if(vv[1]<allBB[2])allBB[2]=vv[1];if(vv[1]>allBB[3])allBB[3]=vv[1];
+      if(fi<coreFaces){
+        if(vv[0]<coreBB[0])coreBB[0]=vv[0];if(vv[0]>coreBB[1])coreBB[1]=vv[0];
+        if(vv[1]<coreBB[2])coreBB[2]=vv[1];if(vv[1]>coreBB[3])coreBB[3]=vv[1];
+      }
+    }
+  }
+  return {v:verts,f:faces,map:mapPoint,unit:scale,coreBB:coreBB,allBB:allBB};
 }
 function w3RenderFrame(ty,skin,L,T,mode,skinId){
   var model=w3WeaponMesh(ty,skin,L,T,skinId),detail=mode!=="game",W=detail?560:340,H=detail?340:210;
@@ -7631,7 +7665,8 @@ function w3RenderFrame(ty,skin,L,T,mode,skinId){
     if(f.a>.8){c.strokeStyle="rgba(3,7,14,.24)";c.lineWidth=.45;c.stroke();}
   }
   c.globalAlpha=1;
-  return {canvas:cv,len:model.len,h:model.h,gripX:model.gripX===undefined?0:model.gripX,gripY:model.gripY===undefined?0:model.gripY};
+  var grip=pr.map(model.grip||[0,0,0]),muzzle=pr.map(model.muzzle||[model.len,0,0]);
+  return {canvas:cv,len:model.len,h:model.h,grip:grip,muzzle:muzzle,unit:pr.unit,coreBB:pr.coreBB,allBB:pr.allBB};
 }
 function w3GetFrame(weaponType,skinId,L,T,mode){
   var skin=SKIN_DEF[skinId]||SKIN_DEF.basicWhite;
@@ -7654,21 +7689,30 @@ function w3GetFrame(weaponType,skinId,L,T,mode){
   if(W3D_CACHE_KEYS.length>W3D_CACHE_MAX){var old=W3D_CACHE_KEYS.shift();delete W3D_CACHE[old];}
   return out;
 }
-function drawWeaponSkin3D(c,weaponType,skinId,level,x,y,scale,flip,animTime,mode){
+function drawWeaponSkin3D(c,weaponType,skinId,level,x,y,scale,flip,animTime,mode,viewW,viewH){
   var sk=SKIN_DEF[skinId]||SKIN_DEF.basicWhite,pal=sk.pal,T=animTime||Date.now()/1000;
   var ty=WEP_TYPES[Math.max(0,Math.min(7,weaponType|0))],L=Math.max(1,Math.min(50,level|0));
   var fr=w3GetFrame(ty,skinId,L,T,mode||"game"),len=fr.len,hh=fr.h;
-  /* 目标屏幕尺寸：枪长按原逻辑，宽按 16:9 帧比例 */
-  var targetW=len*scale*1.6,targetH=targetW*(fr.canvas.height/fr.canvas.width);
-  c.save();c.translate(x,y);if(flip)c.scale(-1,1);
-  /* 帧内原点就是握把，映射到角色持枪挂点；枪口另按模型比例定位 */
   var inGame=mode==="game";
-  var px=inGame?0.5-fr.gripX/len:0.5;
-  var py=inGame?0.5+fr.gripY/(len*1.6):0.5;
-  c.drawImage(fr.canvas,-targetW*px,-targetH*py,targetW,targetH);
+  /* 用投影后的真实单位长度决定显示尺寸，不再把整张离屏帧当枪长 */
+  var projectedLen=Math.abs(fr.muzzle[0]-fr.grip[0])||len*fr.unit;
+  var logicalGunLen=len*1.7;
+  var ratio=logicalGunLen*scale/projectedLen;
+  if(!inGame){
+    var bb=fr.allBB,bw=bb[1]-bb[0],bh=bb[3]-bb[2];
+    ratio=Math.min((viewW||560)*.88/bw,(viewH||340)*.78/bh)*scale;
+  }
+  var targetW=fr.canvas.width*ratio,targetH=fr.canvas.height*ratio;
+  c.save();c.translate(x,y);if(flip)c.scale(-1,1);
+  if(inGame){
+    c.drawImage(fr.canvas,-fr.grip[0]*ratio,-fr.grip[1]*ratio,targetW,targetH);
+  }else{
+    var bc=fr.allBB;
+    c.drawImage(fr.canvas,-(bc[0]+bc[1])*.5*ratio,-(bc[2]+bc[3])*.5*ratio,targetW,targetH);
+  }
   c.restore();
-  var muzzle=len*(ty==="sniper"?1.02:ty==="pistol"?.93:1.0)*scale;
-  return {len:len*scale,hh:hh*scale,muzzleX:muzzle,muzzleY:-fr.gripY*scale,pal:pal,skin:sk,engine:"w3d"};
+  var mdx=(fr.muzzle[0]-fr.grip[0])*ratio,mdy=(fr.muzzle[1]-fr.grip[1])*ratio;
+  return {len:Math.abs(mdx),hh:hh*scale,muzzleX:mdx,muzzleY:mdy,pal:pal,skin:sk,engine:"w3d"};
 }
 
 function drawWeaponSkinLegacy(c, weaponType, skinId, level, x, y, scale, flip, animTime, mode){
@@ -9556,13 +9600,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v10.2");
+    localStorage.setItem("njs_patch","v10.3");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v10.2"){
+    if(seen!=="v10.3"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14221,8 +14265,8 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v10.2</div>
-    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 25 日 12:32</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v10.3</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 25 日 13:44</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
     <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
@@ -14252,6 +14296,13 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-25 13:44:57",items:[
+      "🎯 诸神破晓垂直切片：象牙白圣典匣 / 黑曜下机匣 / 三层圣金浮雕 / 青蓝能量缝",
+      "📐 枪身与皮肤外延分开适配：外延不再把枪身压小，图鉴按实际画布完整显示",
+      "📍 握把、枪口使用投影后的真实锚点，修正整帧缩放和位置漂移",
+      "🧪 禁止旧2D回退实测：图鉴与局内当前皮肤仍真实绘制，0异常",
+      "📋 数量说明：当前为8类基础枪骨架；本轮只完成诸神破晓这一套参考级切片，并非120把独立枪型"
+    ]},
     {time:"2026-10-25 12:32:33",items:[
       "🔫 修复枪皮真正不显示：拼接网格时补齐顶点索引偏移，枪不再碎成小片",
       "🎨 局内已接通当前装备枪皮：3D角色新增真实持枪挂点，drawGun每帧调用当前皮肤",
@@ -14931,7 +14982,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     if(k>2.6)k=2.6;
     ctx.save();
     ctx.translate(cx,cy);
-    try{ drawWeaponSkin(ctx,ty,skinId,lv,0,0,k,false,Date.now()/1000,big?"detail":"thumb"); }catch(e){}
+    try{ drawWeaponSkin(ctx,ty,skinId,lv,0,0,1,false,Date.now()/1000,"detail",big?140:64,big?100:48); }catch(e){}
     ctx.restore();
   }
   /* ===== 图鉴 UI ===== */
@@ -15036,7 +15087,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
         cv.width=110; cv.height=76;
         cv.style.cssText="width:104px;height:72px;margin:0 auto;display:block";
         var c2=cv.getContext("2d");
-        try{ drawWeaponSkin(c2, 1, id, 30, 55, 38, 1.25, false, (i*0.7)+1.2, "detail"); }catch(e){}
+        try{ drawWeaponSkin(c2, 1, id, 30, 55, 38, 1, false, (i*0.7)+1.2, "detail", 110, 76); }catch(e){}
         var nm=document.createElement("div");
         nm.style.cssText="font-size:10px;color:#e8f0ff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
         nm.textContent=sk.name;
@@ -15061,7 +15112,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     cv.width=520; cv.height=300;
     cv.style.cssText="width:100%;max-width:520px;height:auto;display:block;margin:0 auto;border-radius:12px;background:radial-gradient(circle at 50% 50%,rgba(30,40,70,.6),rgba(6,10,20,.95))";
     var c2=cv.getContext("2d");
-    try{ drawWeaponSkin(c2, 1, id, 50, 260, 150, 2.6, false, Date.now()/1000, "detail"); }catch(e){}
+    try{ drawWeaponSkin(c2, 1, id, 50, 260, 150, 1, false, Date.now()/1000, "detail", 520, 300); }catch(e){}
     dt.appendChild(cv);
     var h=document.createElement("div");
     h.style.cssText="text-align:center;margin-top:8px";
@@ -15070,6 +15121,12 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     dt.appendChild(h);
     var info=document.createElement("div");
     info.style.cssText="font-size:11px;color:#a8b8d8;line-height:1.8;margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)";
+    if(id==="dawnGod"){
+      var slice=document.createElement("div");
+      slice.style.cssText="margin-top:8px;padding:8px 10px;border:1px solid rgba(119,232,255,.35);border-radius:10px;color:#aeeeff;font-size:11px;line-height:1.7;background:rgba(30,90,120,.12)";
+      slice.textContent="垂直切片：象牙白圣典匣 / 黑曜下机匣 / 三层圣金浮雕 / 青蓝能量缝";
+      dt.appendChild(slice);
+    }
     var matName={matte:"哑光涂装",lightmetal:"轻金属",brushed:"冷金属拉丝",obsidian:"黑曜石",porcelain:"白瓷半透",crystal:"水晶半透"};
     var shellName={feather:"羽片外骨骼",ice:"冰棱甲片",armor:"重装甲片",plate:"金属贴片",mechplate:"机械板"};
     var exName={wings:"火焰羽翼",icewing:"冰凤凰翼",cape:"焰状披风"};
