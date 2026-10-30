@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.0</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.1</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -197,7 +197,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   </div>
 </div>
 
-<div id="rlPanel" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;z-index:9500;background:rgba(5,8,20,.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box">
+<div id="rlPanel" style="pointer-events:auto;display:none;position:fixed;left:0;top:0;width:100%;height:100%;z-index:9500;background:rgba(5,8,20,.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box">
   <div style="max-width:440px;width:100%;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 16px;box-shadow:0 0 40px rgba(0,242,255,.15)">
     <div id="rlTitle" style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">选择强化</div>
     <div id="rlInfo" style="text-align:center;font-size:11px;color:#5a6f9e;margin-bottom:14px"></div>
@@ -599,7 +599,9 @@ function rlRenderPanel(){
         var card=document.createElement("div");card.className="rlCard";
         var cnt=RL_LEVELS[c.id]||0;
         card.innerHTML='<div class="rlIcon">'+c.icon+'</div><div class="rlName">'+c.name+'</div><div class="rlDesc">'+c.desc+'</div><div class="rlCount">'+cnt+' / '+c.max+'</div>';
-        card.onclick=function(){rlPick(idx);};
+        card.onclick=function(ev){ev.stopPropagation();rlPick(idx);};
+        card.addEventListener('touchend',function(ev){ev.preventDefault();ev.stopPropagation();rlPick(idx);},{passive:false});
+        card.addEventListener('touchstart',function(ev){ev.stopPropagation();},{passive:true});
         box.appendChild(card);
       })(RL_CHOICE[i],i);
     }
@@ -3902,7 +3904,7 @@ p.shootCd=0.13*rlRateMul()*rlRateMul();p.en-=8;p.muzzle=0.09;var spd=680;
 var rd=rageTimer>0?2:1;
 function mk(a,off,col,r,dmg,home){
   var _fx=(p.facing||1);
-  var _mx=p.x+_fx*36,_my=p.y-31+off;
+  var _mx=p.x+_fx*(20+(typeof _gunLenPx==="number"?_gunLenPx:32)),_my=p.y-31+off;
   var _sf=curSkinFx();
   world.bullets.push({pierce:rlPierce(),bounce:rlBounce(),dmg:Math.round(dmg*rd*rlDmgMul()*attrMul("dmg")),x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:Math.round(dmg*rd*rlDmgMul()*attrMul("dmg")),home:home,
     fx:_sf.bullet, trailFx:_sf.trail, fxPal:_sf.pal, lv:gunLevel});
@@ -9761,13 +9763,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v11.0");
+    localStorage.setItem("njs_patch","v11.1");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v11.0"){
+    if(seen!=="v11.1"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14426,7 +14428,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.0</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.1</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 30 日 23:38</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -14457,6 +14459,10 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-30 23:52:00",items:[
+      "👆 修复三选一选项点不动（移动端触摸事件）",
+      "🔫 子弹从真实枪口发射（不再从角色中部出现）"
+    ]},
     {time:"2026-10-30 23:38:20",items:[
       "🎲 玩法全面重构为无尽 Roguelike！",
       "📋 每 300m 弹出三选一升级面板：伤害/射速/移速/生命/金币/分数/穿透/弹射/磁力/复活/狂暴/护盾",
