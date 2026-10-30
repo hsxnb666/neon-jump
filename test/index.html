@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.1</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.2</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -3902,78 +3902,85 @@ var tg=null,md=99999;for(var i=0;i<world.enemies.length;i++){var e=world.enemies
 var ang=0;if(tg)ang=Math.atan2(tg.y-p.y,tg.x-p.x);else ang=p.facing>0?0:Math.PI;
 p.shootCd=0.13*rlRateMul()*rlRateMul();p.en-=8;p.muzzle=0.09;var spd=680;
 var rd=rageTimer>0?2:1;
+var _fx=(p.facing||1);
+var _mx=p.x+_fx*(20+(typeof _gunLenPx=="number"?_gunLenPx:32)),_my=p.y-31;
+var _sf=curSkinFx();
+var bc=_sf.pal.ene||_sf.pal.main||"#00f2ff";  // 子弹颜色来自皮肤
+var bc2=_sf.pal.main||"#00f2ff";
+var bc3=_sf.pal.hi||"#ffffff";
+var ty=(typeof gunType==="number")?gunType:0;
+var L=gunLevel||1;
+var dmgBase=12+L*0.8;  // 基础伤害随等级微增
 function mk(a,off,col,r,dmg,home){
-  var _fx=(p.facing||1);
-  var _mx=p.x+_fx*(20+(typeof _gunLenPx==="number"?_gunLenPx:32)),_my=p.y-31+off;
-  var _sf=curSkinFx();
-  world.bullets.push({pierce:rlPierce(),bounce:rlBounce(),dmg:Math.round(dmg*rd*rlDmgMul()*attrMul("dmg")),x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:Math.round(dmg*rd*rlDmgMul()*attrMul("dmg")),home:home,
-    fx:_sf.bullet, trailFx:_sf.trail, fxPal:_sf.pal, lv:gunLevel});
-  // 枪口喷射粒子（每次开火都喷）
-  spawnMuzzle(_mx,_my,a,col,r>=8?1.8:1.1,gunLevel);
+  world.bullets.push({pierce:rlPierce(),bounce:rlBounce(),dmg:Math.round(dmg*rd*rlDmgMul()*attrMul("dmg")),
+    x:_mx+Math.cos(a)*8,y:_my+off+Math.sin(a)*8,
+    vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
+    r:r,life:2.5,owner:"player",color:col,
+    fx:_sf.bullet||"plain",trailFx:_sf.trail||"none",fxPal:_sf.pal,
+    home:home,lv:L});
 }
-if(gunLevel===1){mk(ang,0,"#00f2ff",5,12,true)}
-else if(gunLevel===2){mk(ang,-5,"#00f2ff",5,12,true);mk(ang,5,"#00f2ff",5,12,true)}
-else if(gunLevel===3){mk(ang,0,"#ffe600",6,16,true);mk(ang-0.18,-6,"#00f2ff",5,12,true);mk(ang+0.18,6,"#00f2ff",5,12,true)}
-else if(gunLevel===4){mk(ang,0,"#ff00aa",7,22,true);mk(ang-0.3,-8,"#00f2ff",5,10,true);mk(ang+0.3,8,"#00f2ff",5,10,true)}
-else if(gunLevel===5){for(var fi=0;fi<4;fi++)mk(ang+(fi-1.5)*0.15,(fi-1.5)*6,"#ff8a5b",7,9,true)}
-else if(gunLevel===6){mk(ang,0,"#7fdcff",6,14,true);mk(ang-0.16,-6,"#7fdcff",6,14,true);mk(ang+0.16,6,"#7fdcff",6,14,true)}
-else if(gunLevel===7){mk(ang,0,"#b026ff",8,45,true);var sn=world.bullets[world.bullets.length-1];sn.pierce=true;sn.vx=Math.cos(ang)*1100;sn.vy=Math.sin(ang)*1100}
-else if(gunLevel===8){for(var qi=0;qi<8;qi++)mk(ang+qi*Math.PI/4,0,qi%2?"#ff00aa":"#ffe600",6,16,true)}
-else if(gunLevel===9){for(var ni=-2;ni<=2;ni++)mk(ang+ni*0.08,ni*5,"#3aff7a",5,11,true);mk(ang,0,"#ffe600",7,20,true)}
-else if(gunLevel===10){for(var si=0;si<6;si++){var sa=ang+Math.sin(Date.now()/100+si)*0.12;mk(sa,(si-2.5)*4,"#00f2ff",5,10,true)}}
-else if(gunLevel===11){mk(ang,0,"#ff2a6d",9,35,true);var sn2=world.bullets[world.bullets.length-1];sn2.pierce=true;sn2.vx=Math.cos(ang)*900;sn2.vy=Math.sin(ang)*900;for(var xi=-1;xi<=1;xi+=2)mk(ang+xi*0.5,0,"#ff8a5b",5,8,true)}
-else if(gunLevel===12){
-  // Lv12 棱镜炮：3发蓝青主弹 + 2发侧翼，全部穿透（参考Lv11强度，绝不用Lv50弹幕）
-  mk(ang,0,"#00f2ff",7,22,true);
-  var _sn12=world.bullets[world.bullets.length-1];
-  _sn12.pierce=true;_sn12.vx=Math.cos(ang)*820;_sn12.vy=Math.sin(ang)*820;
-  mk(ang-0.13,-3,"#7fdcff",5,14,true);
-  mk(ang+0.13,3,"#7fdcff",5,14,true);
-  for(var _i12=-1;_i12<=1;_i12+=2){
-    mk(ang+_i12*0.34,0,"#b026ff",4,9,false);
-  }
+// 弹道由枪型决定，颜色由皮肤决定
+if(ty===0){
+  // 手枪：单发精准
+  mk(ang,0,bc,5,dmgBase,true);
+}else if(ty===1){
+  // 步枪：三连发
+  mk(ang,-4,bc,5,dmgBase*0.7,true);
+  mk(ang,0,bc,5,dmgBase*0.7,true);
+  mk(ang,4,bc,5,dmgBase*0.7,true);
+}else if(ty===2){
+  // 狙击：单发穿透高速大伤害
+  mk(ang,0,bc3,8,dmgBase*2.5,true);
+  var sn=world.bullets[world.bullets.length-1];
+  sn.pierce=(sn.pierce||0)+3;sn.vx=Math.cos(ang)*1100;sn.vy=Math.sin(ang)*1100;
+}else if(ty===3){
+  // 霰弹：扇形散射
+  for(var si=-3;si<=3;si++)mk(ang+si*0.09,si*4,bc2,5,dmgBase*0.5,false);
+}else if(ty===4){
+  // 加特林：快速散射多发
+  for(var gi=-2;gi<=2;gi++)mk(ang+gi*0.05+Math.random()*0.08,gi*3,bc,5,dmgBase*0.6,true);
+}else if(ty===5){
+  // 法杖：能量球 + 两侧弧弹
+  mk(ang,0,bc,9,dmgBase*1.8,true);
+  for(var si2=-1;si2<=1;si2+=2)mk(ang+si2*0.5,0,bc2,5,dmgBase*0.5,false);
+}else if(ty===6){
+  // 巨炮：单发大弹高伤
+  mk(ang,0,bc,10,dmgBase*3,true);
+  var cn=world.bullets[world.bullets.length-1];
+  cn.vx=Math.cos(ang)*480;cn.vy=Math.sin(ang)*480;
+}else if(ty===7){
+  // 浮游：环绕弹幕
+  for(var di=0;di<6;di++)mk(ang+di*Math.PI/3,0,di%2?bc:bc2,5,dmgBase*0.6,true);
 }
-else if(gunLevel===13){for(var i=0;i<6;i++){mk(ang+(i-2.5)*0.1,(i-2.5)*5,"#ff2a6d",5,12,true)}mk(ang,0,"#ffe600",8,28,true);var sn13=world.bullets[world.bullets.length-1];sn13.pierce=true;sn13.vx=Math.cos(ang)*950;sn13.vy=Math.sin(ang)*950}
-else if(gunLevel===14){for(var i=0;i<10;i++)mk(ang+i*Math.PI/5,0,i%2?"#7fdcff":"#ff2a6d",6,15,true);for(var i=0;i<4;i++)mk(ang+(i-1.5)*0.25,(i-1.5)*8,"#ffe600",5,10,false)}
-else if(gunLevel===15){for(var i=0;i<8;i++){mk(ang+(i-3.5)*0.12,(i-3.5)*5,"#ff8a5b",5,11,true)}for(var i=0;i<3;i++)mk(ang+Date.now()/400+i*2.1,0,"#ffe600",7,22,true)}
-else if(gunLevel===16){for(var i=0;i<14;i++)mk(ang+i*Math.PI/7+Date.now()/200,0,i%3===0?"#b026ff":i%3===1?"#7fdcff":"#ff2a6d",6,14,true)}
-else if(gunLevel===17){mk(ang,0,"#00f2ff",10,55,false);var sn17=world.bullets[world.bullets.length-1];sn17.pierce=true;sn17.vx=Math.cos(ang)*1300;sn17.vy=Math.sin(ang)*1300;for(var i=-2;i<=2;i++)mk(ang+i*0.3,0,"#ffe600",5,12,false)}
-else if(gunLevel===18){for(var i=0;i<16;i++)mk(ang+i*Math.PI/8,0,i%2?"#ffe600":"#ff2a6d",6,15,true);for(var i=0;i<3;i++){mk(ang+i*2.1,0,"#b026ff",8,30,true);var sn18=world.bullets[world.bullets.length-1];sn18.pierce=true}}
-else if(gunLevel===19){for(var i=0;i<8;i++)mk(ang+(i-3.5)*0.1,(i-3.5)*5,"#3aff7a",5,12,true);mk(ang,0,"#ff2a6d",9,40,false);var sn19=world.bullets[world.bullets.length-1];sn19.pierce=true;sn19.vx=Math.cos(ang)*1000;sn19.vy=Math.sin(ang)*1000;for(var i=-1;i<=1;i+=2)mk(ang+i*1.57,0,"#ffe600",6,16,true)}
-else if(gunLevel===20){for(var i=0;i<20;i++)mk(ang+i*Math.PI/10+Date.now()/150,0,i%4===0?"#ffe600":i%4===1?"#ff00aa":i%4===2?"#7fdcff":"#3aff7a",7,16,true)}
-else if(gunLevel===21){mk(ang,0,"#fff",11,50,true);var sn21=world.bullets[world.bullets.length-1];sn21.pierce=true;var sp21=1400;sn21.vx=Math.cos(ang)*sp21;sn21.vy=Math.sin(ang)*sp21;for(var i=0;i<6;i++)mk(ang+(i-2.5)*0.15,(i-2.5)*5,"#ff2a6d",5,12,false);for(var i=0;i<8;i++)mk(ang+i*Math.PI/4,0,"#ffe600",5,10,true)}
-else if(gunLevel===22){for(var i=0;i<22;i++)mk(ang+i*Math.PI/11,0,i%2?"#00f2ff":"#ff00aa",6,16,true);for(var i=0;i<2;i++){mk(ang+i*Math.PI,0,"#ffe600",9,35,true);var sn22=world.bullets[world.bullets.length-1];sn22.pierce=true;sn22.vx=Math.cos(ang+i*Math.PI)*1100;sn22.vy=Math.sin(ang+i*Math.PI)*1100}}
-else if(gunLevel===23){for(var i=0;i<16;i++)mk(ang+(i-7.5)*0.08,(i-7.5)*3,"#b026ff",5,13,true);for(var i=0;i<12;i++)mk(ang+i*Math.PI/6+Date.now()/250,0,i%3===0?"#ffe600":i%3===1?"#3aff7a":"#ff8a5b",7,20,true);for(var i=-1;i<=1;i+=2)mk(ang+i*0.3,0,"#fff",8,25,true)}
-else if(gunLevel===24){for(var i=0;i<5;i++){mk(ang+i*1.26,0,"#ff2a6d",8,30,true);var sn24=world.bullets[world.bullets.length-1];sn24.pierce=true}for(var i=0;i<10;i++)mk(ang+i*Math.PI/5,0,"#00f2ff",5,12,true);for(var i=-3;i<=3;i++)mk(ang+i*0.08,(i)*6,"#ffe600",5,10,false)}
-else if(gunLevel===25){for(var i=0;i<3;i++){mk(ang+i*2.094,0,"#ffe600",9,45,true);var sn25=world.bullets[world.bullets.length-1];sn25.pierce=true}for(var i=0;i<24;i++)mk(ang+i*Math.PI/12+Date.now()/120,0,i%3===0?"#ffe600":i%3===1?"#ff2a6d":"#00f2ff",7,18,true);for(var i=-3;i<=3;i++)mk(ang+i*0.12,(i)*6,"#ff8a5b",5,11,false)}
-else if(gunLevel===26){for(var i=0;i<28;i++)mk(ang+i*Math.PI/14+Date.now()/100,0,i%4===0?"#ffe600":i%4===1?"#ff00aa":i%4===2?"#7fdcff":"#b026ff",7,19,true);for(var i=0;i<3;i++){mk(ang+i*2.094,0,"#fff",10,50,true);var sn26=world.bullets[world.bullets.length-1];sn26.pierce=true}for(var i=-3;i<=3;i++)mk(ang+i*0.15,(i)*6,"#3aff7a",5,12,false)}
-else if(gunLevel===27){for(var i=0;i<6;i++){mk(ang+i*1.047,0,"#ff2a6d",8,35,true);var sn27=world.bullets[world.bullets.length-1];sn27.pierce=true}for(var i=0;i<30;i++)mk(ang+i*Math.PI/15+Date.now()/80,0,i%3===0?"#ffe600":i%3===1?"#ff00aa":"#7fdcff",7,20,true);for(var i=-5;i<=5;i++)mk(ang+i*0.06,(i)*4,"#00f2ff",5,10,false)}
-else if(gunLevel===28){for(var i=0;i<4;i++){mk(ang+i*1.571,0,"#ffe600",10,45,true);var sn28=world.bullets[world.bullets.length-1];sn28.pierce=true}for(var i=0;i<32;i++)mk(ang+i*Math.PI/16+Date.now()/60,0,i%4===0?"#ffe600":i%4===1?"#ff00aa":i%4===2?"#7fdcff":"#3aff7a",8,22,true);for(var i=-4;i<=4;i++)mk(ang+i*0.1,(i)*5,"#ff8a5b",5,12,false)}
-else if(gunLevel===29){for(var i=0;i<8;i++){mk(ang+i*0.785,0,i%2?"#ff00aa":"#ffe600",9,40,true);var sn29=world.bullets[world.bullets.length-1];sn29.pierce=true}for(var i=0;i<36;i++)mk(ang+i*Math.PI/18+Date.now()/50,0,i%3===0?"#ffe600":i%3===1?"#ff2a6d":"#00f2ff",8,24,true);for(var i=-6;i<=6;i++)mk(ang+i*0.05,(i)*3,"#b026ff",5,11,false);mk(ang,0,"#fff",12,60,true);var sn29b=world.bullets[world.bullets.length-1];sn29b.pierce=true;sn29b.vx=Math.cos(ang)*1700;sn29b.vy=Math.sin(ang)*1700}
-else if(gunLevel===30){for(var i=0;i<40;i++)mk(ang+i*Math.PI/20+Date.now()/40,0,i%5===0?"#ffe600":i%5===1?"#ff00aa":i%5===2?"#7fdcff":i%5===3?"#3aff7a":"#b026ff",8,30,true);for(var i=0;i<5;i++){mk(ang+i*1.2566,0,"#fff",11,55,true);var sn30=world.bullets[world.bullets.length-1];sn30.pierce=true}for(var i=-8;i<=8;i++)mk(ang+i*0.04,(i)*2.5,"#ff8a5b",5,12,false)}
-else if(gunLevel===31){for(var i=0;i<6;i++){mk(ang+i*1.047,0,i%2?"#ff00aa":"#00f2ff",9,42,true);var sn31=world.bullets[world.bullets.length-1];sn31.pierce=true}for(var i=0;i<42;i++)mk(ang+i*Math.PI/21+Date.now()/35,0,i%6===0?"#ffe600":i%6===1?"#ff00aa":i%6===2?"#7fdcff":i%6===3?"#3aff7a":i%6===4?"#b026ff":"#ff8a5b",8,28,true);for(var i=-7;i<=7;i++)mk(ang+i*0.04,(i)*3,"#ff2a6d",5,11,false)}
-else if(gunLevel===32){mk(ang,0,"#fff",12,65,true);var sn32=world.bullets[world.bullets.length-1];sn32.pierce=true;sn32.vx=Math.cos(ang)*1800;sn32.vy=Math.sin(ang)*1800;for(var i=0;i<8;i++){mk(ang+i*0.785,0,i%2?"#ffe600":"#b026ff",9,40,true);var sn32b=world.bullets[world.bullets.length-1];sn32b.pierce=true}for(var i=0;i<44;i++)mk(ang+i*Math.PI/22+Date.now()/30,0,i%5===0?"#ffe600":i%5===1?"#ff00aa":i%5===2?"#7fdcff":i%5===3?"#3aff7a":"#b026ff",8,29,true)}
-else if(gunLevel===33){for(var i=0;i<4;i++){mk(ang+i*1.571,0,"#fff",10,50,true);var sn33=world.bullets[world.bullets.length-1];sn33.pierce=true}for(var i=0;i<6;i++){mk(ang+i*1.047,0,i%2?"#ff00aa":"#7fdcff",9,38,true);var sn33b=world.bullets[world.bullets.length-1];sn33b.pierce=true}for(var i=0;i<46;i++)mk(ang+i*Math.PI/23+Date.now()/25,0,i%7===0?"#ffe600":i%7===1?"#ff00aa":i%7===2?"#7fdcff":i%7===3?"#3aff7a":i%7===4?"#b026ff":i%7===5?"#ff8a5b":"#00ff88",8,30,true)}
-else if(gunLevel===34){for(var i=0;i<10;i++){mk(ang+i*0.628,0,i%2?"#ffe600":"#ff00aa",9,45,true);var sn34=world.bullets[world.bullets.length-1];sn34.pierce=true}for(var i=0;i<48;i++)mk(ang+i*Math.PI/24+Date.now()/20,0,i%6===0?"#ffe600":i%6===1?"#ff00aa":i%6===2?"#7fdcff":i%6===3?"#3aff7a":i%6===4?"#b026ff":"#7c3aed",8,31,true);for(var i=-10;i<=10;i++)mk(ang+i*0.03,(i)*2,"#ff8a5b",5,13,false)}
-else if(gunLevel===35){mk(ang,0,"#fff",13,70,true);var sn35=world.bullets[world.bullets.length-1];sn35.pierce=true;sn35.vx=Math.cos(ang)*2000;sn35.vy=Math.sin(ang)*2000;for(var i=0;i<6;i++){mk(ang+i*1.047,0,i%2?"#ffe600":"#b026ff",10,48,true);var sn35b=world.bullets[world.bullets.length-1];sn35b.pierce=true}for(var i=0;i<50;i++)mk(ang+i*Math.PI/25+Date.now()/18,0,i%7===0?"#ffe600":i%7===1?"#ff00aa":i%7===2?"#7fdcff":i%7===3?"#3aff7a":i%7===4?"#b026ff":i%7===5?"#ff8a5b":"#00ff88",9,32,true);for(var i=-8;i<=8;i++)mk(ang+i*0.04,(i)*2.5,"#7fdcff",5,12,false)}
-else if(gunLevel===36){for(var i=0;i<12;i++){mk(ang+i*0.524,0,i%3===0?"#ffe600":i%3===1?"#ff00aa":"#7fdcff",9,42,true);var sn36=world.bullets[world.bullets.length-1];sn36.pierce=true}for(var i=0;i<52;i++)mk(ang+i*Math.PI/26+Date.now()/15,0,i%8===0?"#ffe600":i%8===1?"#ff00aa":i%8===2?"#7fdcff":i%8===3?"#3aff7a":i%8===4?"#b026ff":i%8===5?"#ff8a5b":i%8===6?"#00ff88":"#7c3aed",9,33,true)}
-else if(gunLevel===37){mk(ang,0,"#fff",14,75,true);var sn37=world.bullets[world.bullets.length-1];sn37.pierce=true;sn37.vx=Math.cos(ang)*2200;sn37.vy=Math.sin(ang)*2200;for(var i=0;i<8;i++){mk(ang+i*0.785,0,i%2?"#b026ff":"#ff00aa",10,45,true);var sn37b=world.bullets[world.bullets.length-1];sn37b.pierce=true}for(var i=0;i<54;i++)mk(ang+i*Math.PI/27+Date.now()/12,0,i%9===0?"#ffe600":i%9===1?"#ff00aa":i%9===2?"#7fdcff":i%9===3?"#3aff7a":i%9===4?"#b026ff":i%9===5?"#ff8a5b":i%9===6?"#00ff88":i%9===7?"#7c3aed":"#ff2a6d",9,34,true);for(var i=-10;i<=10;i++)mk(ang+i*0.03,(i)*2,"#3aff7a",5,13,false)}
-else if(gunLevel===38){for(var i=0;i<6;i++){mk(ang+i*1.047,0,"#fff",11,55,true);var sn38=world.bullets[world.bullets.length-1];sn38.pierce=true}for(var i=0;i<12;i++){mk(ang+i*0.524,0,i%2?"#ffe600":"#ff00aa",9,40,true);var sn38b=world.bullets[world.bullets.length-1];sn38b.pierce=true}for(var i=0;i<56;i++)mk(ang+i*Math.PI/28+Date.now()/10,0,i%7===0?"#ffe600":i%7===1?"#ff00aa":i%7===2?"#7fdcff":i%7===3?"#3aff7a":i%7===4?"#b026ff":i%7===5?"#ff8a5b":"#00ff88",10,35,true)}
-else if(gunLevel===39){for(var i=0;i<4;i++){mk(ang+i*1.571,0,"#fff",12,60,true);var sn39=world.bullets[world.bullets.length-1];sn39.pierce=true}for(var i=0;i<10;i++){mk(ang+i*0.628,0,i%2?"#b026ff":"#7fdcff",10,48,true);var sn39b=world.bullets[world.bullets.length-1];sn39b.pierce=true}for(var i=0;i<58;i++)mk(ang+i*Math.PI/29+Date.now()/8,0,i%9===0?"#ffe600":i%9===1?"#ff00aa":i%9===2?"#7fdcff":i%9===3?"#3aff7a":i%9===4?"#b026ff":i%9===5?"#ff8a5b":i%9===6?"#00ff88":i%9===7?"#7c3aed":"#ff2a6d",10,36,true);for(var i=-12;i<=12;i++)mk(ang+i*0.025,(i)*1.5,"#ff8a5b",5,14,false)}
-else if(gunLevel===40){mk(ang,0,"#fff",15,80,true);var sn40=world.bullets[world.bullets.length-1];sn40.pierce=true;sn40.vx=Math.cos(ang)*2500;sn40.vy=Math.sin(ang)*2500;for(var i=0;i<6;i++){mk(ang+i*1.047,0,"#fff",11,55,true);var sn40b=world.bullets[world.bullets.length-1];sn40b.pierce=true}for(var i=0;i<60;i++)mk(ang+i*Math.PI/30+Date.now()/6,0,i%10===0?"#ffe600":i%10===1?"#ff00aa":i%10===2?"#7fdcff":i%10===3?"#3aff7a":i%10===4?"#b026ff":i%10===5?"#ff8a5b":i%10===6?"#00ff88":i%10===7?"#7c3aed":i%10===8?"#ff2a6d":"#fff",10,38,true);for(var i=-10;i<=10;i++)mk(ang+i*0.03,(i)*2.5,"#b026ff",5,15,false)}
-else if(gunLevel===41){for(var i=0;i<8;i++){mk(ang+i*0.785,0,"#fff",11,58,true);var sn41=world.bullets[world.bullets.length-1];sn41.pierce=true}for(var i=0;i<62;i++)mk(ang+i*Math.PI/31+Date.now()/5,0,i%7===0?"#ffe600":i%7===1?"#ff00aa":i%7===2?"#7fdcff":i%7===3?"#3aff7a":i%7===4?"#b026ff":i%7===5?"#ff8a5b":"#00ff88",10,39,true)}
-else if(gunLevel===42){mk(ang,0,"#fff",16,85,true);var sn42=world.bullets[world.bullets.length-1];sn42.pierce=true;sn42.vx=Math.cos(ang)*2800;sn42.vy=Math.sin(ang)*2800;for(var i=0;i<8;i++){mk(ang+i*0.785,0,i%2?"#ffe600":"#ff00aa",10,50,true);var sn42b=world.bullets[world.bullets.length-1];sn42b.pierce=true}for(var i=0;i<64;i++)mk(ang+i*Math.PI/32+Date.now()/4,0,i%8===0?"#ffe600":i%8===1?"#ff00aa":i%8===2?"#7fdcff":i%8===3?"#3aff7a":i%8===4?"#b026ff":i%8===5?"#ff8a5b":i%8===6?"#00ff88":"#7c3aed",10,40,true);for(var i=-14;i<=14;i++)mk(ang+i*0.02,(i)*1.2,"#3aff7a",5,16,false)}
-else if(gunLevel===43){for(var i=0;i<10;i++){mk(ang+i*0.628,0,"#fff",12,62,true);var sn43=world.bullets[world.bullets.length-1];sn43.pierce=true}for(var i=0;i<66;i++)mk(ang+i*Math.PI/33+Date.now()/3,0,i%9===0?"#ffe600":i%9===1?"#ff00aa":i%9===2?"#7fdcff":i%9===3?"#3aff7a":i%9===4?"#b026ff":i%9===5?"#ff8a5b":i%9===6?"#00ff88":i%9===7?"#7c3aed":"#ff2a6d",10,41,true)}
-else if(gunLevel===44){mk(ang,0,"#fff",17,90,true);var sn44=world.bullets[world.bullets.length-1];sn44.pierce=true;sn44.vx=Math.cos(ang)*3000;sn44.vy=Math.sin(ang)*3000;for(var i=0;i<12;i++){mk(ang+i*0.524,0,i%2?"#ffe600":"#b026ff",10,48,true);var sn44b=world.bullets[world.bullets.length-1];sn44b.pierce=true}for(var i=0;i<68;i++)mk(ang+i*Math.PI/34+Date.now()/2.5,0,i%10===0?"#ffe600":i%10===1?"#ff00aa":i%10===2?"#7fdcff":i%10===3?"#3aff7a":i%10===4?"#b026ff":i%10===5?"#ff8a5b":i%10===6?"#00ff88":i%10===7?"#7c3aed":i%10===8?"#ff2a6d":"#fff",11,42,true);for(var i=-15;i<=15;i++)mk(ang+i*0.018,(i)*1,"#7fdcff",5,17,false)}
-else if(gunLevel===45){for(var i=0;i<6;i++){mk(ang+i*1.047,0,"#fff",13,68,true);var sn45=world.bullets[world.bullets.length-1];sn45.pierce=true}for(var i=0;i<70;i++)mk(ang+i*Math.PI/35+Date.now()/2,0,i%7===0?"#ffe600":i%7===1?"#ff00aa":i%7===2?"#7fdcff":i%7===3?"#3aff7a":i%7===4?"#b026ff":i%7===5?"#ff8a5b":"#00ff88",11,43,true)}
-else if(gunLevel===46){mk(ang,0,"#fff",18,95,true);var sn46=world.bullets[world.bullets.length-1];sn46.pierce=true;sn46.vx=Math.cos(ang)*3200;sn46.vy=Math.sin(ang)*3200;for(var i=0;i<8;i++){mk(ang+i*0.785,0,i%2?"#ffe600":"#ff00aa",11,52,true);var sn46b=world.bullets[world.bullets.length-1];sn46b.pierce=true}for(var i=0;i<72;i++)mk(ang+i*Math.PI/36+Date.now()/1.5,0,i%8===0?"#ffe600":i%8===1?"#ff00aa":i%8===2?"#7fdcff":i%8===3?"#3aff7a":i%8===4?"#b026ff":i%8===5?"#ff8a5b":i%8===6?"#00ff88":"#7c3aed",11,44,true);for(var i=-16;i<=16;i++)mk(ang+i*0.015,(i)*0.8,"#b026ff",5,18,false)}
-else if(gunLevel===47){for(var i=0;i<10;i++){mk(ang+i*0.628,0,"#fff",13,72,true);var sn47=world.bullets[world.bullets.length-1];sn47.pierce=true}for(var i=0;i<74;i++)mk(ang+i*Math.PI/37+Date.now(),0,i%9===0?"#ffe600":i%9===1?"#ff00aa":i%9===2?"#7fdcff":i%9===3?"#3aff7a":i%9===4?"#b026ff":i%9===5?"#ff8a5b":i%9===6?"#00ff88":i%9===7?"#7c3aed":"#ff2a6d",11,45,true)}
-else if(gunLevel===48){mk(ang,0,"#fff",19,100,true);var sn48=world.bullets[world.bullets.length-1];sn48.pierce=true;sn48.vx=Math.cos(ang)*3500;sn48.vy=Math.sin(ang)*3500;for(var i=0;i<12;i++){mk(ang+i*0.524,0,i%2?"#ffe600":"#b026ff",11,55,true);var sn48b=world.bullets[world.bullets.length-1];sn48b.pierce=true}for(var i=0;i<76;i++)mk(ang+i*Math.PI/38+Date.now(),0,i%10===0?"#ffe600":i%10===1?"#ff00aa":i%10===2?"#7fdcff":i%10===3?"#3aff7a":i%10===4?"#b026ff":i%10===5?"#ff8a5b":i%10===6?"#00ff88":i%10===7?"#7c3aed":i%10===8?"#ff2a6d":"#fff",12,46,true);for(var i=-18;i<=18;i++)mk(ang+i*0.012,(i)*0.5,"#3aff7a",5,20,false)}
-else if(gunLevel===49){for(var i=0;i<8;i++){mk(ang+i*0.785,0,"#fff",14,80,true);var sn49=world.bullets[world.bullets.length-1];sn49.pierce=true}for(var i=0;i<12;i++){mk(ang+i*0.524,0,i%2?"#ffe600":"#ff00aa",11,58,true);var sn49b=world.bullets[world.bullets.length-1];sn49b.pierce=true}for(var i=0;i<78;i++)mk(ang+i*Math.PI/39+Date.now(),0,i%10===0?"#ffe600":i%10===1?"#ff00aa":i%10===2?"#7fdcff":i%10===3?"#3aff7a":i%10===4?"#b026ff":i%10===5?"#ff8a5b":i%10===6?"#00ff88":i%10===7?"#7c3aed":i%10===8?"#ff2a6d":"#fff",12,48,true)}
-else{mk(ang,0,"#fff",20,120,true);var sn50=world.bullets[world.bullets.length-1];sn50.pierce=true;sn50.vx=Math.cos(ang)*4000;sn50.vy=Math.sin(ang)*4000;for(var i=0;i<10;i++){mk(ang+i*0.628,0,"#fff",14,85,true);var sn50b=world.bullets[world.bullets.length-1];sn50b.pierce=true}for(var i=0;i<12;i++){mk(ang+i*0.524,0,i%2?"#ffe600":"#ff00aa",12,60,true);var sn50c=world.bullets[world.bullets.length-1];sn50c.pierce=true}for(var i=0;i<80;i++)mk(ang+i*Math.PI/40+Date.now(),0,i%10===0?"#ffe600":i%10===1?"#ff00aa":i%10===2?"#7fdcff":i%10===3?"#3aff7a":i%10===4?"#b026ff":i%10===5?"#ff8a5b":i%10===6?"#00ff88":i%10===7?"#7c3aed":i%10===8?"#ff2a6d":"#fff",12,55,true);for(var i=-20;i<=20;i++)mk(ang+i*0.01,(i)*0.4,"#fff",6,25,false)}
+// 等级加成：每10级多射一组
+var tier=Math.floor(L/10);
+if(tier>=1){
+  // T1+：额外两侧弹
+  mk(ang-0.25,-8,bc2,4,dmgBase*0.4,false);
+  mk(ang+0.25,8,bc2,4,dmgBase*0.4,false);
+}
+if(tier>=2){
+  // T2+：额外追踪弹
+  mk(ang+0.5,0,bc3,5,dmgBase*0.8,true);
+  mk(ang-0.5,0,bc3,5,dmgBase*0.8,true);
+}
+if(tier>=3){
+  // T3+：穿透主弹
+  mk(ang,0,bc3,7,dmgBase*1.5,true);
+  var pn=world.bullets[world.bullets.length-1];
+  pn.pierce=(pn.pierce||0)+5;pn.vx=Math.cos(ang)*900;pn.vy=Math.sin(ang)*900;
+}
+if(tier>=4){
+  // T4 神话：全向弹幕
+  for(var fi=0;fi<8;fi++)mk(ang+fi*Math.PI/4,0,fi%2?bc3:bc,5,dmgBase*0.5,true);
+}
+// 狂暴模式：额外弹幕
+if(rageTimer>0){
+  for(var ri=-2;ri<=2;ri++)mk(ang+ri*0.2,ri*5,bc3,6,dmgBase*0.6,true);
+}
 sShoot();if(gunLevel>=3)sfx(600+gunLevel*100,"square",0.05,0.03,200);
-spawnParticles(p.x+Math.cos(ang)*32,p.y+Math.sin(ang)*14,3,"#00f2ff",35)}
-
+spawnParticles(p.x+Math.cos(ang)*32,p.y+Math.sin(ang)*14,3,"#00f2ff",35)
+}
 /* 武器模型 */
 
 
@@ -9763,13 +9770,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v11.1");
+    localStorage.setItem("njs_patch","v11.2");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v11.1"){
+    if(seen!=="v11.2"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14428,7 +14435,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.1</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.2</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 30 日 23:38</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -14459,6 +14466,14 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-31 00:15:00",items:[
+      "🔫 弹道全面重构：8种枪型各自独立弹道模式",
+      "手枪=单发精准 / 步枪=三连发 / 狙击=穿透高速 / 霰弹=扇形散射",
+      "加特林=快速散射 / 法杖=能量球+弧弹 / 巨炮=大弹高伤 / 浮游=环绕弹幕",
+      "🎨 子弹颜色和特效由当前枪皮决定（不再全蓝）",
+      "📈 每10级额外加弹（T1两侧/T2追踪/T3穿透/T4全向弹幕）",
+      "💢 狂暴模式额外弹幕"
+    ]},
     {time:"2026-10-30 23:52:00",items:[
       "👆 修复三选一选项点不动（移动端触摸事件）",
       "🔫 子弹从真实枪口发射（不再从角色中部出现）"
