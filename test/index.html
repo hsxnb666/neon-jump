@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v10.5</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.0</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -196,6 +196,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <div class="feat f6"><i>🏆</i><div><b>本机排行</b><s>挑战最高分</s></div></div>
   </div>
 </div>
+
+<div id="rlPanel" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;z-index:9500;background:rgba(5,8,20,.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box">
+  <div style="max-width:440px;width:100%;background:linear-gradient(160deg,#141a36,#0d1126);border:1px solid rgba(0,242,255,.35);border-radius:16px;padding:20px 16px;box-shadow:0 0 40px rgba(0,242,255,.15)">
+    <div id="rlTitle" style="text-align:center;font-size:17px;font-weight:700;color:#00f2ff;letter-spacing:2px;margin-bottom:4px">选择强化</div>
+    <div id="rlInfo" style="text-align:center;font-size:11px;color:#5a6f9e;margin-bottom:14px"></div>
+    <div id="rlChoices" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+<style>
+.rlCard{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(0,242,255,.25);cursor:pointer;transition:all .15s}
+.rlCard:active{transform:scale(.97);background:rgba(0,242,255,.12);border-color:#00f2ff}
+.rlIcon{font-size:28px;line-height:1;flex-shrink:0}
+.rlName{font-size:14px;font-weight:700;color:#e8f0ff}
+.rlDesc{font-size:11px;color:#8fb8d8;margin-top:2px}
+.rlCount{font-size:10px;color:#5a6f9e;margin-left:auto;flex-shrink:0}
+</style>
 
 <div id="overScreen" class="panel hidden">
   <div class="logo neon-title" id="overTitle"></div>
@@ -530,13 +546,97 @@ var revives=3,rageTimer=0,coinCount=0;
 var skillCd=0,SK_CD=12,combo=0,comboT=0,gunLevel=1,gunType=0;
 var smartMode=false;
 
+
+/* ============================================================
+   ROGUELIKE 升级系统
+   每 300m 触发三选一，局内暂停；12种升级选项
+   ============================================================ */
+var RL_LEVELS={dmg:0,rate:0,spd:0,hp:0,coin:0,mult:0};
+var RL_NEXT_TRIGGER=300;
+var RL_CHOICE=null;
+var RL_KILLS=0;
+var RL_UPGRADES_TAKEN=0;
+var RL_POOL=[
+  {id:"dmg",name:"伤害强化",desc:"子弹伤害 +25%",icon:"⚔️",max:8,apply:function(){RL_LEVELS.dmg++;}},
+  {id:"rate",name:"射速提升",desc:"射击间隔 -15%",icon:"🔥",max:6,apply:function(){RL_LEVELS.rate++;}},
+  {id:"spd",name:"移速强化",desc:"移动速度 +15%",icon:"🏃",max:5,apply:function(){RL_LEVELS.spd++;}},
+  {id:"hp",name:"生命强化",desc:"最大生命 +30 并回满",icon:"❤️",max:6,apply:function(){RL_LEVELS.hp++;player.maxHp+=30;player.hp=player.maxHp;}},
+  {id:"coin",name:"金币加成",desc:"金币掉落 +50%",icon:"🪙",max:5,apply:function(){RL_LEVELS.coin++;}},
+  {id:"mult",name:"分数倍率",desc:"得分 x1.2",icon:"⭐",max:5,apply:function(){RL_LEVELS.mult++;}},
+  {id:"pierce",name:"穿透弹",desc:"子弹穿透 1 个敌人",icon:"🔱",max:2,apply:function(){RL_LEVELS.pierce=(RL_LEVELS.pierce||0)+1;}},
+  {id:"bounce",name:"弹射弹",desc:"子弹弹射 +1 次",icon:"🌀",max:3,apply:function(){RL_LEVELS.bounce=(RL_LEVELS.bounce||0)+1;}},
+  {id:"magnet",name:"磁力增强",desc:"金币吸取范围 +80px",icon:"🧲",max:3,apply:function(){RL_LEVELS.magnet=(RL_LEVELS.magnet||0)+1;}},
+  {id:"revive",name:"额外复活",desc:"复活次数 +1",icon:"💫",max:2,apply:function(){RL_LEVELS.revive=(RL_LEVELS.revive||0)+1;revives++;}},
+  {id:"rage",name:"狂暴延长",desc:"狂暴时间 +3s",icon:"💢",max:3,apply:function(){RL_LEVELS.rage=(RL_LEVELS.rage||0)+1;}},
+  {id:"shield",name:"护盾延长",desc:"护盾时间 +2s",icon:"🛡️",max:3,apply:function(){RL_LEVELS.shield=(RL_LEVELS.shield||0)+1;}},
+];
+function rlRollChoices(){
+  var avail=RL_POOL.filter(function(e){return (RL_LEVELS[e.id]||0)<e.max;});
+  if(avail.length<3)return avail.slice();
+  var pick=[],used={};
+  while(pick.length<3&&avail.length>0){
+    var idx=Math.floor(Math.random()*avail.length);
+    var e=avail[idx];if(!used[e.id]){used[e.id]=1;pick.push(e);}
+    avail.splice(idx,1);
+  }
+  return pick;
+}
+function rlTrigger(){
+  RL_CHOICE=rlRollChoices();
+  if(!RL_CHOICE||RL_CHOICE.length===0)return;
+  gameState="rlchoice";timeScale=0;rlRenderPanel();
+}
+function rlRenderPanel(){
+  var panel=document.getElementById("rlPanel");if(!panel)return;
+  var box=document.getElementById("rlChoices");if(box)box.innerHTML="";
+  var title=document.getElementById("rlTitle");
+  if(title)title.textContent="选择强化 · 第"+(RL_UPGRADES_TAKEN+1)+"次";
+  var info=document.getElementById("rlInfo");
+  if(info)info.textContent="距离 "+Math.floor(distance)+"m · 击杀 "+RL_KILLS+" · 武器 Lv"+gunLevel;
+  if(box){
+    for(var i=0;i<RL_CHOICE.length;i++){
+      (function(c,idx){
+        var card=document.createElement("div");card.className="rlCard";
+        var cnt=RL_LEVELS[c.id]||0;
+        card.innerHTML='<div class="rlIcon">'+c.icon+'</div><div class="rlName">'+c.name+'</div><div class="rlDesc">'+c.desc+'</div><div class="rlCount">'+cnt+' / '+c.max+'</div>';
+        card.onclick=function(){rlPick(idx);};
+        box.appendChild(card);
+      })(RL_CHOICE[i],i);
+    }
+  }
+  panel.style.display="flex";
+}
+function rlPick(idx){
+  var c=RL_CHOICE[idx];if(!c)return;
+  c.apply();RL_UPGRADES_TAKEN++;RL_CHOICE=null;
+  var panel=document.getElementById("rlPanel");if(panel)panel.style.display="none";
+  gameState="playing";timeScale=1;
+  showToast(c.icon+" "+c.name+"!");sfx(800,"sine",0.2,0.08,1600);
+  spawnShockRing(player.x,player.y-30,"#ffe600",120);
+}
+function rlReset(){
+  RL_LEVELS={dmg:0,rate:0,spd:0,hp:0,coin:0,mult:0};
+  RL_NEXT_TRIGGER=300;RL_CHOICE=null;RL_KILLS=0;RL_UPGRADES_TAKEN=0;
+}
+function rlDmgMul(){return 1+(RL_LEVELS.dmg||0)*0.25;}
+function rlRateMul(){return 1/(1+(RL_LEVELS.rate||0)*0.15);}
+function rlSpdMul(){return 1+(RL_LEVELS.spd||0)*0.15;}
+function rlCoinMul(){return 1+(RL_LEVELS.coin||0)*0.5;}
+function rlScoreMul(){return Math.pow(1.2,(RL_LEVELS.mult||0));}
+function rlPierce(){return RL_LEVELS.pierce||0;}
+function rlBounce(){return RL_LEVELS.bounce||0;}
+function rlMagnetRange(){return 150+(RL_LEVELS.magnet||0)*80;}
+function rlRageBonus(){return (RL_LEVELS.rage||0)*3;}
+function rlShieldBonus(){return (RL_LEVELS.shield||0)*2;}
+
 function resetGame(){
   /* 清理跨局特效与等级状态，防止上一局粒子/枪口闪光串到下一局 */
   bulletParts.length=0;muzzleFlash.length=0;HITFX.length=0;KILLFX.length=0;
   setGunLv(1);
   bgStageIdx=-1;bgCur={top:[22,10,58],bot:[10,14,70],glow:[90,60,255],hill:[26,12,62]};
-setCL();combo=0;comboT=0;revives=smartMode?1:3;rageTimer=0;coinCount=0;try{input.move=0;stick.active=false;stick.id=-1;}catch(_){}var _cxEq=1,_cxTy=0;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;if(typeof _cx.eqType==="number"&&_cx.eqType>=0&&_cx.eqType<=7)_cxTy=_cx.eqType;else _cxTy=Math.min(7,Math.floor((_cxEq-1)/7));}catch(_){}gunLevel=_cxEq;gunType=_cxTy;setGunLv(_cxEq);_lastCoinGain=0;
+setCL();combo=0;comboT=0;revives=smartMode?2:1;rageTimer=0;coinCount=0;try{input.move=0;stick.active=false;stick.id=-1;}catch(_){}var _cxEq=1,_cxTy=0;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;if(typeof _cx.eqType==="number"&&_cx.eqType>=0&&_cx.eqType<=7)_cxTy=_cx.eqType;else _cxTy=Math.min(7,Math.floor((_cxEq-1)/7));}catch(_){}gunLevel=_cxEq;gunType=_cxTy;setGunLv(_cxEq);_lastCoinGain=0;
 loadEquip();
+rlReset();
 _attrApplied=totalAttr();
 player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:Math.round(100*attrMul("hp")),maxHp:Math.round(100*attrMul("hp")),en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
@@ -544,8 +644,8 @@ world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightni
 score=0;distance=0;wave=1;bossSpawned=0;bossWave=0;bossAlive=false;skillCd=0;timeScale=1;slowTimer=0;
 makeStars();
 world.platforms.push({x:-200,y:H-60,w:900,h:120,bounce:false,moving:false});
-world.enemies.push({type:"walker",x:520,y:H-60-36,w:40,h:44,vx:0.8,hp:50,maxHp:50,plat:world.platforms[0],dir:-1,score:100,shell:0,spinCd:0});
-world.enemies.push({type:"flyer",x:700,y:H-230,w:30,h:30,hp:16,maxHp:16,t:0,score:80,orbit:0,state:0});
+world.enemies.push({type:"walker",x:520,y:H-60-36,w:40,h:44,vx:0.8,hp:40,maxHp:40,plat:world.platforms[0],dir:-1,score:100,shell:0,spinCd:0});
+world.enemies.push({type:"flyer",x:700,y:H-230,w:30,h:30,hp:14,maxHp:14,t:0,score:80,orbit:0,state:0});
 }
 
 function makeStars(){world.stars=[];for(var i=0;i<180;i++){world.stars.push({x:Math.random()*2400-400,y:Math.random()*H*1.4,z:Math.random()*0.7+0.1,s:Math.random()*2+0.5,c:Math.random()>0.7?"#00f2ff":Math.random()>0.5?"#ff00aa":"#fff"})}}
@@ -603,7 +703,8 @@ world.bullets=world.bullets.filter(function(b){return b.x>cam.x-200&&b.x<cam.x+W
 }
 
 function spawnEnemies(){
-while(world.enemies.length<Math.min(4+wave,10)){
+var maxEnemies=Math.min(4+Math.floor(distance/150),9);var hpScale=1+distance/200;
+ while(world.enemies.length<maxEnemies){
 var cand=world.platforms.filter(function(p){return p.x>cam.x+W*0.5&&p.x<cam.x+W+700});
 if(cand.length===0)break;
 var plat=cand[Math.floor(Math.random()*cand.length)];
@@ -628,12 +729,13 @@ var plat=cand[Math.floor(Math.random()*cand.length)];
  else if(r<0.90){e={type:"pylon",x:plat.x+plat.w/2,y:plat.y-30,w:24,h:60,hp:150+wave*18,maxHp:150+wave*18,t:0,score:350}}
  else if(r<0.95){e={type:"mirror",x:plat.x+plat.w/2,y:plat.y-50,w:30,h:48,hp:40+wave*6,maxHp:40+wave*6,t:0,score:220}}
  else{e={type:"doll",x:plat.x+plat.w/2,y:plat.y-30,w:28,h:40,hp:45+wave*7,maxHp:45+wave*7,t:0,score:180}}
-world.enemies.push(e);
+e.hp=Math.round(e.hp*hpScale);e.maxHp=e.hp;
+ world.enemies.push(e);
 }
-if(distance>260&&distance>bossSpawned*450+259&&!bossAlive){
+if(distance>300&&distance>bossSpawned*600+299&&!bossAlive){
 bossWave++;bossSpawned=bossWave;bossAlive=true;
 var cols=["#ffe600","#ff2a6d","#7fdcff","#b026ff","#ff8a5b"];
-var bc=cols[(bossWave-1)%5],hp=4200+bossWave*2600,bk=Math.floor(Math.random()*11);
+var bc=cols[(bossWave-1)%5];var hp=2500+bossWave*1200,bk=Math.floor(Math.random()*11);
 var bnames=["赛博水母","蒸汽战争机器","破碎沙漏","恶魔卡带机","缝合布偶熊","暗影男孩","菌丝卫衣少年","暴食金猪·逼格","伪善学究·眼镜","深渊女仆鲸娘","霓虹执行者K.Volt"];
 var by=Math.max(H*0.55, H-340);
 showToast("BOSS "+bnames[bk]+" 来袭!");sfx(60,"sawtooth",1.2,0.15,30);
@@ -714,7 +816,7 @@ for(var i=world.enemies.length-1;i>=0;i--){var e=world.enemies[i];world.lightnin
 world.blackholes.push({x:p.x+200,y:p.y-40,r:45,t:0,life:5,giant:true});for(var bi=0;bi<3;bi++)spawnShockRing(p.x+200,p.y-40,bi===0?"#b026ff":bi===1?"#7c3aed":"#fff",150+bi*100);spawnShockRing(p.x+200,p.y-40,"#b026ff",300);spawnShockRing(p.x+200,p.y-40,"#7c3aed",200);world.flash=0.6;cam.shake=24;sfx(40,"sawtooth",1.2,0.15,200);world._bhDomain={t:5,x:p.x+200,y:p.y-40};showToast("雷霆审判·黑洞领域!")}
 
 /* 护盾 */
-function doDash(){var p=player;if(gameState!=="playing"||p.dashCd>0)return;p.dashCd=8;p.shield=3;cam.shake=4;
+function doDash(){var p=player;if(gameState!=="playing"||p.dashCd>0)return;p.dashCd=8;p.shield=3+rlShieldBonus();cam.shake=4;
   // 冲刺特效：六边形护盾 + 重力波 + 声波
   fxHexShield(p.x,p.y-30,"#7fdcff",80);
   fxGravityWave(p.x,p.y-20,"#b026ff",110);
@@ -728,7 +830,7 @@ function killEnemy(e,idx){
     if(_kf.kill && _kf.kill!=="plain") spawnKillFxAt(e.x, e.y, _kf.kill, _kf.pal);
   }catch(_ke){}
 combo++;comboT=3;var mult=1+Math.min(Math.floor(combo/3),5)*0.5;var pts=Math.floor(e.score*mult);
-score+=pts*(world.doubleT>0?2:1);
+score+=Math.round(pts*(world.doubleT>0?2:1)*rlScoreMul());
 // 击杀：强停顿 + 强震 + 缩放冲击
 if(HITSTOP_ENABLED)hitStop=Math.max(hitStop,0.11);
 cam.shake=Math.max(cam.shake,14);
@@ -740,12 +842,13 @@ sExplode();sHitHeavy();
   fxQuantumDust(e.x,e.y,null,7);
   fxRipplePulse(e.x,e.y,"#fff",90);spawnShockRing(e.x,e.y,"#ff00aa",120);spawnShockRing(e.x,e.y,"#ffe600",80);spawnShockRing(e.x,e.y,"#fff",50);world.rings.push({x:e.x,y:e.y,r:6,maxR:160,t:0,color:e.type==="boss"?"#fff":"#ff00aa"});world.texts.push({x:e.x,y:e.y-50,text:"K.O.",life:0.5,vy:-60});
 world.texts.push({x:e.x,y:e.y-30,text:"+"+pts+(combo>2?" x"+combo:""),life:0.9,vy:-45});
-if(combo>0&&combo%5===0)showToast(combo+" 连击!");
+RL_KILLS++;if(combo>0&&combo%5===0)showToast(combo+" 连击!");
 if(combo>0&&combo%10===0){player.hp=Math.min(player.maxHp,player.hp+8);world.texts.push({x:e.x,y:e.y-60,text:"连击回血+8",life:1.2,vy:-45});spawnShockRing(e.x,e.y,"#3aff7a",80)}
 var _elite=(e.type==="shield"||e.type==="laser"||e.type==="tank"||e.type==="pylon");
   var _ndrop=_elite?(2+Math.floor(Math.random()*3)):(Math.random()<0.35?(1+(Math.random()<0.4?1:0)):0);
   if(smartMode)_ndrop*=_ndrop>0?2:0; // 聪明人模式：精英掉落×2
   if(smartMode&&!_elite)_ndrop=(Math.random()<0.5?(1+(Math.random()<0.4?1:0)):0); // 聪明人普通怪掉落概率提升到50%
+  _ndrop=Math.round(_ndrop*rlCoinMul());
   for(var _dn=0;_dn<_ndrop;_dn++)world.coins.push({x:e.x+(Math.random()-0.5)*30,y:e.y-15-(Math.random()*20),t:0,got:false});
 if(Math.random()<(smartMode?0.08:0.18))world.pickups.push({x:e.x,y:e.y-20,t:0,kind:"heal",got:false});
 if(Math.random()<(smartMode?0.15:0.3))player.hp=Math.min(player.maxHp,player.hp+(smartMode?3:5));
@@ -753,7 +856,7 @@ player.en=Math.min(player.maxEn,player.en+15);
 if(e.type==="boss"){
   showToast("BOSS击破!丰厚奖励!");score+=15000;world.flash=0.6;cam.shake=22;bossAlive=false;
   // 丰厚奖励：金币+回血+武器升级+护盾
-  coinCount+=Math.round((smartMode?240:120)*attrMul("coin"));
+  coinCount+=Math.round((smartMode?240:120)*attrMul("coin")*rlCoinMul());
   coinHud();
   // Boss 死亡喷射金币实体（视觉爽 + 可吸附拾取）
   for(var _bc=0;_bc<20;_bc++){world.coins.push({x:e.x+(Math.random()-0.5)*120,y:e.y-(Math.random()*60),t:0,got:false});}
@@ -3795,13 +3898,13 @@ function jumpRelease(){}
 function shoot(){var p=player;
 var tg=null,md=99999;for(var i=0;i<world.enemies.length;i++){var e=world.enemies[i];var d=Math.sqrt((e.x-p.x)*(e.x-p.x)+(e.y-p.y)*(e.y-p.y));if(d<md&&d<700){md=d;tg=e}}
 var ang=0;if(tg)ang=Math.atan2(tg.y-p.y,tg.x-p.x);else ang=p.facing>0?0:Math.PI;
-p.shootCd=0.13;p.en-=8;p.muzzle=0.09;var spd=680;
+p.shootCd=0.13*rlRateMul()*rlRateMul();p.en-=8;p.muzzle=0.09;var spd=680;
 var rd=rageTimer>0?2:1;
 function mk(a,off,col,r,dmg,home){
   var _fx=(p.facing||1);
   var _mx=p.x+_fx*36,_my=p.y-31+off;
   var _sf=curSkinFx();
-  world.bullets.push({x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:dmg*rd,home:home,
+  world.bullets.push({pierce:rlPierce(),bounce:rlBounce(),dmg:Math.round(dmg*rd*rlDmgMul()*attrMul("dmg")),x:_mx,y:_my,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:r,life:2,owner:"player",color:col,dmg:Math.round(dmg*rd*rlDmgMul()*attrMul("dmg")),home:home,
     fx:_sf.bullet, trailFx:_sf.trail, fxPal:_sf.pal, lv:gunLevel});
   // 枪口喷射粒子（每次开火都喷）
   spawnMuzzle(_mx,_my,a,col,r>=8?1.8:1.1,gunLevel);
@@ -8943,7 +9046,7 @@ if(keys.KeyD||keys.ArrowRight)move=1;
 if(world._rev||world._revCtrl)move=-move;
 if((keys.Space||keys.KeyW||keys.ArrowUp)&&!keys._jh)tryJump();
 keys._jh=keys.Space||keys.KeyW||keys.ArrowUp;
-var speed=240*attrMul("spd"),fr=12;
+var speed=240*attrMul("spd")*rlSpdMul(),fr=12;
 if(p.airT>0){ p.airT-=dt; }
   var _accel=(!p.onGround&&p.airT>0)?18:10;
   if(Math.abs(move)>0.1){p.vx+=(move*speed-p.vx)*_accel*dt;p.facing=move>0?1:-1}else{p.vx*=Math.max(0,1-fr*dt)}
@@ -8999,8 +9102,9 @@ if(p.clones&&p.clones.length>0){
 }
 if(world._bhDomain){world._bhDomain.t-=rdt;world._bhDomain.y=p.y-40;if(world._bhDomain.t<=0)world._bhDomain=null}
 if(rageTimer>0){rageTimer-=rdt;if(rageTimer<=0)rageTimer=0}
-if(input.shoot&&p.shootCd<=(rageTimer>0?0.04:0.13/Math.max(0.3,attrMul("rate")))&&(rageTimer>0||p.en>=8)){shoot();if(rageTimer>0)p.en=100}
-cam.x+=(p.x-W*0.3-cam.x)*3.5*dt;
+if(input.shoot&&p.shootCd<=(rageTimer>0?0.04:0.13/Math.max(0.3,attrMul("rate")))&&(rageTimer>0||p.en>=8)){shoot();if(rageTimer>0)p.en=100;rageTimer=Math.max(rageTimer,rlRageBonus());}
+if(gameState==="playing"&&distance>=RL_NEXT_TRIGGER){RL_NEXT_TRIGGER+=300;rlTrigger();}
+ cam.x+=(p.x-W*0.3-cam.x)*3.5*dt;
 cam.y+=(p.y-H*0.55-cam.y)*2.0*dt;
 // 打击停顿：几乎冻结时间，仅保留极慢推进
 if(HITSTOP_ENABLED&&hitStop>0){hitStop-=rdt;dt*=0.06;}
@@ -9536,7 +9640,7 @@ for(var i=0;i<world.bullets.length;i++){
                 var _hf=curSkinFx();
                 spawnHitFxAt(b.x, b.y, _hf.hit, _hf.pal);
               }
-            }catch(_he){}if(!b.pierce)b.life=0;
+            }catch(_he){}if(b.pierce&&b.pierce>0){b.pierce--;b.x+=b.vx*0.03;}else if(b.bounce&&b.bounce>0){b.bounce--;b.vx=-b.vx*0.7;b.vy=-b.vy*0.7;}else b.life=0;
 var _dmg=Math.round(_baseDmg);
 var _heavy=_dmg>=60;
 // 命中停顿：轻击1帧感，重击3帧感
@@ -9657,13 +9761,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v10.5");
+    localStorage.setItem("njs_patch","v11.0");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v10.5"){
+    if(seen!=="v11.0"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -13590,7 +13694,7 @@ function gameOver(){
   stopBgm();
   sfx(110,"sawtooth",1,0.12,40);
   settleCoins();
-  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 最高武器 Lv"+gunLevel+" · 本局金币 +"+(typeof _lastCoinGain==="number"?_lastCoinGain:0)+(smartMode?"（聪明人双倍加成）":"");
+  ui.final.textContent="最终得分 "+score+" · 距离 "+distance+"m · 武器 Lv"+gunLevel+" · 升级 "+RL_UPGRADES_TAKEN+"次 · 击杀 "+RL_KILLS+" · 金币 +"+(typeof _lastCoinGain==="number"?_lastCoinGain:0)+(smartMode?"（聪明人双倍加成）":"");
   saveScore(score,distance);
   lbSubmit(score,distance);
   // 只设置视图（不拉数据），等 lbSubmit 成功回调后再刷新，避免显示提交前的旧榜
@@ -14322,8 +14426,8 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v10.5</div>
-    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 25 日 15:20</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.0</div>
+    <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 30 日 23:38</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
     <button onclick="closePatchNote()" style="display:block;margin:16px auto 4px;padding:12px 44px;border-radius:22px;font-size:15px;background:rgba(0,242,255,.18);border:1px solid #00f2ff;color:#00f2ff;cursor:pointer;font-weight:700;pointer-events:auto">开始游戏</button>
@@ -14353,6 +14457,15 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-30 23:38:20",items:[
+      "🎲 玩法全面重构为无尽 Roguelike！",
+      "📋 每 300m 弹出三选一升级面板：伤害/射速/移速/生命/金币/分数/穿透/弹射/磁力/复活/狂暴/护盾",
+      "📈 敌人HP随距离平滑递增（每200m翻倍），不再靠wave跳变",
+      "💀 Boss每600m一个，HP从2500开始合理递增（不再动辄上万）",
+      "❤️ 复活改为1次（聪明人2次），可通过三选一获得额外复活",
+      "🔫 子弹支持穿透和弹射升级；金币/分数/移速全部受Roguelike加成",
+      "🎯 结算显示升级次数和击杀数"
+    ]},
     {time:"2026-10-25 15:20:00",items:[
       "🔧 局内角色恢复完整二次元绘制（不再是小方块）",
       "🔫 局内枪改为2D清晰枪身+3D皮肤识别件叠加（枪像枪，皮肤华丽但不糊）",
