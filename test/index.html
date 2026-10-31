@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.3</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.4</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -642,7 +642,7 @@ setCL();combo=0;comboT=0;revives=smartMode?2:1;rageTimer=0;coinCount=0;try{input
 loadEquip();
 rlReset();
 _attrApplied=totalAttr();
-player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:Math.round(100*attrMul("hp")),maxHp:Math.round(100*attrMul("hp")),en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0};
+player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:Math.round(100*attrMul("hp")),maxHp:Math.round(100*attrMul("hp")),en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0,drones:[]};
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
 world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
 score=0;distance=0;wave=1;bossSpawned=0;bossWave=0;bossAlive=false;skillCd=0;timeScale=1;slowTimer=0;
@@ -3902,86 +3902,170 @@ function jumpRelease(){}
 function shoot(){var p=player;
 var tg=null,md=99999;for(var i=0;i<world.enemies.length;i++){var e=world.enemies[i];var d=Math.sqrt((e.x-p.x)*(e.x-p.x)+(e.y-p.y)*(e.y-p.y));if(d<md&&d<700){md=d;tg=e}}
 var ang=0;if(tg)ang=Math.atan2(tg.y-p.y,tg.x-p.x);else ang=p.facing>0?0:Math.PI;
-p.shootCd=0.13*rlRateMul()*rlRateMul();p.en-=8;p.muzzle=0.09;var spd=680;
 var rd=rageTimer>0?2:1;
 var _fx=(p.facing||1);
-var _mx=p.x+_fx*(20+(typeof _gunLenPx=="number"?_gunLenPx:32)),_my=p.y-31;
+var _mx=p.x+_fx*(20+(typeof _gunLenPx==="number"?_gunLenPx:32)),_my=p.y-31;
 var _sf=curSkinFx();
-var bc=_sf.pal.ene||_sf.pal.main||"#00f2ff";  // 子弹颜色来自皮肤
+var bc=_sf.pal.ene||_sf.pal.main||"#00f2ff";
 var bc2=_sf.pal.main||"#00f2ff";
 var bc3=_sf.pal.hi||"#ffffff";
 var ty=(typeof gunType==="number")?gunType:0;
 var L=gunLevel||1;
-var dmgBase=12+L*0.8;  // 基础伤害随等级微增
-function mk(a,off,col,r,dmg,home){
-  world.bullets.push({pierce:rlPierce(),bounce:rlBounce(),dmg:Math.round(dmg*rd*rlDmgMul()*attrMul("dmg")),
-    x:_mx+Math.cos(a)*8,y:_my+off+Math.sin(a)*8,
-    vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
+var tier=Math.floor(L/10);
+var CD=[0.15,0.09,0.75,0.42,0.045,0.55,0.95,0.3][ty]||0.15;
+var DMG=[1.0,0.55,3.2,0.42,0.34,1.4,3.8,0.45][ty]||1.0;
+p.shootCd=CD*rlRateMul()*rlRateMul();
+p.en-=8;p.muzzle=0.09;
+var dmgBase=12+L*0.8;
+function _dmg(dk){return Math.round(dk*rd*rlDmgMul()*attrMul("dmg"));}
+function mk(a,off,col,r,dk,home,spdOv){
+  world.bullets.push({pierce:rlPierce(),bounce:rlBounce(),
+    dmg:_dmg(dk),
+    x:_mx+Math.cos(a)*(ty===2?26:8),y:_my+off+Math.sin(a)*(ty===2?26:8),
+    vx:Math.cos(a)*(spdOv||620),vy:Math.sin(a)*(spdOv||620),
     r:r,life:2.5,owner:"player",color:col,
     fx:_sf.bullet||"plain",trailFx:_sf.trail||"none",fxPal:_sf.pal,
-    home:home,lv:L});
+    home:home,lv:L,gunTy:ty});
+  return world.bullets[world.bullets.length-1];
 }
-// 弹道由枪型决定，颜色由皮肤决定
+/* ================= 8 种武器，8 种攻击机制 ================= */
 if(ty===0){
-  // 手枪：单发精准
-  mk(ang,0,bc,5,dmgBase,true);
-}else if(ty===1){
-  // 步枪：三连发
-  mk(ang,-4,bc,5,dmgBase*0.7,true);
-  mk(ang,0,bc,5,dmgBase*0.7,true);
-  mk(ang,4,bc,5,dmgBase*0.7,true);
-}else if(ty===2){
-  // 狙击：单发穿透高速大伤害
-  mk(ang,0,bc3,8,dmgBase*2.5,true);
-  var sn=world.bullets[world.bullets.length-1];
-  sn.pierce=(sn.pierce||0)+3;sn.vx=Math.cos(ang)*1100;sn.vy=Math.sin(ang)*1100;
-}else if(ty===3){
-  // 霰弹：扇形散射
-  for(var si=-3;si<=3;si++)mk(ang+si*0.09,si*4,bc2,5,dmgBase*0.5,false);
-}else if(ty===4){
-  // 加特林：快速散射多发
-  for(var gi=-2;gi<=2;gi++)mk(ang+gi*0.05+Math.random()*0.08,gi*3,bc,5,dmgBase*0.6,true);
-}else if(ty===5){
-  // 法杖：能量球 + 两侧弧弹
-  mk(ang,0,bc,9,dmgBase*1.8,true);
-  for(var si2=-1;si2<=1;si2+=2)mk(ang+si2*0.5,0,bc2,5,dmgBase*0.5,false);
-}else if(ty===6){
-  // 巨炮：单发大弹高伤
-  mk(ang,0,bc,10,dmgBase*3,true);
-  var cn=world.bullets[world.bullets.length-1];
-  cn.vx=Math.cos(ang)*480;cn.vy=Math.sin(ang)*480;
-}else if(ty===7){
-  // 浮游：环绕弹幕
-  for(var di=0;di<6;di++)mk(ang+di*Math.PI/3,0,di%2?bc:bc2,5,dmgBase*0.6,true);
+  /* 手枪：单发高速弹，轻微追踪 */
+  mk(ang,0,bc,5,dmgBase*DMG,true,680);
+  if(tier>=2)mk(ang+0.12,2,bc2,4,dmgBase*0.3,true,680);
 }
-// 等级加成：每10级多射一组
-var tier=Math.floor(L/10);
-if(tier>=1){
-  // T1+：额外两侧弹
-  mk(ang-0.25,-8,bc2,4,dmgBase*0.4,false);
-  mk(ang+0.25,8,bc2,4,dmgBase*0.4,false);
+else if(ty===1){
+  /* 步枪：三连点射，直线不追踪 */
+  mk(ang,-3,bc,4,dmgBase*DMG,false,760);
+  mk(ang,0,bc,4,dmgBase*DMG,false,760);
+  mk(ang,3,bc,4,dmgBase*DMG,false,760);
 }
-if(tier>=2){
-  // T2+：额外追踪弹
-  mk(ang+0.5,0,bc3,5,dmgBase*0.8,true);
-  mk(ang-0.5,0,bc3,5,dmgBase*0.8,true);
+else if(ty===2){
+  /* 狙击：一条贯穿光束，瞬间命中整条直线所有敌人 */
+  try{
+    fxBeamBurst(_mx,_my,bc3,260);
+    fxLightningArc(_mx,_my,_mx+Math.cos(ang)*900,_my+Math.sin(ang)*900,bc3);
+  }catch(_){}
+  for(var si2=world.enemies.length-1;si2>=0;si2--){
+    var se=world.enemies[si2];
+    var dx=se.x-p.x,dy=se.y-(p.y-31);
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>900)continue;
+    var ea=Math.atan2(dy,dx);
+    var diff=ea-ang;while(diff>Math.PI)diff-=6.283;while(diff<-Math.PI)diff+=6.283;
+    if(Math.abs(diff)<0.13||dist<40){
+      se.hp-=_dmg(dmgBase*DMG);
+      spawnShockRing(se.x,se.y,bc3,70);
+      if(se.hp<=0)killEnemy(se,si2);
+    }
+  }
+  cam.shake=Math.max(cam.shake||0,7);
+  sfx(180,"sawtooth",0.25,0.12,60);
 }
-if(tier>=3){
-  // T3+：穿透主弹
-  mk(ang,0,bc3,7,dmgBase*1.5,true);
-  var pn=world.bullets[world.bullets.length-1];
-  pn.pierce=(pn.pierce||0)+5;pn.vx=Math.cos(ang)*900;pn.vy=Math.sin(ang)*900;
+else if(ty===3){
+  /* 霰弹：7 发扇形，越近越痛，全部不追踪 */
+  for(var si=-3;si<=3;si++){
+    mk(ang+si*0.13,si*2.5,bc2,5,dmgBase*DMG,false,520*(1-Math.abs(si)*0.06));
+  }
+}
+else if(ty===4){
+  /* 加特林：超高频扫射，抖动大，弱追踪 */
+  for(var gi=0;gi<2;gi++){
+    mk(ang+(Math.random()-0.5)*0.2,(Math.random()-0.5)*7,bc,4,dmgBase*DMG,true,600*(0.9+Math.random()*0.2));
+  }
+}
+else if(ty===5){
+  /* ✦ 法杖：召唤雷电打击全场最近敌人 + 追踪魔法球 */
+  try{
+    fxChainLightning(p.x,p.y-35,bc3,4+tier);
+    fxPlasmaBloom(p.x,p.y-35,bc,80);
+    for(var li=0;li<3;li++){
+      var la=Math.random()*6.283;
+      fxLightningArc(p.x,p.y-35,p.x+Math.cos(la)*220,p.y-35+Math.sin(la)*180,bc2);
+    }
+  }catch(_){}
+  /* 雷击：范围内所有敌人受魔法伤害 */
+  var hitAny=false;
+  for(var mi=world.enemies.length-1;mi>=0;mi--){
+    var me=world.enemies[mi];
+    var mdx=me.x-p.x,mdy=me.y-(p.y-35);
+    if(Math.sqrt(mdx*mdx+mdy*mdy)<260){
+      me.hp-=_dmg(dmgBase*DMG);
+      world.lightnings.push({x:me.x,y:me.y,t:0});
+      spawnShockRing(me.x,me.y,bc2,90);
+      hitAny=true;
+      if(me.hp<=0)killEnemy(me,mi);
+    }
+  }
+  /* 附带两枚追踪魔法球（不是子弹，是魔法弹） */
+  var orb1=mk(ang+(Math.random()-0.5)*0.6,0,bc,9,dmgBase*0.5,true,320);
+  orb1.magicOrb=true;
+  if(tier>=1){
+    var orb2=mk(ang+(Math.random()-0.5)*0.9,0,bc2,7,dmgBase*0.35,true,290);
+    orb2.magicOrb=true;
+  }
+  cam.shake=Math.max(cam.shake||0,5);
+  if(hitAny)sfx(320,"sine",0.3,0.1,120);
+}
+else if(ty===6){
+  /* ✦ 巨炮：发射巨大炮弹，落地/命中产生范围爆炸 */
+  var shell=mk(ang,0,bc,14,dmgBase*DMG,false,430);
+  shell.life=2.4;shell.bigShell=true;shell.boomR=110;
+  cam.shake=Math.max(cam.shake||0,10);
+  sfx(90,"sawtooth",0.35,0.16,40);
+}
+else if(ty===7){
+  /* ✦ 浮游：召唤 2-4 架浮游机伴飞，自主攻击 */
+  if(!p.drones)p.drones=[];
+  var droneCount=2+Math.min(tier,2);
+  while(p.drones.length<droneCount){
+    var _dna=Math.random()*6.283,_dnr=55+Math.random()*25;
+    p.drones.push({a:_dna,r:_dnr,cd:0,life:999,
+      x:p.x+Math.cos(_dna)*_dnr,
+      y:p.y-45+Math.sin(_dna*1.3)*22});
+  }
+  /* 浮游机本身每帧自动攻击（在 update 里），这里只补充能量弹 */
+  for(var di=0;di<p.drones.length;di++){
+    var dr=p.drones[di];
+    if(typeof dr.x!=="number"||isNaN(dr.x)){dr.x=p.x+Math.cos(dr.a)*dr.r;dr.y=p.y-45+Math.sin(dr.a*1.3)*22;}
+    if(dr.cd<=0){
+      dr.cd=0.45;
+      var _dtx=tg?tg.x:(p.x+p.facing*200), _dty=tg?tg.y:(p.y-40);
+      var da2=Math.atan2(_dty-dr.y,_dtx-dr.x);
+      if(!isFinite(da2))da2=ang;
+      world.bullets.push({dmg:_dmg(dmgBase*0.5),x:dr.x,y:dr.y,
+        vx:Math.cos(da2)*560,vy:Math.sin(da2)*560,r:4,life:2,
+        owner:"player",color:bc,home:true,lv:L,gunTy:7,
+        fx:_sf.bullet||"plain",trailFx:_sf.trail||"none",fxPal:_sf.pal});
+    }
+  }
+}
+/* ===== 所有武器的等级强化（保留） ===== */
+if(tier>=2&&ty!==2&&ty!==5&&ty!==6){
+  mk(ang+0.55,0,bc3,5,dmgBase*0.5,true,600);
+}
+if(tier>=3&&ty!==2&&ty!==5&&ty!==6){
+  var pn=mk(ang,0,bc3,7,dmgBase*0.9,false,800);
+  pn.pierce=(pn.pierce||0)+4;
 }
 if(tier>=4){
-  // T4 神话：全向弹幕
-  for(var fi=0;fi<8;fi++)mk(ang+fi*Math.PI/4,0,fi%2?bc3:bc,5,dmgBase*0.5,true);
+  for(var fi=0;fi<5;fi++)mk(ang+(fi-2)*0.3,0,fi%2?bc3:bc,4,dmgBase*0.35,true,580);
 }
-// 狂暴模式：额外弹幕
 if(rageTimer>0){
-  for(var ri=-2;ri<=2;ri++)mk(ang+ri*0.2,ri*5,bc3,6,dmgBase*0.6,true);
+  for(var ri=-1;ri<=1;ri++)mk(ang+ri*0.18,ri*4,bc3,6,dmgBase*0.5,true,700);
 }
-sShoot();if(gunLevel>=3)sfx(600+gunLevel*100,"square",0.05,0.03,200);
-spawnParticles(p.x+Math.cos(ang)*32,p.y+Math.sin(ang)*14,3,"#00f2ff",35)
+if(ty!==2)sShoot();
+spawnParticles(p.x+Math.cos(ang)*32,p.y+Math.sin(ang)*14,3,bc,35);
+/* 浮游机位置同步 */
+if(ty===7&&p.drones){
+  for(var ui=0;ui<p.drones.length;ui++){
+    var ud=p.drones[ui];
+    ud.a+=(0.04+ui*0.01);
+    ud.x=p.x+Math.cos(ud.a)*ud.r;
+    ud.y=p.y-45+Math.sin(ud.a*1.3)*22;
+    if(ud.cd>0)ud.cd-=0.05;
+  }
+}
 }
 /* 武器模型 */
 
@@ -9651,7 +9735,25 @@ for(var i=0;i<world.bullets.length;i++){
                 var _hf=curSkinFx();
                 spawnHitFxAt(b.x, b.y, _hf.hit, _hf.pal);
               }
-            }catch(_he){}if(b.pierce&&b.pierce>0){b.pierce--;b.x+=b.vx*0.03;}else if(b.bounce&&b.bounce>0){b.bounce--;b.vx=-b.vx*0.7;b.vy=-b.vy*0.7;}else b.life=0;
+            }catch(_he){}
+            if(b.bigShell){
+              var _br=b.boomR||110;
+              try{fxExplosionStar(b.x,b.y,b.color||"#ff8a5b",_br);fxShardRain(b.x,b.y,b.color||"#ff8a5b",10);}catch(_){}
+              spawnShockRing(b.x,b.y,b.color||"#ff8a5b",_br);
+              spawnShockRing(b.x,b.y,"#ffffff",_br*0.6);
+              cam.shake=Math.max(cam.shake||0,12);
+              for(var _bi2=world.enemies.length-1;_bi2>=0;_bi2--){
+                var _be=world.enemies[_bi2];
+                var _bdx=_be.x-b.x,_bdy=_be.y-b.y;
+                if(Math.sqrt(_bdx*_bdx+_bdy*_bdy)<_br){
+                  _be.hp-=(b.dmg||10)*0.8;
+                  if(_be.hp<=0)killEnemy(_be,_bi2);
+                }
+              }
+              b.life=0;
+            }else if(b.pierce&&b.pierce>0){b.pierce--;b.x+=b.vx*0.03;}
+            else if(b.bounce&&b.bounce>0){b.bounce--;b.vx=-b.vx*0.7;b.vy=-b.vy*0.7;}
+            else b.life=0;
 var _dmg=Math.round(_baseDmg);
 var _heavy=_dmg>=60;
 // 命中停顿：轻击1帧感，重击3帧感
@@ -9825,13 +9927,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v11.3");
+    localStorage.setItem("njs_patch","v11.4");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v11.3"){
+    if(seen!=="v11.4"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14490,7 +14592,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.3</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.4</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 30 日 23:38</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -14521,6 +14623,16 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-31 09:05:00",items:[
+      "⚔️ 8 种武器改成 8 种真实攻击机制，不再全是打子弹",
+      "🔫 手枪=单发精准 / 步枪=三连直线点射 / 霰弹=7发扇形散射",
+      "⚡ 加特林=超高频抖动扫射（45ms 一发）",
+      "🎯 狙击=瞬时光束，不发射子弹，一条直线贯穿命中",
+      "🔮 法杖=召唤雷电范围打击 + 追踪魔法球（不再是子弹）",
+      "💥 巨炮=发射巨大炮弹，命中产生范围爆炸伤害",
+      "🛸 浮游=召唤 2~4 架浮游机环绕伴飞，自主开火",
+      "🐛 修复浮游机首次攻击坐标为空导致的 NaN 弹道"
+    ]},
     {time:"2026-10-31 01:15:00",items:[
       "🔫 主页新增 8 种枪型直接选择：手枪 / 步枪 / 狙击 / 霰弹 / 加特林 / 法杖 / 巨炮 / 浮游",
       "💡 选完立即生效并保存，开局就是用你选的枪（枪模和弹道都变）",
