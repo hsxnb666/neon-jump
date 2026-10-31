@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.3</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -185,6 +185,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     </div>
     <div id="heroTag" style="font-size:11px;color:#ffd54a;margin-top:6px">当前角色：机甲战士</div>
   </div>
+  <div id="gunTypePicker" style="margin-top:8px;text-align:center"></div>
   <button class="btn btn-cont" id="contBtn" onclick="continueGame()" style="display:none">继续上局</button>
 
   <div class="feats">
@@ -636,7 +637,8 @@ function resetGame(){
   bulletParts.length=0;muzzleFlash.length=0;HITFX.length=0;KILLFX.length=0;
   setGunLv(1);
   bgStageIdx=-1;bgCur={top:[22,10,58],bot:[10,14,70],glow:[90,60,255],hill:[26,12,62]};
-setCL();combo=0;comboT=0;revives=smartMode?2:1;rageTimer=0;coinCount=0;try{input.move=0;stick.active=false;stick.id=-1;}catch(_){}var _cxEq=1,_cxTy=0;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;if(typeof _cx.eqType==="number"&&_cx.eqType>=0&&_cx.eqType<=7)_cxTy=_cx.eqType;else _cxTy=Math.min(7,Math.floor((_cxEq-1)/7));}catch(_){}gunLevel=_cxEq;gunType=_cxTy;setGunLv(_cxEq);_lastCoinGain=0;
+setCL();combo=0;comboT=0;revives=smartMode?2:1;rageTimer=0;coinCount=0;try{input.move=0;stick.active=false;stick.id=-1;}catch(_){}var _cxEq=1,_cxTy=0;try{var _cx=JSON.parse(localStorage.getItem("njs_codex")||"{}");if(_cx.equipped&&_cx.equipped>=1&&_cx.equipped<=50)_cxEq=_cx.equipped;if(typeof _cx.eqType==="number"&&_cx.eqType>=0&&_cx.eqType<=7)_cxTy=_cx.eqType;else _cxTy=Math.min(7,Math.floor((_cxEq-1)/7));
+    try{var _gt=parseInt(localStorage.getItem('njs_gunType')||'-1',10);if(_gt>=0&&_gt<=7)_cxTy=_gt;}catch(_){}}catch(_){}gunLevel=_cxEq;gunType=_cxTy;setGunLv(_cxEq);_lastCoinGain=0;
 loadEquip();
 rlReset();
 _attrApplied=totalAttr();
@@ -9756,7 +9758,60 @@ function initHero(){
   }catch(e){}
   try{ setHero(HERO); }catch(e){}
 }
+
 try{ initHero(); }catch(e){}
+/* 枪型选择：动态生成按钮 */
+var GUN_TYPE_NAMES=["手枪","步枪","狙击","霰弹","加特林","法杖","巨炮","浮游"];
+var GUN_TYPE_ICONS=["🔫","🔫","🎯","💥","⚡","🔮","☄️","🛸"];
+function setGunType(n){
+  n=parseInt(n,10);
+  if(isNaN(n)||n<0||n>7)n=0;
+  gunType=n;
+  try{ localStorage.setItem("njs_gunType",String(n)); }catch(e){}
+  try{
+    var bs=document.querySelectorAll("[data-gun-btn]");
+    for(var i=0;i<bs.length;i++){
+      var v=parseInt(bs[i].getAttribute("data-gun-btn"),10);
+      bs[i].style.background=(v===n)?"rgba(0,242,255,.2)":"rgba(255,255,255,.06)";
+      bs[i].style.borderColor=(v===n)?"#00f2ff":"rgba(160,168,255,.4)";
+      bs[i].style.color=(v===n)?"#00f2ff":"#b8c0ff";
+    }
+    var t=document.getElementById("gunTypeTag");
+    if(t)t.textContent="当前枪型："+GUN_TYPE_NAMES[n];
+  }catch(e){}
+}
+(function(){
+  try{
+    var host=document.getElementById("gunTypePicker");
+    if(!host)return;
+    var title=document.createElement("div");
+    title.style.cssText="font-size:11px;color:#6a7fb8;margin-bottom:6px";
+    title.textContent="选择枪型";
+    host.appendChild(title);
+    var row=document.createElement("div");
+    row.style.cssText="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;padding:0 8px";
+    for(var i=0;i<8;i++){
+      (function(idx){
+        var btn=document.createElement("button");
+        btn.setAttribute("data-gun-btn",String(idx));
+        btn.style.cssText="padding:5px 10px;border-radius:12px;font-size:10px;background:rgba(255,255,255,.06);border:1px solid rgba(160,168,255,.4);color:#b8c0ff;cursor:pointer";
+        btn.textContent=GUN_TYPE_ICONS[idx]+" "+GUN_TYPE_NAMES[idx];
+        btn.onclick=function(){setGunType(idx);};
+        btn.addEventListener("touchend",function(ev){ev.stopPropagation();setGunType(idx);},{passive:true});
+        row.appendChild(btn);
+      })(i);
+    }
+    host.appendChild(row);
+    var tag=document.createElement("div");
+    tag.id="gunTypeTag";
+    tag.style.cssText="font-size:11px;color:#ffd54a;margin-top:5px";
+    host.appendChild(tag);
+    var saved=parseInt(localStorage.getItem("njs_gunType")||"0",10);
+    if(saved>=0&&saved<=7)gunType=saved;
+    setGunType(gunType);
+  }catch(e){}
+})();
+
 /* 更新公告：仅新版首次进入显示 */
 function openPatchNote(){
   try{
@@ -9770,13 +9825,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v11.2");
+    localStorage.setItem("njs_patch","v11.3");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v11.2"){
+    if(seen!=="v11.3"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14435,7 +14490,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.2</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.3</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 30 日 23:38</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -14466,6 +14521,11 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-10-31 01:15:00",items:[
+      "🔫 主页新增 8 种枪型直接选择：手枪 / 步枪 / 狙击 / 霰弹 / 加特林 / 法杖 / 巨炮 / 浮游",
+      "💡 选完立即生效并保存，开局就是用你选的枪（枪模和弹道都变）",
+      "🎮 支持手机触摸点击，不用再靠买武器间接换枪"
+    ]},
     {time:"2026-10-31 00:15:00",items:[
       "🔫 弹道全面重构：8种枪型各自独立弹道模式",
       "手枪=单发精准 / 步枪=三连发 / 狙击=穿透高速 / 霰弹=扇形散射",
