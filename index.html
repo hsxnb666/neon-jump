@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v11.9</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v12.0</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -4111,7 +4111,7 @@ function wmUpdate(p,dt){if(!p)return;if(gunType!==7&&p.drones)p.drones=[];for(va
 function wmHit(b,e){var ty=b.gunTy;if(ty===3){e.x+=10;wmFx('slash',b.x,b.y,WM_COLS[3],{r:35,a:Math.atan2(b.vy,b.vx),life:.2});}else if(ty===5){wmFx('rune',b.x,b.y,WM_COLS[5],{r:28,life:.28});}else if(ty===7){wmFx('link',b.x-12,b.y-12,WM_COLS[7],{x2:b.x+12,y2:b.y+12,life:.18});}else wmFx('ring',b.x,b.y,WM_COLS[ty]||b.color,{r:28,life:.2});}
 
 /* ===== 武器发射口 / 随机属性击败演出 ===== */
-function wmMuzzle(p,ty){var handX=p.x+p.facing*20,handY=p.y-30,aim=0,tg=null,md=700*700;for(var i=0;i<world.enemies.length;i++){var e=world.enemies[i],dd=(e.x-p.x)*(e.x-p.x)+(e.y-p.y)*(e.y-p.y);if(dd<md){md=dd;tg=e;}}if(tg)aim=Math.atan2(tg.y-handY,tg.x-handX)*.55;var len=(typeof _gunLenPx==='number'&&isFinite(_gunLenPx))?_gunLenPx:[30,42,48,42,42,44,42,32][ty];var gx=[.5,1.2,.6,.3,0,1.5,-2.9,4.5][ty]||0,gy=[1.8,2.4,1.7,3.4,5.8,0,6.1,0][ty]||0,gs=[1.27,.77,.63,.97,.93,.99,.87,1.16][ty]||1,grow=1+(Math.max(1,Math.min(60,gunLevel||1))-1)*.004;var lx=len-gx*gs*grow,ly=-gy*gs*grow;var ca=Math.cos(aim*p.facing),sa=Math.sin(aim*p.facing);return{x:handX+p.facing*(lx*ca-ly*sa),y:handY+lx*sa+ly*ca,a:aim};}
+function wmMuzzle(p,ty){var handX=p.x+p.facing*20,handY=p.y-30,aim=0,tg=null,md=700*700;for(var i=0;i<world.enemies.length;i++){var e=world.enemies[i],dd=(e.x-p.x)*(e.x-p.x)+(e.y-p.y)*(e.y-p.y);if(dd<md){md=dd;tg=e;}}if(tg)aim=Math.atan2(tg.y-handY,tg.x-handX)*.55;var len=(typeof _gunLenPx==='number'&&isFinite(_gunLenPx))?_gunLenPx:[30,42,48,42,42,44,42,32][ty];var gx=[.5,1.2,.6,.3,0,1.5,-2.9,4.5][ty]||0,gy=[1.8,2.4,1.7,3.4,5.8,0,6.1,0][ty]||0,gs=[1.27,.77,.63,.97,.93,.99,.87,1.16][ty]||1,grow=1+(Math.max(1,Math.min(60,gunLevel||1))-1)*.004;var lx=len-gx*gs*grow,ly=(typeof _gunMuzzleY==='number'?_gunMuzzleY:0)-gy*gs*grow;var ca=Math.cos(aim*p.facing),sa=Math.sin(aim*p.facing);return{x:handX+p.facing*(lx*ca-ly*sa),y:handY+lx*sa+ly*ca,a:aim};}
 function wmKill(e,ty){var c=WM_COLS[ty]||'#fff',v=Math.floor(Math.random()*3),x=e.x,y=e.y;e._wmKilled=true;
  if(ty===0){wmFx('slash',x,y,c,{r:55,a:v*.8-.8,life:.5});wmFx('slash',x,y,'#fff',{r:38,a:2.2-v*.7,life:.35});wmFx('ring',x,y,c,{r:80,life:.5});fxShardRain(x,y,c,10+v*3);}
  else if(ty===1){for(var i=0;i<3+v;i++)wmFx('link',x-45+i*14,y-45,c,{x2:x+15+i*8,y2:y+35,life:.35+i*.05});wmFx('ring',x,y,c,{r:65+v*15,life:.55});fxSparkBurst(x,y,c,14);}
@@ -4198,6 +4198,33 @@ function clearReviveArea(x,y){world.bullets=world.bullets.filter(function(b){ret
 /* ===== 单次施法伤害去重，保持范围演出但避免重叠爆发失控 ===== */
 function wmBeginCast(p){p._wmCastId=(p._wmCastId||0)+1;p._wmCastHit={};return p._wmCastId;}
 function wmCastCanHit(p,e){if(!p._wmCastId||!e)return true;var id=e._wmId||(e._wmId=(wmBeginCast._eid=(wmBeginCast._eid||0)+1));var key=p._wmCastId+':'+id;if(p._wmCastHit&&p._wmCastHit[key])return false;if(!p._wmCastHit)p._wmCastHit={};p._wmCastHit[key]=true;return true;}
+/* ===== 八武器主体全面重构：独立剪影，禁止枪杖同骨 ===== */
+function nxPoly(c,pts,fill,stroke,lw){c.beginPath();for(var i=0;i<pts.length;i++){if(i)c.lineTo(pts[i][0],pts[i][1]);else c.moveTo(pts[i][0],pts[i][1]);}c.closePath();c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=lw||1;c.stroke();}}
+function nxLine(c,pts,col,w){c.beginPath();for(var i=0;i<pts.length;i++){if(i)c.lineTo(pts[i][0],pts[i][1]);else c.moveTo(pts[i][0],pts[i][1]);}c.strokeStyle=col;c.lineWidth=w;c.lineCap='round';c.lineJoin='round';c.stroke();}
+function nxCrystal(c,x,y,r,pal,T){c.save();c.translate(x,y);c.rotate(Math.sin(T*1.8)*.12);nxPoly(c,[[0,-r*1.35],[r*.68,-r*.35],[r*.48,r*.65],[0,r*1.2],[-r*.48,r*.65],[-r*.68,-r*.35]],pal.e,pal.h,1);nxPoly(c,[[0,-r*1.1],[r*.22,-r*.2],[0,r*.75],[-r*.2,-r*.2]],pal.h);c.restore();}
+function nxWeapon(c,ty,L,pal,T){var stage=Math.min(5,Math.floor((L-1)/10)),sub=(L-1)%10,metal=pal.m,hi=pal.h,ene=pal.e,dark=pal.d||'#0b1020',mx=45;
+ c.save();c.lineJoin='round';
+ if(ty===0){/* 手枪：短厚机匣+大握把，绝无长护木 */
+  mx=29+stage*2;nxPoly(c,[[0,-5],[7,-8],[mx-3,-7],[mx,-3],[mx-2,2],[9,4],[0,2]],metal,hi);nxPoly(c,[[5,2],[13,2],[11,15+sub*.25],[4,14+sub*.25],[2,6]],dark,hi);nxPoly(c,[[mx-8,-5],[mx+3,-4],[mx+3,1],[mx-8,1]],dark,ene);nxLine(c,[[4,-4],[mx-8,-4]],ene,1.4);if(sub>=2)nxPoly(c,[[8,-8],[13,-13],[19,-12],[20,-7]],dark,ene);if(stage>=2){nxLine(c,[[8,5],[18,9],[mx-2,5]],hi,1.2);}if(stage>=4){for(var i=0;i<2;i++){c.strokeStyle=ene;c.beginPath();c.ellipse(mx*.55,0,mx*.6,12+i*5,0,0,6.283);c.stroke();}}
+ }else if(ty===1){/* 步枪：枪托+长机匣+独立护木+实体长管 */
+  mx=52+stage*3;nxPoly(c,[[-9,-7],[2,-6],[7,-2],[4,5],[-7,7],[-12,3]],dark,hi);nxPoly(c,[[0,-6],[22,-7],[28,-4],[26,4],[4,5],[-1,1]],metal,hi);nxPoly(c,[[22,-5],[38,-4],[40,2],[24,3]],dark,ene);nxPoly(c,[[37,-2],[mx,-2],[mx+4,0],[mx,2],[37,2]],metal,hi);nxPoly(c,[[7,4],[15,4],[13,14],[7,13],[4,7]],dark,hi);nxPoly(c,[[18,3],[26,3],[24,11],[19,12],[16,7]],dark,ene);nxLine(c,[[2,-8],[39,-7]],hi,1.2);for(var i=0;i<4+stage;i++)nxLine(c,[[26+i*2.4,-3],[26+i*2.4,2]],ene,.8);if(sub>=3){nxPoly(c,[[11,-9],[27,-10],[30,-7],[12,-6]],dark,hi);nxLine(c,[[14,-9],[26,-9]],ene,2);}if(stage>=3){nxPoly(c,[[31,3],[38,3],[35,13],[31,12]],metal,hi);}if(stage>=5){nxLine(c,[[5,-12],[26,-17],[43,-10]],ene,2);}
+ }else if(ty===2){/* 狙击：超细长轨+大瞄镜+分叉磁轨口 */
+  mx=70+stage*3;nxPoly(c,[[-12,-4],[3,-5],[13,-2],[6,4],[-10,5]],dark,hi);nxPoly(c,[[0,-3],[45,-4],[53,-1],[45,3],[1,3]],metal,hi);nxLine(c,[[42,-2],[mx,-5]],hi,3);nxLine(c,[[42,2],[mx,5]],hi,3);nxLine(c,[[48,0],[mx+4,0]],ene,1.5);nxPoly(c,[[10,-7],[33,-9],[39,-5],[34,-2],[12,-2]],dark,hi);nxLine(c,[[15,-6],[34,-6]],ene,2);nxPoly(c,[[7,3],[13,3],[10,14],[5,14]],dark,hi);nxLine(c,[[40,3],[35,15]],metal,2);nxLine(c,[[46,3],[52,15]],metal,2);if(stage>=3){for(var i=0;i<3;i++){c.strokeStyle=i%2?hi:ene;c.beginPath();c.ellipse(mx-5+i*4,0,3,10+i*3,0,0,6.283);c.stroke();}}
+ }else if(ty===3){/* 霰弹：宽双管+厚重泵动+短粗轮廓 */
+  mx=43+stage*2;nxPoly(c,[[-8,-8],[5,-7],[12,-3],[7,6],[-7,8],[-12,3]],dark,hi);nxPoly(c,[[1,-7],[25,-8],[31,-4],[28,6],[3,7],[-2,2]],metal,hi);nxPoly(c,[[23,-6],[mx,-6],[mx+3,-3],[mx,-1],[24,-1]],dark,hi);nxPoly(c,[[23,1],[mx,1],[mx+3,3],[mx,6],[23,6]],dark,hi);nxPoly(c,[[16,5],[31,5],[33,11],[19,13],[14,9]],metal,ene);nxPoly(c,[[3,6],[11,6],[9,16],[2,15]],dark,hi);for(var i=0;i<3+stage;i++)nxLine(c,[[19+i*3,6],[19+i*3,11]],ene,1);if(stage>=4){nxPoly(c,[[25,-9],[36,-16],[mx,-10],[mx,-5]],metal,ene);}
+ }else if(ty===4){/* 加特林：六管束+圆形供能鼓，非单管步枪 */
+  mx=46+stage*2;nxPoly(c,[[-5,-8],[12,-10],[24,-6],[25,7],[10,11],[-6,7]],metal,hi);c.fillStyle=dark;c.beginPath();c.arc(9,1,10+stage,0,6.283);c.fill();c.strokeStyle=ene;c.lineWidth=2;c.stroke();for(var i=0;i<6;i++){var a=i*1.047+T*.25,yy=Math.sin(a)*(5+stage*.4),xx=Math.cos(a)*3;nxLine(c,[[20+xx,yy],[mx+xx,yy]],i%2?hi:metal,2.4);nxPoly(c,[[mx-2+xx,yy-2],[mx+5+xx,yy],[mx-2+xx,yy+2]],dark,ene);}nxPoly(c,[[1,8],[9,8],[7,17],[0,16]],dark,hi);if(stage>=3){c.strokeStyle=ene;c.beginPath();c.arc(24,0,15+stage*2,0,6.283);c.stroke();}
+ }else if(ty===5){/* 法杖：长柄+悬浮晶核+月牙冠，完全无枪管/机匣/弹仓 */
+  mx=48+stage*2;var sway=Math.sin(T*2)*1.2;nxLine(c,[[-7,10],[5,5],[20,-2],[35+sway,-8]],dark,7);nxLine(c,[[-7,9],[5,4],[20,-3],[35+sway,-8]],metal,4);nxLine(c,[[-5,8],[18,-2],[33,-7]],hi,1);for(var i=0;i<3+stage;i++){var bx=2+i*6,by=5-i*2;c.strokeStyle=ene;c.lineWidth=1.3;c.beginPath();c.arc(bx,by,3,0,6.283);c.stroke();}
+  nxLine(c,[[31,-8],[34,-19],[42,-23],[49,-18]],metal,4);nxLine(c,[[34,-7],[44,-3],[51,-7],[53,-14]],metal,4);nxLine(c,[[34,-18],[42,-21],[48,-17]],hi,1.3);nxCrystal(c,43+sway,-11,7+stage*.7,pal,T);c.strokeStyle=ene;c.lineWidth=1.2;c.beginPath();c.ellipse(43+sway,-11,12+stage,7+stage,T*.5,0,6.283);c.stroke();if(stage>=2){c.beginPath();c.ellipse(43+sway,-11,8+stage,14+stage,-T*.4,0,6.283);c.stroke();}if(stage>=4){for(var j=0;j<3;j++){var a=T+j*2.094;nxCrystal(c,43+Math.cos(a)*16,-11+Math.sin(a)*14,2.5,pal,T);}}mx=53;
+ }else if(ty===6){/* 巨炮：方重膛+宽炮口+背部能源舱 */
+  mx=45+stage*2;nxPoly(c,[[-6,-11],[21,-13],[34,-8],[36,9],[19,14],[-7,9]],metal,hi);nxPoly(c,[[25,-9],[mx-3,-12],[mx+5,-8],[mx+5,9],[mx-3,13],[25,8]],dark,hi);nxPoly(c,[[mx-1,-7],[mx+8,-6],[mx+8,7],[mx-1,8]],metal,ene);nxPoly(c,[[1,10],[12,10],[9,20],[0,19]],dark,hi);for(var i=0;i<3+stage;i++){nxPoly(c,[[2+i*6,-14],[6+i*6,-14],[7+i*6,-9],[3+i*6,-9]],dark,ene);}c.fillStyle=ene;c.beginPath();c.arc(17,0,5+stage*.5,0,6.283);c.fill();c.strokeStyle=hi;c.stroke();if(stage>=3){nxLine(c,[[-4,-15],[17,-22],[35,-14]],hi,2);}
+ }else{/* 浮游：中央控制核+三架机械翼，不长枪管 */
+  mx=36+stage*2;nxCrystal(c,12,0,8+stage*.4,pal,T);c.strokeStyle=hi;c.lineWidth=2;c.beginPath();c.ellipse(12,0,14,9,T*.4,0,6.283);c.stroke();for(var i=0;i<3;i++){var a=T*.45+i*2.094,x=12+Math.cos(a)*(18+stage*2),y=Math.sin(a)*(13+stage);nxLine(c,[[12,0],[x,y]],metal,2);c.save();c.translate(x,y);c.rotate(a);nxPoly(c,[[-7,-4],[5,-5],[10,0],[5,5],[-7,4],[-3,0]],dark,ene);nxPoly(c,[[2,-2],[8,0],[2,2]],ene);c.restore();}nxPoly(c,[[2,7],[8,8],[6,17],[0,16]],dark,hi);mx=40+stage*2;
+ }
+ // 阶段刻度嵌在主体内部，不充当主体差异
+ c.globalAlpha=.75;for(var k=0;k<=sub;k++)nxLine(c,[[2+k*1.4,-2],[2+k*1.4,0]],hi,.6);c.globalAlpha=1;c.restore();return{mx:mx,my:ty===5?-11:0};
+}
 /* 武器模型 */
 
 
@@ -9035,9 +9062,9 @@ function wepDraw(typeIdx,lv,c2,opt){
   c.save();
   glowAt(c,10,0,22,pal.e,0.16);
   var r={mx:20,my:0};
-  try{ r=(FAM_DRAW[ty]||famPistol)(c,pal,seg,T,mk,L)||r; }catch(e){}
-  wepVisibleGrowth(c,typeIdx,L,r,pal,T);
-  wep60Accessory(c,typeIdx,L,r,pal,T);
+  try{ r=nxWeapon(c,typeIdx,L,pal,T)||r; }catch(e){}
+  if(typeIdx!==5)wepVisibleGrowth(c,typeIdx,L,r,pal,T);
+  if(typeIdx!==5)wep60Accessory(c,typeIdx,L,r,pal,T);
   c.restore();
   return {len:r.mx, muzzleX:r.mx, muzzleY:r.my, pal:pal, seg:seg, type:ty, mark:mk};
 }
@@ -9071,6 +9098,7 @@ function drawGun(){
   /* 局内：先用旧2D引擎画清晰枪身，再叠3D皮肤识别件 */
   var info2=wepDraw(ty,L,ctx,{t:T});
   _gunLenPx=info2.len||44; _gunHalfH=6;
+  _gunMuzzleY=info2.muzzleY||0;
   var mx=rec+info2.muzzleX;
 var _wp=info2.pal;
   var skin=SKIN_DEF[sk]||SKIN_DEF.basicWhite;
@@ -9078,7 +9106,7 @@ var _wp=info2.pal;
   /* 叠加3D皮肤识别件：只画皮肤专属外延，不画整把3D枪 */
   try{
     var fr3d=w3GetFrame(WEP_TYPES[ty],sk,L,T,"game");
-    if(fr3d&&fr3d.coreBB&&fr3d.allBB){
+    if(ty!==5&&ty!==7&&fr3d&&fr3d.coreBB&&fr3d.allBB){
       var cb=fr3d.coreBB,ab=fr3d.allBB;
       var extW=(ab[1]-ab[0])-(cb[1]-cb[0]);
       if(extW>2){
@@ -10069,13 +10097,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v11.9");
+    localStorage.setItem("njs_patch","v12.0");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v11.9"){
+    if(seen!=="v12.0"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14736,7 +14764,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v11.9</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v12.0</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 30 日 23:38</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -14767,6 +14795,15 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-11-01 02:10:00",items:[
+      "🔨 八类武器主体全面重构，不再共用细枪身+圆环骨架",
+      "🔫 步枪改为完整枪托/机匣/独立护木/实体长管；狙击使用分叉磁轨与大型瞄镜",
+      "🔮 法杖彻底移除枪管、机匣和弹仓，改为斜长柄/月牙冠/悬浮晶核/多层魔法轨道",
+      "💥 霰弹使用宽双管与泵动结构；加特林使用六管束与圆形供能鼓",
+      "☄️ 巨炮使用方重膛与宽炮口；浮游使用中央控制核与三机械翼",
+      "🎯 法杖攻击改从悬浮晶核发射，不再从枪管位置出现",
+      "🧩 法杖与浮游不再叠加旧枪械3D框架，避免皮肤把新主体重新覆盖成枪"
+    ]},
     {time:"2026-11-01 01:20:00",items:[
       "🔮 法杖全面加强：雷击倍率提升，3个基础目标起步，每阶增加2个雷链目标与额外落雷",
       "📈 武器升级加入真实伤害曲线与阶段机制成长：弹体尺寸/数量/贯穿/范围/拖尾随等级提升",
