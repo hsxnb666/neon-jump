@@ -164,6 +164,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   </div>
 <button class="btn btn-main" onclick="startGame(false)">开 始 游 戏</button>
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
+  <button class="btn btn-main" style="background:linear-gradient(135deg,#5433ff,#20bdff);margin-top:8px" onclick="startRift()">◈ 裂隙突围 · 新玩法</button>
+  <div style="font-size:10px;color:#8edfff;margin-top:4px">穿门续时 · 电池补给 · 连锁得分 · 守望者决战</div>
   <div style="display:flex;gap:8px;justify-content:center;margin:8px auto 0">
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
@@ -172,7 +174,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v12.2</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v12.3</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -227,7 +229,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   </div>
   <div id="overBoard" style="width:min(90vw,480px);height:170px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;margin:0 auto;padding:6px 10px;border-radius:12px;background:rgba(0,242,255,.05);border:1px solid rgba(0,242,255,.2);color:#7fdcff;font-size:12px;text-align:left;box-sizing:border-box"></div>
   <div id="lbStatus" style="font-size:10px;color:#7fb8e0;margin-top:4px;min-height:14px;text-align:center"></div>
-<button class="btn btn-main" onclick="startGame(smartMode)">重新开始</button>
+<button class="btn btn-main" onclick="riftMode?startRift():startGame(smartMode)">重新开始</button>
   <button onclick="backToHome()" style="margin-top:10px;padding:9px 34px;border-radius:20px;background:rgba(255,255,255,.07);border:1.5px solid rgba(160,168,255,.5);color:#b8c0ff;font-size:14px;cursor:pointer">🏠 回 主 页</button>
 </div>
 
@@ -252,6 +254,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <div class="dist"><span id="distVal">0</span><u>m</u></div>
     <div class="score" id="scoreVal">0</div>
     <div class="wave" id="waveVal">WAVE 1</div>
+    <div id="riftHud" style="display:none;font-size:12px;font-weight:800;color:#8ef7ff"></div>
     <div id="coinVal" style="font-size:12px;font-weight:700;color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,.5);transition:transform .12s">🪙 0</div>
   </div>
 </div>
@@ -281,6 +284,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   </div>
 </div>
 <script>
+var riftMode=false,rift=null,_riftWinTimer=null,_riftHudLast="";
 window.onerror=function(m,s,l,c,e){
   try{
     var d=document.getElementById("errbox");
@@ -318,7 +322,7 @@ resize();addEventListener("resize",resize);
 /* 音乐 */
 var AC=window.AudioContext||window.webkitAudioContext,audio=null,musicOn=true,bgmT=null,bgmS=0;
 function eA(){if(!audio&&AC){try{audio=new AC()}catch(e){}}if(audio&&audio.state==="suspended"){try{audio.resume()}catch(e){}}}
-function sfx(f,t,d,v,sl){if(!audio||!musicOn)return;try{var o=audio.createOscillator(),g=audio.createGain();o.type=t;o.frequency.setValueAtTime(f,audio.currentTime);if(sl)o.frequency.exponentialRampToValueAtTime(sl,audio.currentTime+d);g.gain.setValueAtTime(v,audio.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audio.currentTime+d);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d)}catch(e){}}
+function sfx(f,t,d,v,sl){if(!audio||!musicOn)return;try{var o=audio.createOscillator(),g=audio.createGain();o.type=t;o.frequency.setValueAtTime(f,audio.currentTime);if(sl)o.frequency.exponentialRampToValueAtTime(sl,audio.currentTime+d);g.gain.setValueAtTime(v,audio.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audio.currentTime+d);o.connect(g);g.connect(audioDest(false));o.start();o.stop(audio.currentTime+d)}catch(e){}}
 /* ===== 性能优化：粒子池 + 帧预算 + 拖尾降密度 + 渐变缓存 ===== */
 var _PT_POOL=[],_PT_ALIVE=0;
 function ptAlloc(o){var q=_PT_POOL.pop();if(!q)q={};q.x=o.x;q.y=o.y;q.vx=o.vx;q.vy=o.vy;q.t=0;q.life=o.life;q.size=o.size;q.color=o.color;q.kind=o.kind;q.shape=o.shape;q.spin=o.spin||0;q.rot=o.rot||0;q.grav=o.grav;q._alive=1;return q;}
@@ -355,7 +359,7 @@ function sfxNew(freq,dur,vol,type,slide){
    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
    var f=audio.createBiquadFilter();
    f.type='lowpass';f.frequency.value=Math.min(9000,freq*3.2);f.Q.value=0.7;
-   o.connect(f);f.connect(g);g.connect(audio.destination);
+   o.connect(f);f.connect(g);g.connect(audioDest(false));
    o.start(t);o.stop(t+dur+0.02);
  }catch(e){}
 }
@@ -379,7 +383,7 @@ function noiseHit(dur,vol,freq,type){
    src.playbackRate.value=Math.min(2,Math.max(0.6,(type==='highpass'?1.6:1.0)));
    var f=audio.createBiquadFilter();f.type=type||'bandpass';f.frequency.value=freq||1200;f.Q.value=0.9;
    var g=audio.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-   src.connect(f);f.connect(g);g.connect(audio.destination);
+   src.connect(f);f.connect(g);g.connect(audioDest(false));
    src.start(t);src.stop(t+dur+0.02);
  }catch(e){}
 }
@@ -398,7 +402,7 @@ function sfxH(freq,dur,vol,wave,slide,hp){
     var fl=audio.createBiquadFilter();
     fl.type=hp?"highpass":"lowpass";
     fl.frequency.value=(hp||1)*1;
-    o.connect(fl);fl.connect(g);g.connect(audio.destination);
+    o.connect(fl);fl.connect(g);g.connect(audioDest(false));
     o.start(t);o.stop(t+dur+0.01);
   }catch(e){}
 }
@@ -418,7 +422,7 @@ function noiseBurst(dur,vol,filtFreq,type){
     var src=audio.createBufferSource();src.buffer=buf;
     var f=audio.createBiquadFilter();f.type=type||"bandpass";f.frequency.value=filtFreq||1200;f.Q.value=1.2;
     var g=audio.createGain();g.gain.value=vol;
-    src.connect(f);f.connect(g);g.connect(audio.destination);
+    src.connect(f);f.connect(g);g.connect(audioDest(false));
     src.start(t);
   }catch(e){}
 }
@@ -504,7 +508,7 @@ function bgmTick(){
       k.frequency.exponentialRampToValueAtTime(38,t+0.13);
       kg.gain.setValueAtTime(0.22,t);
       kg.gain.exponentialRampToValueAtTime(0.001,t+0.15);
-      k.connect(kg);kg.connect(audio.destination);k.start(t);k.stop(t+0.16);
+      k.connect(kg);kg.connect(audioDest(false));k.start(t);k.stop(t+0.16);
       noiseBurst(0.05,0.06,3000,"highpass");
     }
     // 军鼓：第2、4拍
@@ -514,7 +518,7 @@ function bgmTick(){
       sn.type="triangle";sn.frequency.setValueAtTime(200,t);
       sn.frequency.exponentialRampToValueAtTime(120,t+0.1);
       sng.gain.setValueAtTime(0.07,t);sng.gain.exponentialRampToValueAtTime(0.001,t+0.11);
-      sn.connect(sng);sng.connect(audio.destination);sn.start(t);sn.stop(t+0.12);
+      sn.connect(sng);sng.connect(audioDest(false));sn.start(t);sn.stop(t+0.12);
     }
     // 踩镲：每8分音符
     if(step%2===0){
@@ -530,7 +534,7 @@ function bgmTick(){
     bft.Q.value=6;
     bg.gain.setValueAtTime(0.1,t);
     bg.gain.exponentialRampToValueAtTime(0.001,t+0.23);
-    bo.connect(bft);bft.connect(bg);bg.connect(audio.destination);
+    bo.connect(bft);bft.connect(bg);bg.connect(audioDest(false));
     bo.start(t);bo.stop(t+0.24);
     // 主旋律琶音
     if(step%2===1){
@@ -540,7 +544,7 @@ function bgmTick(){
       var aft=audio.createBiquadFilter();aft.type="lowpass";aft.frequency.value=2400;
       ag.gain.setValueAtTime(0.026,t);
       ag.gain.exponentialRampToValueAtTime(0.001,t+0.14);
-      ao.connect(aft);aft.connect(ag);ag.connect(audio.destination);
+      ao.connect(aft);aft.connect(ag);ag.connect(audioDest(false));
       ao.start(t);ao.stop(t+0.15);
       // 延迟回声
       var ao2=audio.createOscillator(),ag2=audio.createGain();
@@ -558,7 +562,7 @@ function bgmTick(){
       pg.gain.setValueAtTime(0.001,t);
       pg.gain.linearRampToValueAtTime(0.035,t+0.4);
       pg.gain.exponentialRampToValueAtTime(0.001,t+2.2);
-      po.connect(pf);pf.connect(pg);pg.connect(audio.destination);
+      po.connect(pf);pf.connect(pg);pg.connect(audioDest(false));
       po.start(t);po.stop(t+2.3);
     }
     // 氛围噪声（风声）
@@ -581,7 +585,7 @@ function _bgmVoice(freq,t,dur,vol,type,cut){
    g.gain.setValueAtTime(0.0001,t);
    g.gain.exponentialRampToValueAtTime(vol,t+0.02);
    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-   o.connect(f);f.connect(g);g.connect(audio.destination);
+   o.connect(f);f.connect(g);g.connect(audioDest(false));
    o.start(t);o.stop(t+dur+0.03);
  }catch(e){}
 }
@@ -593,7 +597,7 @@ function _bgmKick(t){
    g.gain.setValueAtTime(0.0001,t);
    g.gain.exponentialRampToValueAtTime(0.16,t+0.012);
    g.gain.exponentialRampToValueAtTime(0.0001,t+0.2);
-   o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+0.22);
+   o.connect(g);g.connect(audioDest(false));o.start(t);o.stop(t+0.22);
  }catch(e){}
 }
 function _bgmHat(t,vol){
@@ -602,7 +606,7 @@ function _bgmHat(t,vol){
    var s=audio.createBufferSource();s.buffer=buf;s.playbackRate.value=2.2;
    var f=audio.createBiquadFilter();f.type='highpass';f.frequency.value=7000;
    var g=audio.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
-   s.connect(f);f.connect(g);g.connect(audio.destination);s.start(t);s.stop(t+0.07);
+   s.connect(f);f.connect(g);g.connect(audioDest(false));s.start(t);s.stop(t+0.07);
  }catch(e){}
 }
 function bgmTickNew(){
@@ -679,7 +683,7 @@ var gameState="start",lastTime=0,timeScale=1,slowTimer=0;
 var hitStop=0,hitStopMax=0,zoomPunch=0,zoomPunchDir=1;
 var HITSTOP_ENABLED=false;   // 关闭命中停顿（用户要求：不要停顿，技能可保留）
 var cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
-var world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
+var world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],riftGates:[],riftCells:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
 var score=0,distance=0,wave=1,bossSpawned=0,bossWave=0,bossAlive=false;
 var revives=3,rageTimer=0,coinCount=0;
 var skillCd=0,SK_CD=12,combo=0,comboT=0,gunLevel=1,gunType=0;
@@ -783,8 +787,10 @@ _attrApplied=totalAttr();
 player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:Math.round(100*attrMul("hp")),maxHp:Math.round(100*attrMul("hp")),en:100,maxEn:100,onGround:false,jumps:0,facing:1,shootCd:0,inv:0,dead:false,anim:0,dashCd:0,dashing:0,shield:0,drones:[]};
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
 world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
-score=0;distance=0;wave=1;bossSpawned=0;bossWave=0;bossAlive=false;skillCd=0;timeScale=1;slowTimer=0;WM_FX.length=0;WM_STATE={ty:-1,step:0,heat:0,last:0};
+score=0;distance=0;wave=1;bossSpawned=0;bossWave=0;bossAlive=false;skillCd=0;timeScale=1;slowTimer=0;WM_FX.length=0;WM_STATE={ty:-1,step:0,heat:0,last:0};world.riftGates=[];world.riftCells=[];
 makeStars();
+_PHYS_ACC=0;
+var rh=document.getElementById("riftHud");if(rh)rh.style.display=riftMode?"block":"none";
 world.platforms.push({x:-200,y:H-60,w:900,h:120,bounce:false,moving:false});
 world.enemies.push({type:"walker",x:520,y:H-60-36,w:40,h:44,vx:0.8,hp:40,maxHp:40,plat:world.platforms[0],dir:-1,score:100,shell:0,spinCd:0});
 world.enemies.push({type:"flyer",x:700,y:H-230,w:30,h:30,hp:14,maxHp:14,t:0,score:80,orbit:0,state:0});
@@ -966,6 +972,7 @@ function doDash(){var p=player;if(gameState!=="playing"||p.dashCd>0)return;p.das
   fxOrbitalRings(p.x,p.y-30,"#7c3aed",90);sfx(600,"sine",0.5,0.1,1200);spawnShockRing(p.x,p.y-30,"#b026ff",90);p.clones=[];for(var ci=0;ci<3;ci++){p.clones.push({a:ci*2.094,t:0,life:4,shootCd:0,x:0,y:0})}world.flash=0.35;spawnShockRing(p.x,p.y-30,"#00f2ff",100);spawnShockRing(p.x,p.y-30,"#ff00aa",80);spawnShockRing(p.x,p.y-30,"#fff",140);sfx(900,"sine",0.4,0.08,2400);world.texts.push({x:p.x,y:p.y-70,text:"护盾·分身幻影!",life:1.2,vy:-40})}
 
 function killEnemy(e,idx){
+  if(riftMode&&e.riftBoss)riftVictory();
   if(!e._wmKilled&&typeof e._wmLastTy==='number')wmKill(e,e._wmLastTy);
   /* 击杀特效：按当前皮肤 kill 分派 */
   try{
@@ -4189,7 +4196,7 @@ if(tier>=4){
 if(rageTimer>0){
   for(var ri=-1;ri<=1;ri++)mk(ang+ri*0.18,ri*4,bc3,6,dmgBase*0.5,true,700);
 }
-if(ty!==2)sShoot();
+weaponSound(ty,false);
 spawnParticles(p.x+Math.cos(ang)*32,p.y+Math.sin(ang)*14,3,bc,35);
 /* 浮游机位置同步 */
 if(ty===7&&p.drones){
@@ -4231,7 +4238,7 @@ function wmDrawBullet(b){var ty=b.gunTy,c=WM_COLS[ty]||b.color,a=Math.atan2(b.vy
  ctx.restore();}
 function wmDraw(){if(!player)return;wmDrawFx();for(var i=0;i<world.bullets.length;i++){var b=world.bullets[i];if(b.owner==='player'&&b.gunTy>=0&&b.gunTy!==2)wmDrawBullet(b);}if(gunType===7&&player.drones){for(var j=0;j<player.drones.length;j++){var d=player.drones[j];ctx.save();ctx.translate(d.x,d.y);ctx.rotate(d.a*2);ctx.fillStyle=WM_COLS[7];ctx.strokeStyle='#fff';ctx.lineWidth=1.2;wmPoly(4,9,.785);ctx.fill();ctx.stroke();ctx.fillStyle='#101e38';wmPoly(4,5,.785);ctx.fill();ctx.rotate(-d.a*4);ctx.strokeStyle=WM_COLS[7];wmPoly(3,14,0);ctx.stroke();ctx.restore();}}
  if(input.shoot&&gameState==='playing'){var names=['双星','追猎','贯星','碎星','过热','雷印','轰爆','棱镜'],step=(player.wmStep||0)+1,need=[5,6,3,4,12,4,3,6][gunType];ctx.save();ctx.textAlign='center';ctx.font='bold 11px sans-serif';ctx.fillStyle=WM_COLS[gunType];ctx.fillText(names[gunType]+' '+Math.min(step,need)+'/'+need,player.x,player.y-100);ctx.restore();}}
-function wmDamage(e,dmg,ty,x,y){if(!e||e.hp<=0||!wmCastCanHit(player,e))return;var idx=world.enemies.indexOf(e);e.hp-=dmg;e._wmLastTy=ty;wmFx(ty===5?'strike':ty===3?'slash':'ring',x,y,WM_COLS[ty],{life:ty===5?.42:.3,r:ty===3?65:42,a:0});if(ty===3&&e.type!=='boss')e.x+=22;if(e.hp<=0&&idx>=0)killEnemy(e,idx);}
+function wmDamage(e,dmg,ty,x,y){if(!e||e.hp<=0||!wmCastCanHit(player,e))return;weaponHitSound(ty);var idx=world.enemies.indexOf(e);e.hp-=dmg;e._wmLastTy=ty;wmFx(ty===5?'strike':ty===3?'slash':'ring',x,y,WM_COLS[ty],{life:ty===5?.42:.3,r:ty===3?65:42,a:0});if(ty===3&&e.type!=='boss')e.x+=22;if(e.hp<=0&&idx>=0)killEnemy(e,idx);}
 function wmArea(x,y,r,dmg,ty){var list=world.enemies.slice();for(var i=0;i<list.length;i++){var e=list[i],dx=e.x-x,dy=e.y-y;if(dx*dx+dy*dy<r*r)wmDamage(e,dmg,ty,e.x,e.y);}}
 function wmBeam(x,y,a,len,dmg,pierce){wmFx('beam',x,y,WM_COLS[2],{life:.38,x2:x+Math.cos(a)*len,y2:y+Math.sin(a)*len});var list=world.enemies.slice();for(var i=0;i<list.length;i++){var e=list[i],dx=e.x-x,dy=e.y-y,along=dx*Math.cos(a)+dy*Math.sin(a),side=Math.abs(-dx*Math.sin(a)+dy*Math.cos(a));if(along>0&&along<len&&side<(pierce?34:22))wmDamage(e,dmg,2,e.x,e.y);}}
 function wmShot(p,ty,dmg,a,x,y,spd){var b={x:x,y:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:ty===6?13:5,life:2.5,owner:'player',color:WM_COLS[ty],dmg:dmg,home:ty===0||ty===5,lv:gunLevel,gunTy:ty,wm:true,age:0,pierce:ty===1?1:0,bounce:0};wmEmpowerBullet(b);world.bullets.push(b);return b;}
@@ -4245,7 +4252,7 @@ function wmFire(p,tg,dmgBase,rd){wmResetCombo();wmBeginCast(p);var ty=gunType,L=
  else if(ty===6){p.shootCd=.95*rlRateMul();var sh=wmShot(p,6,d*3.4,a,x,y,420);sh.bigShell=true;sh.boomR=125;if(step%3===0){combo=true;sh.wmCluster=true;sh.boomR=175;sh.r=17;}cam.shake=8;}
  else {p.shootCd=.28*rlRateMul();if(!p.drones)p.drones=[];while(p.drones.length<2+Math.min(tier,2)){var da=p.drones.length*2.1;p.drones.push({a:da,r:62,x:p.x,y:p.y-45,cd:0});}if(step%6===0){combo=true;var tx=tg?tg.x:x+p.facing*300,tyy=tg?tg.y:y;for(var v=0;v<p.drones.length;v++){var dr=p.drones[v];wmFx('beam',dr.x,dr.y,WM_COLS[7],{x2:tx,y2:tyy,life:.4});wmArea(tx,tyy,100,d*1.5,7);}}}
  wmEvolutionFx(p,tg,ty,tier,x,y,d);
- if(combo){world.texts.push({x:p.x,y:p.y-115,text:'✦ '+WM_NAMES[ty]+' ✦',life:1.0,vy:-28});spawnShockRing(p.x,p.y-35,WM_COLS[ty],105);}
+ weaponSound(ty,true);if(combo){world.texts.push({x:p.x,y:p.y-115,text:'✦ '+WM_NAMES[ty]+' ✦',life:1.0,vy:-28});spawnShockRing(p.x,p.y-35,WM_COLS[ty],105);}
 }
 function wmUpdate(p,dt){if(!p)return;if(gunType!==7&&p.drones)p.drones=[];for(var i=0;i<world.bullets.length;i++){var b=world.bullets[i];if(b.owner==='player'){b.age=(b.age||0)+dt;if(b.gunTy===5){b.vy+=Math.sin(b.age*8)*18*dt;}if(b.gunTy===1&&b.wmMissile){b.vy+=Math.sin(b.age*10)*90*dt;}}}if(gunType===7&&p.drones){for(var j=0;j<p.drones.length;j++){var d=p.drones[j];d.a+=dt*(1.5+j*.12);d.x=p.x+Math.cos(d.a)*d.r;d.y=p.y-45+Math.sin(d.a*1.3)*28;d.cd-=dt;if(d.cd<=0){var tg=null,md=500*500;for(var k=0;k<world.enemies.length;k++){var e=world.enemies[k],dd=(e.x-d.x)*(e.x-d.x)+(e.y-d.y)*(e.y-d.y);if(dd<md){md=dd;tg=e;}}d.cd=.65;if(tg){var a=Math.atan2(tg.y-d.y,tg.x-d.x),db=Math.round((12+(gunLevel||1)*.8)*.45*rlDmgMul()*attrMul('dmg'));wmShot(p,7,db,a,d.x,d.y,600);}}}}}
 function wmHit(b,e){var ty=b.gunTy;if(ty===3){e.x+=10;wmFx('slash',b.x,b.y,WM_COLS[3],{r:35,a:Math.atan2(b.vy,b.vx),life:.2});}else if(ty===5){wmFx('rune',b.x,b.y,WM_COLS[5],{r:28,life:.28});}else if(ty===7){wmFx('link',b.x-12,b.y-12,WM_COLS[7],{x2:b.x+12,y2:b.y+12,life:.18});}else wmFx('ring',b.x,b.y,WM_COLS[ty]||b.color,{r:28,life:.2});}
@@ -9417,7 +9424,7 @@ var _wp=info2.pal;
   }
 }
 /* ========== update ========== */
-function update(rdt){
+function updateStep(rdt){
 if(gameState!=="playing")return;
 var dt=rdt*timeScale;
 try{ _animUpd(dt); }catch(e){}
@@ -9452,8 +9459,10 @@ if(p.airT>0){ p.airT-=dt; }
   if(Math.abs(move)>0.1){p.vx+=(move*speed-p.vx)*_accel*dt;p.facing=move>0?1:-1}else{p.vx*=Math.max(0,1-fr*dt)}
 p.dashCd=Math.max(0,p.dashCd-rdt);
 if(p.shield>0)p.shield-=rdt;
-p.vy+=1100*dt;
-p.x+=p.vx*dt;p.y+=p.vy*dt;p.anim+=dt;
+var _prevFoot=p.y+p.h/2;
+ p.vy+=1100*dt;
+ p.x+=p.vx*dt;p.y+=p.vy*dt;p.anim+=dt;
+ var _nextFoot=p.y+p.h/2;
 for(var i=0;i<world.platforms.length;i++){
   if(world.platforms[i].moving){
     var pl=world.platforms[i];pl.mvPhase+=dt*1.2;
@@ -9468,7 +9477,7 @@ for(var i=0;i<world.platforms.length;i++){
   var plat=world.platforms[i];
   if(p.x+p.w/2>plat.x&&p.x-p.w/2<plat.x+plat.w&&p.vy>0){
     var top=plat.y-plat.h/2;
-    if(p.y+p.h/2>=top&&p.y+p.h/2<=top+34){
+    if(_nextFoot>=top&&_prevFoot<=top+4&&_nextFoot-_prevFoot>=0){
       if(plat.bounce){p.y=top-p.h/2;p.vy=-680;p.jumps=0;sBounce();spawnShockRing(p.x,top,"#ffe600",90);world.texts.push({x:p.x,y:top-40,text:"弹射!",life:0.5,vy:-40})}
       else{p.y=top-p.h/2;p.vy=0;p.onGround=true;p.jumps=0;p._plat=plat}
     }
@@ -10116,6 +10125,7 @@ world._dark=Math.max(0,(world._dark||0)-rdt*2);
 world._blind=Math.max(0,(world._blind||0)-rdt*2);
 // 死亡
 if(p.hp<=0&&!p.dead){p.dead=true;if(revives>0){gameState="revive";try{setPanelTitle("reviveTitle",TAUNT_DEAD,_tauntUsedDead);}catch(e){}var ri=document.getElementById("reviveInfo");if(ri)ri.textContent="剩余复活 "+revives+"次 得分"+score+" 距离"+distance+"m"+(smartMode?" · 🧠聪明人模式":"");var rs=document.getElementById("reviveScreen");if(rs)rs.classList.remove("hidden");ui.hud.classList.add("hidden");sfx(80,"sawtooth",0.5,0.1,40)}else{doGiveUp()}}
+if(riftMode)riftUpdate(rdt);
 ensureWorld();spawnEnemies()}
 
 /* 头像 */
@@ -10244,7 +10254,7 @@ function closePatchNote(){
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v12.2"){
+    if(seen!=="12.3"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -13891,7 +13901,7 @@ function draw(){
 drawFx();
 drawBulletFx();
 drawSkinFx();   /* 命中/击杀特效（按皮肤分派） */
- wmDraw();
+ wmDraw();if(riftMode)riftDraw();
   // 分身幻影绘制
   if(player&&player.clones&&player.clones.length>0){
     for(var ci=0;ci<player.clones.length;ci++){
@@ -14086,9 +14096,18 @@ function updateUI(){
   if(score!==_uiLast.s){_uiLast.s=score;ui.score.textContent=score;}
 }
 
+var _PHYS_ACC=0;
+function update(rdt){
+ if(gameState!=="playing")return;
+ _PHYS_ACC+=Math.min(rdt,.12);
+ var steps=0;
+ while(_PHYS_ACC>=1/60&&steps<6){updateStep(1/60);_PHYS_ACC-=1/60;steps++;if(gameState!=="playing"){_PHYS_ACC=0;break;}}
+ if(steps===6)_PHYS_ACC=0;
+}
 var _lastFrameMs=0,_frameMsAcc=0,_frameMsCnt=0;
 function loop(ts){
-  var rdt=Math.min((ts-lastTime)/1000,0.05);
+  var rawDt=lastTime?(ts-lastTime)/1000:1/60;
+  var rdt=Math.min(Math.max(rawDt,0),0.10);
   lastTime=ts;
 
   // 性能采样（用帧间隔判断负载）
@@ -14105,6 +14124,7 @@ function loop(ts){
 }
 
 function startGame(sm){
+  if(!riftMode)rift=null;
   smartMode=!!sm;
   eA();
   startBgm();
@@ -14716,7 +14736,7 @@ function openHomeRank(){ try{ openHomeRankFixed(); }catch(e){ try{console.log(e.
 
 function closeHomeRank(){ try{ closeHomeRankFixed(); }catch(e){} }
 
-function backToHome(){
+function backToHome(){riftMode=false;rift=null;if(_riftWinTimer){clearTimeout(_riftWinTimer);_riftWinTimer=null;}
   try{ if(typeof stopBgm==="function") stopBgm(); }catch(e){}
   // 兜底：本局有分数但还没提交过（如中途放弃），补提交一次
   try{
@@ -14905,7 +14925,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v12.2</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v12.3</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 30 日 23:38</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -16086,6 +16106,113 @@ var _info3=document.createElement("div");
     dt.appendChild(h);dt.appendChild(back);
   }
 })();
+/* v12.3：独立武器音色 + 母线限幅 + 有主题的配乐 */
+var _audioMaster=null,_sfxBus=null,_musicBus=null,_audioComp=null;
+function initAudioBus(){
+ if(!audio||_audioMaster)return;
+ _audioMaster=audio.createGain();_audioMaster.gain.value=.78;
+ _sfxBus=audio.createGain();_sfxBus.gain.value=.62;
+ _musicBus=audio.createGain();_musicBus.gain.value=.34;
+ _audioComp=audio.createDynamicsCompressor();
+ _audioComp.threshold.value=-18;_audioComp.knee.value=16;_audioComp.ratio.value=5;
+ _audioComp.attack.value=.006;_audioComp.release.value=.18;
+ _sfxBus.connect(_audioMaster);_musicBus.connect(_audioMaster);
+ _audioMaster.connect(_audioComp);_audioComp.connect(audio.destination);
+}
+function audioDest(music){initAudioBus();return music?_musicBus:_sfxBus;}
+function aTone(freq,t,dur,vol,type,slide,cut,music){
+ if(!audio||!musicOn)return;
+ try{
+  var o=audio.createOscillator(),g=audio.createGain(),f=audio.createBiquadFilter();
+  o.type=type||'sine';o.frequency.setValueAtTime(Math.max(25,freq),t);
+  if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(25,slide),t+dur*.88);
+  f.type='lowpass';f.frequency.value=cut||4200;f.Q.value=.55;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,vol),t+.008);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(f);f.connect(g);g.connect(audioDest(music));o.start(t);o.stop(t+dur+.025);
+ }catch(e){}
+}
+var _wsLast=[0,0,0,0,0,0,0,0],_whLast=0;
+function weaponSound(ty,combo){
+ if(!audio||!musicOn)return;
+ var n=audio.currentTime,minGap=[.07,.065,.16,.15,.04,.13,.20,.07][ty]||.06;
+ if(n-_wsLast[ty]<minGap)return;_wsLast[ty]=n;
+ var v=combo?1.15:1;
+ if(ty===0){aTone(330,n,.09,.13*v,'triangle',115,1700);aTone(1250,n,.045,.038,'sine',620,2800);noiseHit(.045,.045,1000,'bandpass');}
+ else if(ty===1){aTone(185,n,.075,.105*v,'sawtooth',72,1050);aTone(640,n,.035,.04,'square',310,1500);noiseHit(.038,.032,850,'bandpass');}
+ else if(ty===2){aTone(105,n,.24,.18*v,'sine',38,650);aTone(1450,n,.16,.055*v,'triangle',390,2600);noiseHit(.12,.075,1700,'bandpass');}
+ else if(ty===3){aTone(115,n,.19,.20*v,'triangle',42,650);noiseHit(.16,.15*v,620,'lowpass');aTone(410,n+.026,.07,.04,'sine',180,1200);}
+ else if(ty===4){aTone(145,n,.06,.075*v,'sawtooth',62,800);noiseHit(.035,.035,520,'lowpass');aTone(480,n,.03,.022,'square',220,1000);}
+ else if(ty===5){aTone(261.63,n,.28,.065*v,'sine',523.25,2600);aTone(392,n+.025,.23,.035,'sine',659.25,2800);aTone(783.99,n,.12,.024,'triangle',1174.66,3500);noiseHit(.08,.022,2300,'bandpass');}
+ else if(ty===6){aTone(82,n,.32,.22*v,'sine',28,500);aTone(190,n,.15,.08,'triangle',45,700);noiseHit(.24,.18*v,440,'lowpass');}
+ else {aTone(880,n,.11,.06*v,'sine',1320,3600);aTone(1760,n,.055,.025,'triangle',1100,3800);}
+}
+function weaponHitSound(ty){
+ if(!audio||!musicOn)return;var n=audio.currentTime;if(n-_whLast<.055)return;_whLast=n;
+ var f=[520,310,760,190,240,660,110,940][ty]||400;
+ aTone(f,n,.055,.027,'sine',f*.58,1800);
+ if(ty===5)aTone(f*1.5,n+.018,.07,.018,'sine',f*2,2400);
+}
+/* 四个小节的和声与旋律，不再用随机琶音循环 */
+var _bgmCtxT=0,_bgmStep=0,_bgmTimer=null;
+var _PROG=[[0,3,7],[8,12,15],[5,8,12],[7,10,14]];
+var _MELO=[12,15,19,17,15,12,10,12,20,19,15,17,15,12,10,7];
+function _bgmVoice(freq,t,dur,vol,type,cut){aTone(freq,t,dur,vol,type,0,cut,true);}
+function _bgmKick(t){aTone(105,t,.19,.15,'sine',38,500,true);}
+function _bgmHat(t,v){if(!audio||!musicOn)return;try{var s=audio.createBufferSource();s.buffer=noiseBuf();var f=audio.createBiquadFilter();f.type='highpass';f.frequency.value=5200;var g=audio.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+.045);s.connect(f);f.connect(g);g.connect(_musicBus||audio.destination);s.start(t);s.stop(t+.06);}catch(e){}}
+function bgmTickNew(){
+ if(!audio||!musicOn)return;initAudioBus();var now=audio.currentTime;
+ if(_bgmCtxT<now)_bgmCtxT=now+.04;
+ while(_bgmCtxT<now+.18){
+  var step=_bgmStep%16,bar=Math.floor(_bgmStep/16)%4,ch=_PROG[bar],t=_bgmCtxT;
+  if(step===0||step===8||(bar===3&&step===14))_bgmKick(t);
+  if(step===4||step===12){_bgmHat(t,.035);aTone(155,t,.09,.035,'triangle',95,900,true);}
+  if(step%2===1)_bgmHat(t,step%4===3?.018:.011);
+  if(step%4===0)_bgmVoice(55*Math.pow(2,ch[0]/12),t,.38,.07,'triangle',0,650,true);
+  if(step===0){for(var k=0;k<3;k++)_bgmVoice(110*Math.pow(2,ch[k]/12),t,1.55,.023,'sine',0,1300,true);}
+  if(step%2===0){var m=_MELO[(step+bar*4)%16];_bgmVoice(220*Math.pow(2,m/12),t,.24,.036,'triangle',0,2400,true);if(bar===1||bar===3)_bgmVoice(440*Math.pow(2,m/12),t+.055,.15,.009,'sine',0,2800,true);}
+  _bgmCtxT+=.125;_bgmStep++;
+ }
+}
+function startBgm(){if(!audio)return;stopBgm();initAudioBus();_bgmCtxT=audio.currentTime+.06;_bgmStep=0;_bgmTimer=setInterval(bgmTickNew,50);bgmT=_bgmTimer;}
+function stopBgm(){if(_bgmTimer){clearInterval(_bgmTimer);_bgmTimer=null;}if(bgmT){clearInterval(bgmT);bgmT=null;}}
+function toggleMusic(){musicOn=!musicOn;if(ui.musicBtn){ui.musicBtn.textContent=musicOn?"♪":"✕";ui.musicBtn.style.color=musicOn?"#ffe600":"#555";}if(audio&&_audioMaster)_audioMaster.gain.setTargetAtTime(musicOn?.78:0,audio.currentTime,.025);}
+/* 独立玩法：裂隙突围 */
+var riftMode=false,rift=null,_riftWinTimer=null,_riftHudLast='';
+function riftReset(){if(_riftWinTimer){clearTimeout(_riftWinTimer);_riftWinTimer=null;}_riftHudLast='';rift={time:48,gates:0,combo:0,best:0,next:1,boss:false,won:false,cells:0};}
+function startRift(){riftMode=true;startGame(false);riftReset();riftSpawnGate();riftUpdate(0);showToast('裂隙突围：穿过能量门续时，最终击破守望者！');}
+function riftSpawnGate(){
+ var p=player,x=p.x+Math.max(W*.85,520),best=null;
+ for(var i=0;i<world.platforms.length;i++){var q=world.platforms[i];if(q.x>x-100&&q.x<x+450&&q.w>150){best=q;break;}}
+ var y=best?best.y-best.h/2-70:H*.48;
+ world.riftGates.push({x:x,y:y,r:55,t:0,got:false});
+ if(rift.gates%2===0)world.riftCells.push({x:x-180,y:y-25,t:0,got:false});
+}
+function riftUpdate(rdt){
+ if(!rift||gameState!=='playing')return;
+ if(rift.won)return;
+ rift.time-=rdt;
+ if(rift.time<=0){rift.time=0;player.hp=0;return;}
+ if(!world.riftGates.length)riftSpawnGate();
+ for(var i=world.riftGates.length-1;i>=0;i--){var g=world.riftGates[i];g.t+=rdt;var dx=player.x-g.x,dy=player.y-g.y;
+  if(!g.got&&dx*dx+dy*dy<(g.r+24)*(g.r+24)){g.got=true;rift.gates++;rift.combo++;rift.best=Math.max(rift.best,rift.combo);var bonus=Math.min(6,3+rift.combo*.25);rift.time=Math.min(65,rift.time+bonus);score+=500*rift.combo;player.en=player.maxEn;world.texts.push({x:g.x,y:g.y-70,text:'裂隙 '+rift.gates+'/6  +'+bonus.toFixed(1)+'秒',life:1.8,vy:-25});spawnShockRing(g.x,g.y,'#7df9ff',150);weaponSound(5,true);world.riftGates.splice(i,1);if(rift.gates<6)riftSpawnGate();else riftSpawnBoss();continue;}
+  if(g.x<player.x-150){rift.combo=0;world.riftGates.splice(i,1);riftSpawnGate();}
+ }
+ for(var j=world.riftCells.length-1;j>=0;j--){var c=world.riftCells[j];c.t+=rdt;if(!c.got&&Math.abs(player.x-c.x)<38&&Math.abs(player.y-c.y)<55){c.got=true;rift.cells++;rift.time=Math.min(65,rift.time+4);coinCount+=5;world.texts.push({x:c.x,y:c.y-35,text:'电池 +4秒 +5金币',life:1.4,vy:-30});sCoin();world.riftCells.splice(j,1);}else if(c.x<cam.x-250)world.riftCells.splice(j,1);}
+ var el=$('riftHud'),txt='裂隙 '+Math.ceil(rift.time)+'s · 门 '+rift.gates+'/6 · 连锁 ×'+Math.max(1,rift.combo);if(el&&txt!==_riftHudLast){_riftHudLast=txt;el.textContent=txt;}
+}
+function riftSpawnBoss(){
+ if(rift.boss)return;rift.boss=true;rift.time=Math.max(rift.time,35);
+ var x=player.x+520,y=H*.35,hp=950+gunLevel*45;
+ world.enemies.push({type:'boss',bk:10,x:x,y:y,w:110,h:130,hp:hp,maxHp:hp,phase:0,cd:1.2,atkMode:0,telegraph:0,score:5000,riftBoss:true});bossAlive=true;
+ showToast('最终目标：裂隙守望者');world.texts.push({x:x,y:y-100,text:'击破守望者即突围成功',life:3,vy:-15});
+}
+function riftVictory(){if(!rift||rift.won)return;rift.won=true;score+=10000+Math.ceil(rift.time)*200;coinCount+=60;var eh=$('riftHud');if(eh)eh.textContent='突围成功 · 奖励 60 金币';showToast('突围成功！奖励 60 金币');_riftWinTimer=setTimeout(function(){_riftWinTimer=null;if(riftMode&&rift&&rift.won&&gameState==='playing')gameOver();},1800);}
+function riftDraw(){
+ if(!rift||!world.riftGates)return;
+ for(var i=0;i<world.riftGates.length;i++){var g=world.riftGates[i];ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.t*.7);ctx.strokeStyle='#7df9ff';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(0,0,g.r*.58,g.r,0,0,6.283);ctx.stroke();ctx.rotate(-g.t*1.6);ctx.strokeStyle='#e879f9';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,g.r*.78,g.r*.82,0,0,5.3);ctx.stroke();ctx.fillStyle='rgba(80,220,255,.12)';ctx.beginPath();ctx.ellipse(0,0,g.r*.48,g.r*.9,0,0,6.283);ctx.fill();ctx.restore();}
+ for(var j=0;j<world.riftCells.length;j++){var c=world.riftCells[j];ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.t);ctx.fillStyle='#ffe66d';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-17);ctx.lineTo(12,-6);ctx.lineTo(7,15);ctx.lineTo(-7,15);ctx.lineTo(-12,-6);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle='#302800';ctx.fillRect(-2,-9,4,18);ctx.restore();}
+}
 </script>
 </body>
 </html>
