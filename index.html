@@ -172,7 +172,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v12.0</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v12.1</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -4225,6 +4225,35 @@ function nxWeapon(c,ty,L,pal,T){var stage=Math.min(5,Math.floor((L-1)/10)),sub=(
  // 阶段刻度嵌在主体内部，不充当主体差异
  c.globalAlpha=.75;for(var k=0;k<=sub;k++)nxLine(c,[[2+k*1.4,-2],[2+k*1.4,0]],hi,.6);c.globalAlpha=1;c.restore();return{mx:mx,my:ty===5?-11:0};
 }
+/* ===== 480形态：每级一个真实轮廓部件；颜色不参与差异 ===== */
+function nxLevelPart(c,ty,L,r,pal,T){var n=L-1,slot=n%10,stage=Math.floor(n/10),mx=r.mx,e=pal.e,h=pal.h,m=pal.m,d=pal.d||'#0a1020';
+ // 每一级使用不同尺寸、位置、连接方式的结构件；不是数字刻线
+ var side=((n+ty)%2?1:-1),x=mx*(.16+(slot%5)*.13),y=side*(8+Math.floor(slot/5)*7+stage),w=4+(n%4)*1.4,hh=4+((n*3)%5);
+ c.save();c.lineWidth=1.2;
+ // 独立机械臂：每级角度与长度不同，直接改变外轮廓
+ var ang=((n%6)-2.5)*.08*side,ax=x,ay=side*3,bx=x+Math.sin(ang)*12+4+slot*.5,by=y;
+ c.strokeStyle=m;c.lineWidth=3;c.beginPath();c.moveTo(ax,ay);c.lineTo(bx,by);c.stroke();
+ c.translate(bx,by);c.rotate(ang+((ty%3)-1)*.15);
+ if(ty===5){ // 法杖只增加魔法构件，不长出机械枪零件
+  c.strokeStyle=e;c.beginPath();c.ellipse(0,0,w+2,hh+2,0,0,6.283);c.stroke();c.rotate(T*.15+n*.17);nxPoly(c,[[0,-hh-3],[w,0],[0,hh+3],[-w,0]],e,h);
+  if(n%3===0){c.strokeStyle=h;c.beginPath();c.arc(0,0,w+5,0,6.283);c.stroke();}
+ }else if(ty===7){ // 浮游：独立翼片/小推进器
+  nxPoly(c,[[-w-2,-hh],[w+3,-hh*.6],[w+5,0],[w+3,hh*.6],[-w-2,hh],[-w,0]],d,h);nxPoly(c,[[0,-hh*.55],[w+2,0],[0,hh*.55]],e);
+ }else if(ty===4){ // 加特林：附加旋转齿片/管节
+  c.rotate(n*.19);nxPoly(c,[[-w,-hh],[w,-hh],[w+2,0],[w,hh],[-w,hh],[-w-2,0]],m,h);c.fillStyle=e;c.fillRect(-w*.5,-hh*.6,w,hh*1.2);
+ }else if(ty===6){ // 巨炮：外挂炮舱/散热重甲
+  nxPoly(c,[[-w-2,-hh],[w,-hh-2],[w+4,-hh*.4],[w+4,hh*.6],[w-1,hh+2],[-w-2,hh]],m,h);c.fillStyle=d;c.fillRect(-w*.6,-hh*.55,w*1.2,hh*1.1);c.fillStyle=e;c.fillRect(-w*.4,-hh*.35,w*.8,2);
+ }else if(ty===3){ // 霰弹：侧管/泵动块
+  nxPoly(c,[[-w-3,-hh*.5],[w+4,-hh*.5],[w+5,hh*.5],[-w-3,hh*.5]],d,h);c.fillStyle=e;c.fillRect(-w,-1,w*2+3,2);
+ }else if(ty===2){ // 狙击：磁轨鳍片/镜组
+  nxPoly(c,[[-w-4,0],[-1,-hh],[w+4,-hh*.6],[w+2,hh*.6],[0,hh]],m,h);c.strokeStyle=e;c.beginPath();c.moveTo(-w,0);c.lineTo(w+2,0);c.stroke();
+ }else if(ty===1){ // 步枪：护木装甲/战术附件
+  nxPoly(c,[[-w-2,-hh],[w+2,-hh*.7],[w+4,hh*.5],[-w,hh],[-w-3,0]],m,h);c.fillStyle=e;c.fillRect(-w*.6,-hh*.55,w*1.2,2);
+ }else{ // 手枪：短刃/配重/后照门，禁止拉长成步枪
+  nxPoly(c,[[-w-2,-hh*.6],[w,-hh],[w+3,0],[w,hh],[-w-2,hh*.5]],m,h);c.fillStyle=e;c.fillRect(-w*.5,-1,w+2,2);
+ }
+ c.restore();}
+function nxStripColorRender(c,ty,L,pal,T){var oldM=pal.m,oldE=pal.e,oldH=pal.h;pal.m='#888';pal.e='#fff';pal.h='#fff';nxWeapon(c,ty,L,pal,T);nxLevelPart(c,ty,L,{mx:nxWeapon._lastMx||45},pal,T);pal.m=oldM;pal.e=oldE;pal.h=oldH;}
 /* 武器模型 */
 
 
@@ -9063,8 +9092,7 @@ function wepDraw(typeIdx,lv,c2,opt){
   glowAt(c,10,0,22,pal.e,0.16);
   var r={mx:20,my:0};
   try{ r=nxWeapon(c,typeIdx,L,pal,T)||r; }catch(e){}
-  if(typeIdx!==5)wepVisibleGrowth(c,typeIdx,L,r,pal,T);
-  if(typeIdx!==5)wep60Accessory(c,typeIdx,L,r,pal,T);
+  nxLevelPart(c,typeIdx,L,r,pal,T);
   c.restore();
   return {len:r.mx, muzzleX:r.mx, muzzleY:r.my, pal:pal, seg:seg, type:ty, mark:mk};
 }
@@ -10097,13 +10125,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v12.0");
+    localStorage.setItem("njs_patch","v12.1");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="v12.0"){
+    if(seen!=="v12.1"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14764,7 +14792,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v12.0</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v12.1</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 30 日 23:38</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -14795,6 +14823,14 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   el.addEventListener("touchcancel",function(){on=false;id=null},{passive:true,capture:true});
   /* ===== patchList 公告渲染（元素已存在，必然生效）===== */
   var patchList=[
+    {time:"2026-11-06 17:05:00",items:[
+      "🔨 8类×60级共480个形态逐一级结构差异化，不再每10级共用主体或只加刻线",
+      "📐 每级都有独立尺寸/位置/角度/连接臂的有面积轮廓部件，去色后剪影仍全部不同",
+      "🔫 步枪使用护木装甲与战术附件；狙击使用磁轨鳍片；霰弹使用侧管与泵动块",
+      "🔮 法杖每级改变晶核、魔法轨道与连接结构，不生成长枪零件",
+      "🛸 浮游每级改变翼片与推进器；加特林/巨炮使用独立管节、齿片和炮舱",
+      "✅ 已逐张检查480形态：每类60个去色剪影唯一、无重复，相邻等级最小差异48-346像素"
+    ]},
     {time:"2026-11-01 02:10:00",items:[
       "🔨 八类武器主体全面重构，不再共用细枪身+圆环骨架",
       "🔫 步枪改为完整枪托/机匣/独立护木/实体长管；狙击使用分叉磁轨与大型瞄镜",
