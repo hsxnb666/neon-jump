@@ -164,8 +164,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   </div>
 <button class="btn btn-main" onclick="startGame(false)">开 始 游 戏</button>
   <button class="btn btn-smart" onclick="startGame(true)">聪明人模式</button>
-  <button class="btn btn-main" style="background:linear-gradient(135deg,#5433ff,#20bdff);margin-top:8px" onclick="startDefense()">⬡ 核心防线 · 守点构筑</button>
-  <div style="font-size:10px;color:#8edfff;margin-top:4px">封闭竞技场 · 保护核心 · 六波构筑 · 十类新敌</div>
+  <div style="font-size:11px;color:#ffd166;margin-top:8px">主模式新增：精英猎杀遭遇 · 十种实体新怪 · 枪皮/角色皮肤图鉴</div>
   <div style="display:flex;gap:8px;justify-content:center;margin:8px auto 0">
     <button onclick="openPatchNote()" style="padding:7px 16px;border-radius:18px;background:rgba(0,242,255,.08);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:12px;cursor:pointer">📢 公告</button>
     <button id="homeRankBtn" onclick="openHomeRank()" style="padding:7px 16px;border-radius:18px;background:rgba(255,200,0,.1);border:1.5px solid rgba(255,200,0,.5);color:#ffd54a;font-size:12px;cursor:pointer">🏆 排行榜</button>
@@ -174,7 +173,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
     <button onclick="openCodex(0)" style="padding:7px 22px;border-radius:18px;background:rgba(176,38,255,.1);border:1.5px solid rgba(176,38,255,.5);color:#c08bff;font-size:12px;cursor:pointer">📚 图鉴</button>
     <button onclick="openAttrPanel()" style="padding:7px 22px;border-radius:18px;background:rgba(61,255,122,.1);border:1.5px solid rgba(61,255,122,.5);color:#7dffa0;font-size:12px;cursor:pointer">⚡ 属性</button>
   </div>
-  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v12.5</div>
+  <div id="verTag" style="text-align:center;font-size:10px;color:#3a4568;margin-top:6px;letter-spacing:1px">正式版 v12.6</div>
   
   <div style="margin-top:10px;text-align:center">
     <div style="font-size:11px;color:#6a7fb8;margin-bottom:6px">选择角色</div>
@@ -229,7 +228,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#05030f;font-family:
   </div>
   <div id="overBoard" style="width:min(90vw,480px);height:170px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;margin:0 auto;padding:6px 10px;border-radius:12px;background:rgba(0,242,255,.05);border:1px solid rgba(0,242,255,.2);color:#7fdcff;font-size:12px;text-align:left;box-sizing:border-box"></div>
   <div id="lbStatus" style="font-size:10px;color:#7fb8e0;margin-top:4px;min-height:14px;text-align:center"></div>
-<button class="btn btn-main" onclick="defenseMode?startDefense():startGame(smartMode)">重新开始</button>
+<button class="btn btn-main" onclick="startGame(smartMode)">重新开始</button>
   <button onclick="backToHome()" style="margin-top:10px;padding:9px 34px;border-radius:20px;background:rgba(255,255,255,.07);border:1.5px solid rgba(160,168,255,.5);color:#b8c0ff;font-size:14px;cursor:pointer">🏠 回 主 页</button>
 </div>
 
@@ -793,7 +792,7 @@ player={x:120,y:H-220,w:44,h:68,vx:0,vy:0,hp:Math.round(100*attrMul("hp")),maxHp
 cam={x:0,y:0,shake:0,shakeX:0,shakeY:0};
 world={platforms:[],enemies:[],bullets:[],particles:[],texts:[],stars:[],lightnings:[],gems:[],rings:[],pickups:[],coins:[],portals:[],lasers:[],blackholes:[],poisons:[],ices:[],chests:[],drones:[],wells:[],meteors:[],tcrystals:[],ghosts:[],smartTraps:[],escort:null,challenge:null,flash:0,nextSpawnX:900};
 score=0;distance=0;wave=1;bossSpawned=0;bossWave=0;bossAlive=false;skillCd=0;timeScale=1;slowTimer=0;if(typeof WM_FX==="undefined")WM_FX=[];WM_FX.length=0;WM_STATE={ty:-1,step:0,heat:0,last:0};world.riftGates=[];world.riftCells=[];
-makeStars();
+makeStars();huntReset();
 _PHYS_ACC=0;
 var rh=document.getElementById("riftHud");if(rh)rh.style.display=(riftMode||defenseMode)?"block":"none";
 world.platforms.push({x:-200,y:H-60,w:900,h:120,bounce:false,moving:false});
@@ -4061,7 +4060,7 @@ var L=gunLevel||1;
 var tier=Math.floor(L/10);
 var CD=[0.15,0.09,0.75,0.42,0.045,0.55,0.95,0.3][ty]||0.15;
 var DMG=[1.0,0.55,3.2,0.42,0.34,1.4,3.8,0.45][ty]||1.0;
-p.shootCd=CD*rlRateMul()*rlRateMul();
+p.shootCd=CD*rlRateMul()*attrRateMul()*rlRateMul()*attrRateMul();
 p.en-=wmEnergyCost(ty);p.muzzle=0.09;p._wmMuzzle=wmMuzzle(p,ty);
 var dmgBase=12+L*0.8;
 wmFire(p,tg,dmgBase,rd);
@@ -4248,16 +4247,16 @@ function wmDraw(){if(!player)return;wmDrawFx();for(var i=0;i<world.bullets.lengt
 function wmDamage(e,dmg,ty,x,y){if(!e||e.hp<=0||!wmCastCanHit(player,e))return;weaponHitSound(ty);var idx=world.enemies.indexOf(e);e.hp-=dmg;e._wmLastTy=ty;wmFx(ty===5?'strike':ty===3?'slash':'ring',x,y,WM_COLS[ty],{life:ty===5?.42:.3,r:ty===3?65:42,a:0});if(ty===3&&e.type!=='boss')e.x+=22;if(e.hp<=0&&idx>=0)killEnemy(e,idx);}
 function wmArea(x,y,r,dmg,ty){var list=world.enemies.slice();for(var i=0;i<list.length;i++){var e=list[i],dx=e.x-x,dy=e.y-y;if(dx*dx+dy*dy<r*r)wmDamage(e,dmg,ty,e.x,e.y);}}
 function wmBeam(x,y,a,len,dmg,pierce){wmFx('beam',x,y,WM_COLS[2],{life:.38,x2:x+Math.cos(a)*len,y2:y+Math.sin(a)*len});var list=world.enemies.slice();for(var i=0;i<list.length;i++){var e=list[i],dx=e.x-x,dy=e.y-y,along=dx*Math.cos(a)+dy*Math.sin(a),side=Math.abs(-dx*Math.sin(a)+dy*Math.cos(a));if(along>0&&along<len&&side<(pierce?34:22))wmDamage(e,dmg,2,e.x,e.y);}}
-function wmShot(p,ty,dmg,a,x,y,spd){var b={x:x,y:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:ty===6?13:5,life:2.5,owner:'player',color:WM_COLS[ty],dmg:dmg,home:ty===0||ty===5,lv:gunLevel,gunTy:ty,wm:true,age:0,pierce:ty===1?1:0,bounce:0};wmEmpowerBullet(b);world.bullets.push(b);return b;}
+function wmShot(p,ty,dmg,a,x,y,spd){var b={x:x,y:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:ty===6?13:5,life:2.5,owner:'player',color:WM_COLS[ty],dmg:dmg,home:ty===0||ty===5,lv:gunLevel,gunTy:ty,wm:true,age:0,pierce:ty===1?1:0,bounce:0};b.pierce=(b.pierce||0)+attrPierceBonus();wmEmpowerBullet(b);world.bullets.push(b);return b;}
 function wmFire(p,tg,dmgBase,rd){wmResetCombo();wmBeginCast(p);var ty=gunType,L=gunLevel||1,tier=Math.floor(L/10),_mz=wmMuzzle(p,ty),x=_mz.x,y=_mz.y,a=tg?Math.atan2(tg.y-y,tg.x-x):(p.facing>0?0:Math.PI),mul=rd*rlDmgMul()*attrMul('dmg')*wmPower(L),d=Math.round(dmgBase*mul);tier=wmTier(L);p.wmStep=(p.wmStep||0)+1;var step=p.wmStep,combo=false;
- if(ty===0){p.shootCd=.16*rlRateMul();wmShot(p,0,d*1.1,a,x,y,720);if(step%5===0){combo=true;for(var s=-1;s<=1;s+=2){var b=wmShot(p,0,d*1.4,a+s*.22,x,y,650);b.pierce=2;}wmFx('ring',x,y,WM_COLS[0],{r:90});}}
- else if(ty===1){p.shootCd=.14*rlRateMul();for(var i=-1;i<=1;i++)wmShot(p,1,d*.55,a,x,y+i*6,820);if(step%6===0){combo=true;for(var j=0;j<3;j++){var m=wmShot(p,1,d*1.1,a+(j-1)*.12,x,y,480);m.home=true;m.pierce=1;m.wmMissile=true;}wmFx('link',x,y,WM_COLS[1],{x2:x+180,y2:y-50});}}
- else if(ty===2){p.shootCd=.8*rlRateMul();wmBeam(x,y,a,950,d*3.3,false);if(step%3===0){combo=true;for(var k=-1;k<=1;k++)wmBeam(x,y+k*18,a,1100,d*2.0,true);cam.shake=10;}}
- else if(ty===3){p.shootCd=.48*rlRateMul();for(var q=-3;q<=3;q++)wmShot(p,3,d*.5,a+q*.14,x,y,540-Math.abs(q)*30);if(step%4===0){combo=true;wmArea(x+p.facing*65,y,190,d*2.2,3);wmFx('slash',x+p.facing*35,y,WM_COLS[3],{r:145,a:p.facing>0?0:Math.PI,life:.5});cam.shake=8;}}
- else if(ty===4){WM_STATE.heat=Math.min(1,WM_STATE.heat+.075);p.shootCd=(.095-WM_STATE.heat*.045)*rlRateMul();for(var g=0;g<2;g++)wmShot(p,4,d*.34,a+(Math.random()-.5)*.22,x,y+(Math.random()-.5)*10,660);if(step%12===0){combo=true;for(var z=0;z<8;z++){var saw=wmShot(p,4,d*.75,a+z*.785,x,y,480);saw.pierce=2;saw.r=8;}wmFx('ring',x,y,WM_COLS[4],{r:115});}}
- else if(ty===5){p.shootCd=(.48-tier*.035)*rlRateMul();wmFx('rune',x+p.facing*35,y,WM_COLS[5],{r:45,life:.55});var near=world.enemies.slice().sort(function(e1,e2){return Math.abs(e1.x-p.x)-Math.abs(e2.x-p.x)}).slice(0,3+tier*2);for(var n=0;n<near.length;n++){var e=near[n],dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<360*360){wmDamage(e,d*1.75,5,e.x,e.y);wmFx('link',x,y,WM_COLS[5],{x2:e.x,y2:e.y,life:.35});}}var orb=wmShot(p,5,d*(.7+tier*.12),a,x,y,350+tier*30);orb.home=true;orb.r=10;if(step%4===0){combo=true;for(var u=0;u<6;u++){var sx=p.x+(u-2.5)*75;wmFx('strike',sx,p.y+20,WM_COLS[5],{r:70,life:.55});wmArea(sx,p.y+20,95,d*1.35,5);}world.flash=.12;}}
- else if(ty===6){p.shootCd=.95*rlRateMul();var sh=wmShot(p,6,d*3.4,a,x,y,420);sh.bigShell=true;sh.boomR=125;if(step%3===0){combo=true;sh.wmCluster=true;sh.boomR=175;sh.r=17;}cam.shake=8;}
- else {p.shootCd=.28*rlRateMul();if(!p.drones)p.drones=[];while(p.drones.length<2+Math.min(tier,2)){var da=p.drones.length*2.1;p.drones.push({a:da,r:62,x:p.x,y:p.y-45,cd:0});}if(step%6===0){combo=true;var tx=tg?tg.x:x+p.facing*300,tyy=tg?tg.y:y;for(var v=0;v<p.drones.length;v++){var dr=p.drones[v];wmFx('beam',dr.x,dr.y,WM_COLS[7],{x2:tx,y2:tyy,life:.4});wmArea(tx,tyy,100,d*1.5,7);}}}
+ if(ty===0){p.shootCd=.16*rlRateMul()*attrRateMul();wmShot(p,0,d*1.1,a,x,y,720);if(step%5===0){combo=true;for(var s=-1;s<=1;s+=2){var b=wmShot(p,0,d*1.4,a+s*.22,x,y,650);b.pierce=2;}wmFx('ring',x,y,WM_COLS[0],{r:90});}}
+ else if(ty===1){p.shootCd=.14*rlRateMul()*attrRateMul();for(var i=-1;i<=1;i++)wmShot(p,1,d*.55,a,x,y+i*6,820);if(step%6===0){combo=true;for(var j=0;j<3;j++){var m=wmShot(p,1,d*1.1,a+(j-1)*.12,x,y,480);m.home=true;m.pierce=1;m.wmMissile=true;}wmFx('link',x,y,WM_COLS[1],{x2:x+180,y2:y-50});}}
+ else if(ty===2){p.shootCd=.8*rlRateMul()*attrRateMul();wmBeam(x,y,a,950,d*3.3,false);if(step%3===0){combo=true;for(var k=-1;k<=1;k++)wmBeam(x,y+k*18,a,1100,d*2.0,true);cam.shake=10;}}
+ else if(ty===3){p.shootCd=.48*rlRateMul()*attrRateMul();for(var q=-3;q<=3;q++)wmShot(p,3,d*.5,a+q*.14,x,y,540-Math.abs(q)*30);if(step%4===0){combo=true;wmArea(x+p.facing*65,y,190,d*2.2,3);wmFx('slash',x+p.facing*35,y,WM_COLS[3],{r:145,a:p.facing>0?0:Math.PI,life:.5});cam.shake=8;}}
+ else if(ty===4){WM_STATE.heat=Math.min(1,WM_STATE.heat+.075);p.shootCd=(.095-WM_STATE.heat*.045)*rlRateMul()*attrRateMul();for(var g=0;g<2;g++)wmShot(p,4,d*.34,a+(Math.random()-.5)*.22,x,y+(Math.random()-.5)*10,660);if(step%12===0){combo=true;for(var z=0;z<8;z++){var saw=wmShot(p,4,d*.75,a+z*.785,x,y,480);saw.pierce=2;saw.r=8;}wmFx('ring',x,y,WM_COLS[4],{r:115});}}
+ else if(ty===5){p.shootCd=(.48-tier*.035)*rlRateMul()*attrRateMul();wmFx('rune',x+p.facing*35,y,WM_COLS[5],{r:45,life:.55});var near=world.enemies.slice().sort(function(e1,e2){return Math.abs(e1.x-p.x)-Math.abs(e2.x-p.x)}).slice(0,3+tier*2);for(var n=0;n<near.length;n++){var e=near[n],dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<360*360){wmDamage(e,d*1.75,5,e.x,e.y);wmFx('link',x,y,WM_COLS[5],{x2:e.x,y2:e.y,life:.35});}}var orb=wmShot(p,5,d*(.7+tier*.12),a,x,y,350+tier*30);orb.home=true;orb.r=10;if(step%4===0){combo=true;for(var u=0;u<6;u++){var sx=p.x+(u-2.5)*75;wmFx('strike',sx,p.y+20,WM_COLS[5],{r:70,life:.55});wmArea(sx,p.y+20,95,d*1.35,5);}world.flash=.12;}}
+ else if(ty===6){p.shootCd=.95*rlRateMul()*attrRateMul();var sh=wmShot(p,6,d*3.4,a,x,y,420);sh.bigShell=true;sh.boomR=125;if(step%3===0){combo=true;sh.wmCluster=true;sh.boomR=175;sh.r=17;}cam.shake=8;}
+ else {p.shootCd=.28*rlRateMul()*attrRateMul();if(!p.drones)p.drones=[];while(p.drones.length<2+Math.min(tier,2)){var da=p.drones.length*2.1;p.drones.push({a:da,r:62,x:p.x,y:p.y-45,cd:0});}if(step%6===0){combo=true;var tx=tg?tg.x:x+p.facing*300,tyy=tg?tg.y:y;for(var v=0;v<p.drones.length;v++){var dr=p.drones[v];wmFx('beam',dr.x,dr.y,WM_COLS[7],{x2:tx,y2:tyy,life:.4});wmArea(tx,tyy,100,d*1.5,7);}}}
  wmEvolutionFx(p,tg,ty,tier,x,y,d);
  weaponSound(ty,true);if(combo){world.texts.push({x:p.x,y:p.y-115,text:'✦ '+WM_NAMES[ty]+' ✦',life:1.0,vy:-28});spawnShockRing(p.x,p.y-35,WM_COLS[ty],105);}
 }
@@ -8258,7 +8257,7 @@ function drawWeaponSkin3D(c,weaponType,skinId,level,x,y,scale,flip,animTime,mode
   }
   if(!inGame){
     var bb=fr.allBB,bw=bb[1]-bb[0],bh=bb[3]-bb[2];
-    ratio=Math.min((viewW||560)*.88/bw,(viewH||340)*.78/bh)*scale;
+    ratio=Math.min((viewW||560)*.84/bw,(viewH||340)*.72/bh)*scale;
   }
   var targetW=fr.canvas.width*ratio,targetH=fr.canvas.height*ratio;
   c.save();c.translate(x,y);if(flip)c.scale(-1,1);
@@ -10135,7 +10134,7 @@ world._blind=Math.max(0,(world._blind||0)-rdt*2);
 if(p.hp<=0&&!p.dead){p.dead=true;if(revives>0){gameState="revive";try{setPanelTitle("reviveTitle",TAUNT_DEAD,_tauntUsedDead);}catch(e){}var ri=document.getElementById("reviveInfo");if(ri)ri.textContent="剩余复活 "+revives+"次 得分"+score+" 距离"+distance+"m"+(smartMode?" · 🧠聪明人模式":"");var rs=document.getElementById("reviveScreen");if(rs)rs.classList.remove("hidden");ui.hud.classList.add("hidden");sfx(80,"sawtooth",0.5,0.1,40)}else{doGiveUp()}}
 if(riftMode)riftUpdate(rdt);
 if(defenseMode){defUpdate(rdt);world.enemies=world.enemies.filter(function(e){return e.hp>0});}
-else{ensureWorld();spawnEnemies();nxSpawnAmbient();}}
+else{ensureWorld();spawnEnemies();nxSpawnAmbient();huntUpdate(rdt);}}
 
 /* 头像 */
 var heroHeadImg=new Image(),heroHeadOk=false;
@@ -10257,13 +10256,13 @@ function closePatchNote(){
   try{
     var d=document.getElementById("patchNote");
     if(d){d.style.display="none";d.style.pointerEvents="none";}
-    localStorage.setItem("njs_patch","v12.2");
+    localStorage.setItem("njs_patch","v12.6");
   }catch(e){}
 }
 (function(){
   try{
     var seen=localStorage.getItem("njs_patch");
-    if(seen!=="12.3"){
+    if(seen!=="12.6"){
       var d=document.getElementById("patchNote");
       if(d)d.style.display="flex";
       var sc=document.getElementById("patchScroll");
@@ -14936,7 +14935,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button onclick="closePatchNote()" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(13,17,38,.7);border:1.5px solid rgba(0,242,255,.5);color:#7fdcff;font-size:18px;line-height:1;cursor:pointer;pointer-events:auto;box-shadow:0 0 10px rgba(0,242,255,.25);padding:0">✕</button>
     </div>
     <div id="patchDate" style="text-align:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v12.5</div>
+    <div style="font-size:13px;font-weight:600;color:#9fb8e8;letter-spacing:1px">正式版 v12.6</div>
     <div id="patchDateText" style="font-size:10px;color:#5a6f9e;margin-top:3px;letter-spacing:1px">更新于 2026 年 10 月 30 日 23:38</div>
   </div>
     <div id="patchListBox" style="font-size:12.5px;line-height:1.9;color:#c8d8f0"></div>
@@ -15439,6 +15438,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
       <button id="codexTab1" onclick="codexSwitch(1)" style="flex:1;padding:7px 0;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(61,255,122,.3);color:#7dffa0;font-size:12px;cursor:pointer">👾 小怪</button>
       <button id="codexTab2" onclick="codexSwitch(2)" style="flex:1;padding:7px 0;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(176,38,255,.3);color:#c08bff;font-size:12px;cursor:pointer">💀 Boss</button>
       <button id="codexTab3" onclick="codexSwitch(3)" style="flex:1;padding:7px 0;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(251,191,36,.35);color:#fbbf24;font-size:12px;cursor:pointer">🎨 枪皮</button>
+      <button id="codexTab4" onclick="codexSwitch(4)" style="flex:1;padding:7px 0;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,122,209,.35);color:#ff7ad1;font-size:12px;cursor:pointer">👤 角色</button>
     </div>
     <div id="codexGrid" style="flex:1;min-height:200px;max-height:62vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:2px"></div>
     <div id="codexDetail" style="display:none;flex:1;min-height:200px;max-height:62vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:2px"></div>
@@ -15822,7 +15822,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
   };
   window.codexSwitch=function(tab){
     cxTab=tab;cxDetailId=null;
-    var t0=document.getElementById("codexTab0"),t1=document.getElementById("codexTab1"),t2=document.getElementById("codexTab2");
+    var t0=document.getElementById("codexTab0"),t1=document.getElementById("codexTab1"),t2=document.getElementById("codexTab2"),t4=document.getElementById("codexTab4");
     var ti=document.getElementById("codexTitle");
     var active="linear-gradient(135deg,#ff2a6d,#ff8a5b);color:#fff;font-weight:700;border:none";
     var idle="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#8fb8d8;font-weight:400";
@@ -15831,7 +15831,7 @@ try{ setTimeout(function(){ if(typeof pendCount==="function"&&pendCount()>0)lbFl
     if(tab===0){idleAll();t0.style.cssText+=";"+active;ti.textContent="武器图鉴";codexRenderWeapons();}
     else if(tab===1){idleAll();t1.style.cssText+=";"+active;ti.textContent="小怪图鉴";codexRenderMobs();}
     else if(tab===2){idleAll();t2.style.cssText+=";"+active;ti.textContent="Boss图鉴";codexRenderBoss();}
-    else{idleAll();if(t3)t3.style.cssText+=";"+active;ti.textContent="枪皮图鉴";codexRenderSkins();}
+    else{idleAll();if(tab===3){if(t3)t3.style.cssText+=";"+active;ti.textContent="枪皮图鉴（跟随当前枪型）";codexRenderSkinsV126();}else{if(t4)t4.style.cssText+=";"+active;ti.textContent="角色皮肤";codexRenderRoleV126();}}
     // 绑定手动拖动滚动（全局 touch-action:none 导致原生滚动失效）
     var _g=document.getElementById("codexGrid");
     var _d=document.getElementById("codexDetail");
@@ -16346,6 +16346,172 @@ function defDraw(){if(!def)return;var c=ctx,x=def.core.x,y=def.core.y,t=Date.now
  c.translate(x,y);c.fillStyle='#17243a';c.beginPath();c.ellipse(0,43,50,10,0,0,6.283);c.fill();c.fillStyle=artGrad(c,-42,15,42,43,'#66768d','#29384e','#111a2a');c.beginPath();c.roundRect(-42,15,84,28,6);c.fill();c.strokeStyle='#879ab3';c.lineWidth=2;c.stroke();c.fillStyle='#24344b';c.fillRect(-32,4,64,17);
  for(var i=-1;i<=1;i+=2){c.fillStyle=artGrad(c,i*27,-40,i*42,20,'#63758e','#29394e','#101b2b');c.beginPath();c.roundRect(i*27-10,-39,20,58,5);c.fill();c.strokeStyle='#6b8cac';c.stroke();c.fillStyle='#47dff5';c.fillRect(i*27-5,-30,10,23);c.strokeStyle='#27364a';c.lineWidth=6;c.beginPath();c.moveTo(i*28,19);c.lineTo(i*43,35);c.stroke();}
  c.fillStyle='rgba(65,223,245,.17)';c.beginPath();c.ellipse(0,-13,22,34,0,0,6.283);c.fill();c.fillStyle=artGrad(c,-12,-42,12,14,'#d7ffff','#42dff5','#14708f');c.beginPath();c.moveTo(0,-43);c.lineTo(13,-26);c.lineTo(11,4);c.lineTo(0,17);c.lineTo(-11,4);c.lineTo(-13,-26);c.closePath();c.fill();c.strokeStyle='#d3fbff';c.lineWidth=1.5;c.stroke();c.strokeStyle='#31475f';c.lineWidth=5;c.beginPath();c.ellipse(0,-12,28,12,t*.2,0,6.283);c.stroke();c.strokeStyle='#75efff';c.lineWidth=2;c.beginPath();c.ellipse(0,-12,28,12,t*.2,0,3.9);c.stroke();c.fillStyle='#0d1b2b';c.fillRect(-24,25,48,8);c.fillStyle=def.core.hp/def.core.maxHp<.3?'#fb7185':'#67e8f9';c.fillRect(-22,27,44*Math.max(0,def.core.hp/def.core.maxHp),4);c.restore();if(world.nxSlow){var z=world.nxSlow;c.save();c.strokeStyle='rgba(103,232,249,.55)';c.fillStyle='rgba(60,130,180,.12)';c.lineWidth=3;c.beginPath();c.arc(z.x,z.y,z.r,0,6.283);c.fill();c.stroke();c.restore();}}
+/* v12.6：枪皮展示与当前枪型/等级联动 + 角色皮肤图鉴 */
+var skinShowTy=null,skinShowLv=null;
+function skinTy(){return skinShowTy===null?(typeof gunType==='number'?gunType:0):skinShowTy;}
+function skinLv(){return skinShowLv===null?((typeof gunLevel==='number'&&gunLevel>1)?gunLevel:30):skinShowLv;}
+/* 新增枪皮：与当前枪型联动展示与装备 */
+var SKIN_NEW={
+  crimsonTide:{name:"赤潮风爆",rar:"purple",fam:"赤潮军械",pal:{main:"#c2273f",sub:"#6e1626",hi:"#ff6b7d",ene:"#ffb347",dark:"#1a0a10"},baseMat:"obsidian",shell:"plate",extend:"cape",trail:"ember",glow:2,dyn:"high"},
+  glacierWolf:{name:"冰川狼嚎",rar:"purple",fam:"极地军械",pal:{main:"#a8d8ea",sub:"#5b8aa6",hi:"#eafaff",ene:"#66f2ff",dark:"#0c1a24"},baseMat:"crystal",shell:"ice",extend:"icewing",trail:"frost",glow:2,dyn:"mid"},
+  jadeSerpent:{name:"翠鳞蛇信",rar:"purple",fam:"秘林军械",pal:{main:"#2fae6a",sub:"#155e39",hi:"#b8ffd9",ene:"#ffe66d",dark:"#07130d"},baseMat:"scaledragon",shell:"feather",trail:"leaf",glow:1,dyn:"mid"},
+  voidHerald:{name:"虚空先驱",rar:"red",fam:"深渊王权",pal:{main:"#3a2a5e",sub:"#191033",hi:"#b8a3ff",ene:"#ff2a6d",dark:"#070512"},baseMat:"obsidian",shell:"runeplate",extend:"wings",floaters:["shard","ring"],trail:"void",glow:3,dyn:"high"}
+};
+(function(){for(var k in SKIN_NEW){if(!SKIN_DEF[k])SKIN_DEF[k]=SKIN_NEW[k];}})();
+if(!SKIN_RAR.purple)SKIN_RAR.purple={n:"史诗",stars:4,col:"#c084fc"};
+if(!SKIN_RAR.red)SKIN_RAR.red={n:"神话",stars:5,col:"#ff5470"};
+/* 图鉴展示：按选择枪型/等级渲染，不再写死步枪 */
+function codexRenderSkinsV126(){
+  var g=document.getElementById("codexGrid");if(!g)return;
+  var dt=document.getElementById("codexDetail");if(dt)dt.style.display="none";
+  g.style.display="grid";g.innerHTML="";
+  var bar=document.createElement("div");
+  bar.style.cssText="grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:6px";
+  for(var t=0;t<8;t++)(function(idx){
+    var b=document.createElement("button");
+    b.style.cssText="padding:4px 9px;border-radius:10px;font-size:10px;cursor:pointer;border:1px solid "+(skinTy()===idx?"#00f2ff":"rgba(160,168,255,.35)")+";background:"+(skinTy()===idx?"rgba(0,242,255,.16)":"rgba(255,255,255,.05)")+";color:"+(skinTy()===idx?"#00f2ff":"#b8c0ff");
+    b.textContent=GUN_TYPE_NAMES[idx];
+    b.onclick=function(){skinShowTy=idx;codexRenderSkinsV126();};
+    bar.appendChild(b);
+  })(t);
+  var lvRow=document.createElement("div");
+  lvRow.style.cssText="grid-column:1/-1;text-align:center;font-size:10px;color:#8fa8c8;margin-bottom:4px";
+  lvRow.textContent="展示等级 Lv"+skinLv()+"（跟随局内等级，点枪型切换）";
+  bar.appendChild(lvRow);
+  g.appendChild(bar);
+  var ids=Object.keys(SKIN_DEF);
+  for(var i=0;i<ids.length;i++)(function(id){
+    var sk=SKIN_DEF[id],rar=SKIN_RAR[sk.rar]||SKIN_RAR.white;
+    var cell=document.createElement("div");
+    cell.style.cssText="border-radius:10px;padding:5px 3px;text-align:center;cursor:pointer;background:rgba(255,255,255,.045);border:1px solid "+(currentSkin===id?"#ffd700":"rgba(255,255,255,.1)");
+    var cv=document.createElement("canvas");
+    cv.width=104;cv.height=68;cv.style.cssText="width:100%;display:block";
+    var c2=cv.getContext("2d");
+    try{drawWeaponSkin(c2,skinTy(),id,skinLv(),52,34,1,false,(i*.7)+1.2,"detail",104,68);}catch(e){}
+    cell.appendChild(cv);
+    var nm=document.createElement("div");
+    nm.style.cssText="font-size:9px;color:"+rar.col+";margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
+    nm.textContent=sk.name;
+    cell.appendChild(nm);
+    cell.onclick=function(){codexShowSkinV126(id);};
+    g.appendChild(cell);
+  })(ids[i]);
+}
+function codexShowSkinV126(id){
+  var g=document.getElementById("codexGrid");if(g)g.style.display="none";
+  var dt=document.getElementById("codexDetail");if(!dt)return;
+  dt.style.display="block";dt.innerHTML="";
+  var sk=SKIN_DEF[id],rar=SKIN_RAR[sk.rar]||SKIN_RAR.white;
+  var cv=document.createElement("canvas");
+  cv.width=520;cv.height=280;
+  cv.style.cssText="width:100%;max-width:520px;height:auto;display:block;margin:0 auto;border-radius:12px;background:radial-gradient(circle at 50% 50%,rgba(30,40,70,.6),rgba(6,10,20,.95))";
+  var c2=cv.getContext("2d");
+  try{drawWeaponSkin(c2,skinTy(),id,skinLv(),260,140,1,false,Date.now()/1000,"detail",520,280);}catch(e){}
+  dt.appendChild(cv);
+  var h=document.createElement("div");
+  h.style.cssText="text-align:center;margin-top:8px";
+  h.innerHTML='<div style="font-size:17px;font-weight:700;color:'+rar.col+'">'+sk.name+'</div><div style="font-size:11px;color:'+rar.col+';margin-top:2px">'+"★".repeat(rar.stars)+' '+rar.n+' · '+sk.fam+' · '+GUN_TYPE_NAMES[skinTy()]+' Lv'+skinLv()+'</div>';
+  dt.appendChild(h);
+  var sa=(typeof skinAttrOf==="function")?skinAttrOf(id):[],info=document.createElement("div");
+  info.style.cssText="font-size:11px;color:#a8b8d8;line-height:1.9;margin-top:8px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)";
+  var txt='枪型：'+GUN_TYPE_NAMES[skinTy()]+'　等级联动：随局内武器等级成长<br>';
+  for(var i=0;i<sa.length;i++){var d=ATTR_DEF[sa[i].k];if(d)txt+=d.n+' +'+sa[i].v+'%　';}
+  info.textContent=txt;dt.appendChild(info);
+  var use=document.createElement("button");
+  use.style.cssText="display:block;margin:12px auto 4px;padding:10px 36px;border-radius:22px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,"+rar.col+",#7c3aed);border:none;color:#06111a";
+  use.textContent=(currentSkin===id)?"已装备（全部枪型通用）":"装 备";
+  use.onclick=function(){currentSkin=id;try{var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");_c.skin=id;localStorage.setItem("njs_codex",JSON.stringify(_c));}catch(e){}codexShowSkinV126(id);};
+  dt.appendChild(use);
+  var back=document.createElement("button");
+  back.style.cssText="display:block;margin:8px auto;padding:8px 28px;border-radius:20px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(160,168,255,.4);color:#b8c0ff";
+  back.textContent="← 返回列表";back.onclick=function(){codexRenderSkinsV126();};
+  dt.appendChild(back);
+}
+/* 角色皮肤图鉴：预览 + 装备，按当前角色 */
+function codexRenderRoleV126(){
+  var g=document.getElementById("codexGrid");if(!g)return;
+  var dt=document.getElementById("codexDetail");if(dt)dt.style.display="none";
+  g.style.display="grid";g.innerHTML="";
+  var list=ROLE_SKIN_DEF[HERO]||[];
+  var head=document.createElement("div");
+  head.style.cssText="grid-column:1/-1;text-align:center;font-size:11px;color:#ff7ad1;margin-bottom:4px";
+  head.textContent="当前角色：英雄"+(HERO)+" · 皮肤改变局内外观与属性";
+  g.appendChild(head);
+  for(var i=0;i<list.length;i++)(function(rs){
+    var rar=SKIN_RAR[rs.rar]||SKIN_RAR.white;
+    var cell=document.createElement("div");
+    cell.style.cssText="border-radius:10px;padding:6px 3px;text-align:center;cursor:pointer;background:rgba(255,255,255,.045);border:1px solid "+(currentRoleSkin===rs.id?"#ffd700":"rgba(255,255,255,.1)");
+    var cv=document.createElement("canvas");
+    cv.width=90;cv.height=110;cv.style.cssText="width:100%;display:block;background:linear-gradient(180deg,rgba(120,60,120,.12),rgba(10,10,30,.5));border-radius:8px";
+    var c2=cv.getContext("2d");
+    try{
+      c2.save();c2.translate(45,55);c2.scale(.42,.42);
+      var old={x:player.x,y:player.y};player.x=0;player.y=0;
+      var fns=[drawHeroMech,drawHeroMaid,drawHeroAnime,drawHeroFighter,drawHeroSamurai];
+      var fn=fns[HERO-1]||drawHeroMech;
+      var oldAnim=JSON.stringify(_anim||{});_anim={spd:0,run:0,air:0};
+      fn(0,0,1,1,0,true,0);
+      try{eval(oldAnim);_anim=JSON.parse(oldAnim);}catch(e){}
+      player.x=old.x;player.y=old.y;c2.restore();
+    }catch(e){}
+    cell.appendChild(cv);
+    var nm=document.createElement("div");
+    nm.style.cssText="font-size:9px;color:"+rar.col+";margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
+    nm.textContent=rs.name;cell.appendChild(nm);
+    cell.onclick=function(){codexShowRoleV126(rs.id);};
+    g.appendChild(cell);
+  })(list[i]);
+}
+function codexShowRoleV126(rid){
+  var g=document.getElementById("codexGrid");if(g)g.style.display="none";
+  var dt=document.getElementById("codexDetail");if(!dt)return;
+  dt.style.display="block";dt.innerHTML="";
+  var list=ROLE_SKIN_DEF[HERO]||[],rs=null;
+  for(var i=0;i<list.length;i++)if(list[i].id===rid)rs=list[i];
+  if(!rs){codexRenderRoleV126();return;}
+  var rar=SKIN_RAR[rs.rar]||SKIN_RAR.white;
+  var cv=document.createElement("canvas");
+  cv.width=240;cv.height=300;
+  cv.style.cssText="width:240px;display:block;margin:0 auto;border-radius:12px;background:radial-gradient(circle at 50% 40%,rgba(120,60,120,.25),rgba(6,10,20,.95))";
+  var c2=cv.getContext("2d");
+  try{c2.save();c2.translate(120,150);c2.scale(1.05,1.05);var fns=[drawHeroMech,drawHeroMaid,drawHeroAnime,drawHeroFighter,drawHeroSamurai];(fns[HERO-1]||drawHeroMech)(0,0,1,1,0,true,0);c2.restore();}catch(e){}
+  dt.appendChild(cv);
+  var h=document.createElement("div");
+  h.style.cssText="text-align:center;margin:8px 0";
+  h.innerHTML='<div style="font-size:16px;font-weight:700;color:'+rar.col+'">'+rs.name+'</div><div style="font-size:11px;color:'+rar.col+';margin-top:2px">'+"★".repeat(rar.stars)+' '+rar.n+'</div><div style="font-size:10px;color:#8fa8c8;margin-top:4px">'+(rs.desc||'')+'</div>';
+  dt.appendChild(h);
+  var attr=document.createElement("div");
+  attr.style.cssText="font-size:11px;color:#a8b8d8;line-height:1.8;margin-top:6px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)";
+  var txt="属性加成：";
+  for(var j=0;j<(rs.attr||[]).length;j++){var d=ATTR_DEF[rs.attr[j].k];if(d)txt+=d.n+" +"+rs.attr[j].v+"%　";}
+  attr.textContent=txt;dt.appendChild(attr);
+  var use=document.createElement("button");
+  use.style.cssText="display:block;margin:12px auto 4px;padding:10px 36px;border-radius:22px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,"+rar.col+",#7c3aed);border:none;color:#06111a";
+  use.textContent=(currentRoleSkin===rid)?"已装备":"装 备";
+  use.onclick=function(){currentRoleSkin=rid;try{var _c=JSON.parse(localStorage.getItem("njs_codex")||"{}");_c.roleSkin=rid;localStorage.setItem("njs_codex",JSON.stringify(_c));}catch(e){}_attrApplied=totalAttr();codexShowRoleV126(rid);};
+  dt.appendChild(use);
+  var back=document.createElement("button");
+  back.style.cssText="display:block;margin:8px auto;padding:8px 28px;border-radius:20px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(160,168,255,.4);color:#b8c0ff";
+  back.textContent="← 返回列表";back.onclick=function(){codexRenderRoleV126();};
+  dt.appendChild(back);
+}
+/* 图鉴入口：加入角色标签 */
+window.codexSwitchV126=function(tab){
+  if(tab===4){codexRenderRoleV126();return true;}
+  return false;
+};
+/* 主模式猎杀事件与属性实装 */
+function attrRateMul(){return 1/(1+Math.max(0,attrPct('rate'))/100);}
+function attrPierceBonus(){return Math.floor(Math.max(0,attrPct('pie'))/20);}
+function attrLuckMul(){return 1+Math.max(0,attrPct('luck'))/100;}
+var hunt=null,huntNext=220;
+function huntReset(){hunt=null;huntNext=220;}
+function huntStart(){if(hunt||bossAlive||gameState!=='playing')return;var plat=null;for(var i=0;i<world.platforms.length;i++){var q=world.platforms[i];if(q.x>player.x+180&&q.x<player.x+600&&q.w>170){plat=q;break;}}if(!plat)return;hunt={left:3,total:3,t:0};var types=['nx_aegis','nx_medic','nx_hound'];for(var i=0;i<3;i++){var e=nxEnemy(types[i],plat.x+plat.w*(.25+i*.25),plat.y-plat.h/2-25,wave+2);e.hunt=true;e.hp=e.maxHp=Math.round(e.hp*1.35);world.enemies.push(e);}world.texts.push({x:player.x+180,y:player.y-100,text:'⚔ 猎杀遭遇：优先击破治疗与盾卫',life:2.5,vy:-12,color:'#ffd166'});showToast('猎杀遭遇！清空精英小队获得补给');}
+function huntUpdate(dt){if(defenseMode||riftMode)return;if(!hunt&&distance>=huntNext&&player.onGround){huntNext+=360;huntStart();}if(hunt){hunt.t+=dt;var alive=0;for(var i=0;i<world.enemies.length;i++)if(world.enemies[i].hunt)alive++;if(alive===0){var bonus=Math.round(12*attrLuckMul());coinCount+=bonus;player.hp=Math.min(player.maxHp,player.hp+20);score+=900;world.gems.push({x:player.x+60,y:player.y-55,t:0,got:false});world.texts.push({x:player.x,y:player.y-85,text:'猎杀完成 +900 · 金币 '+bonus,life:2,vy:-25,color:'#ffe66d'});showToast('猎杀完成：升级能量、回血与金币');hunt=null;}}}
+function openAttrPanelV126(){loadEquip();_attrApplied=totalAttr();var a=_attrApplied,p=$('attrPanel'),line=$('attrEquipLine'),bars=$('attrBars');if(!p||!bars)return;var sk=SKIN_DEF[currentSkin]||SKIN_DEF.basicWhite,rsName='未装备',list=ROLE_SKIN_DEF[HERO]||[];for(var i=0;i<list.length;i++)if(list[i].id===currentRoleSkin)rsName=list[i].name;line.innerHTML='🎨 枪皮：<b style="color:#ff7ad1">'+sk.name+'</b>　👤 角色：<b style="color:#ff7ad1">'+rsName+'</b>';bars.innerHTML='';var names={dmg:'伤害倍率',rate:'攻击速度',crit:'暴击率',hp:'生命上限',spd:'移动速度',coin:'金币获取',luck:'精英掉落',pie:'子弹穿透'};for(var j=0;j<ATTR_KEYS.length;j++){var k=ATTR_KEYS[j],v=a[k]||0,row=document.createElement('div');row.style.cssText='padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.045);border:1px solid rgba(125,255,160,.16)';var desc='';if(k==='dmg')desc='当前武器伤害 ×'+attrMul('dmg').toFixed(2);else if(k==='rate')desc='当前冷却 ×'+attrRateMul().toFixed(2);else if(k==='crit')desc='实际暴击率 '+v.toFixed(1)+'% · 暴击伤害 1.8倍';else if(k==='hp')desc='开局生命 '+Math.round(100*attrMul('hp'));else if(k==='spd')desc='基础移动 '+Math.round(240*attrMul('spd'))+' px/s';else if(k==='coin')desc='金币结算 ×'+attrMul('coin').toFixed(2);else if(k==='luck')desc='猎杀额外掉落 ×'+attrLuckMul().toFixed(2);else if(k==='pie')desc='额外穿透 '+attrPierceBonus()+' 个目标（每20% +1）';row.innerHTML='<div style="display:flex;font-size:12px;color:#d8e4ff"><span>'+names[k]+'</span><b style="margin-left:auto;color:#7dffa0">+'+v.toFixed(1)+'%</b></div><div style="font-size:10px;color:#8fa8c8;margin-top:5px">'+desc+'</div>';bars.appendChild(row);}p.style.display='block';}
+function closePatchNoteV126(){var d=$('patchNote');if(d){d.style.display='none';d.style.pointerEvents='none';}try{localStorage.setItem('njs_patch','v12.6');}catch(e){}}
+function patchV126(){var box=$('patchListBox');if(!box)return;box.innerHTML='';var items=['🔫 枪皮图鉴改为完整适配：缩略图与详情显示整把武器，不再放大裁切','⚔ 主跑酷加入猎杀遭遇：盾卫、治疗与猎犬组成精英小队，清空获得升级能量、回血与金币','⚡ 攻速词条现在真实缩短射击冷却；穿透词条每20%增加一个穿透目标','🍀 运气词条真实提高猎杀事件金币掉落','👾 十种实体新怪加入主跑酷，不再使用几何线框图标','🕹 修复触点丢失导致的自动前进/后退；失焦会清空全部输入','📢 更新公告版本同步，关闭后记录当前版本'];for(var i=0;i<items.length;i++){var d=document.createElement('div');d.style.cssText='padding:7px 0;border-bottom:1px solid rgba(120,160,220,.1)';d.textContent=items[i];box.appendChild(d);}var dt=$('patchDateText');if(dt)dt.textContent='更新于 2026 年 11 月 7 日 · v12.6';try{if(localStorage.getItem('njs_patch')!=='v12.6')openPatchNote();}catch(e){}}
+window.openAttrPanel=openAttrPanelV126;closePatchNote=closePatchNoteV126;patchV126();
 </script>
 </body>
 </html>
